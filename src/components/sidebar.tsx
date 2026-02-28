@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, Key, LogOut, Gauge, Users, Bot, GitBranch, BookOpen } from "lucide-react";
+import { House, BarChart2, Key, LogOut, Gauge, Users, Bot, GitBranch, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -18,7 +18,8 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Home", icon: House },
+  { href: "/analytics", label: "Dashboard", icon: BarChart2 },
   { href: "/assinaturas", label: "Licenças", icon: Key },
   { href: "/automacoes", label: "Automações & Agentes", icon: Bot },
   { href: "/processos", label: "Processos & Fluxos", icon: GitBranch },
