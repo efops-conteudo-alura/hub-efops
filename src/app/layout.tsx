@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gestão de Licenças",
-  description: "Gerencie assinaturas e licenças do seu time",
+  title: "Hub de Eficiência Operacional",
+  description: "Plataforma de Eficiência Operacional do time de Conteúdo da Alura.",
 };
 
 export default function RootLayout({

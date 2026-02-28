@@ -54,7 +54,7 @@ export default async function HomePage() {
     <div className="p-8 max-w-6xl">
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Bem-vindo, {session?.user?.name?.split(" ")[0]}!</h1>
-        <p className="text-muted-foreground mt-1">EO Hub — Eficiência Operacional do time de conteúdo.</p>
+        <p className="text-muted-foreground mt-1">Hub de Eficiência Operacional — Conteúdo</p>
       </div>
 
       {/* Feature cards */}
