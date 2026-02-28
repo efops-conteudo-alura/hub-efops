@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, DollarSign, Package, Plus } from "lucide-react";
+import { CheckCircle, XCircle, DollarSign, Package, Plus, Key, Bot, GitBranch, BookOpen, ArrowRight } from "lucide-react";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -127,6 +127,68 @@ export default async function DashboardPage() {
             <p className="text-xs text-muted-foreground mt-1">apenas em BRL</p>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="mb-8">
+        <h2 className="text-base font-semibold mb-4">Módulos</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link href="/assinaturas">
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Key size={16} className="text-primary" />
+                  Licenças
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">Gestão de assinaturas e ferramentas do departamento.</p>
+                <div className="flex items-center gap-1 mt-3 text-xs text-primary">Acessar <ArrowRight size={12} /></div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/automacoes">
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Bot size={16} className="text-primary" />
+                  Automações & Agentes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">Portfólio de automações, agentes de IA e calculadora de ROI.</p>
+                <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground"><Badge variant="outline" className="text-xs py-0">Em breve</Badge></div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/processos">
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <GitBranch size={16} className="text-primary" />
+                  Processos & Fluxos
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">Mapeamento e documentação de processos operacionais.</p>
+                <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground"><Badge variant="outline" className="text-xs py-0">Em breve</Badge></div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/documentacoes">
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <BookOpen size={16} className="text-primary" />
+                  Documentações
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">Base de conhecimento e referências do time.</p>
+                <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground"><Badge variant="outline" className="text-xs py-0">Em breve</Badge></div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

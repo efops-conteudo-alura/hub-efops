@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, Key, LogOut, Gauge, Users } from "lucide-react";
+import { LayoutDashboard, Key, LogOut, Gauge, Users, Bot, GitBranch, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -18,7 +18,10 @@ interface SidebarProps {
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/assinaturas", label: "Assinaturas", icon: Key },
+  { href: "/assinaturas", label: "Licenças", icon: Key },
+  { href: "/automacoes", label: "Automações & Agentes", icon: Bot },
+  { href: "/processos", label: "Processos & Fluxos", icon: GitBranch },
+  { href: "/documentacoes", label: "Documentações", icon: BookOpen },
 ];
 
 export function Sidebar({ user, isAdmin }: SidebarProps) {
@@ -29,7 +32,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
       <div className="p-6 border-b">
         <div className="flex items-center gap-2">
           <Gauge size={20} className="text-primary shrink-0" />
-          <h1 className="font-bold text-lg">Gestão de Licenças</h1>
+          <h1 className="font-bold text-lg">EO Hub</h1>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
           Eficiência Operacional
