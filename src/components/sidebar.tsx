@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { LayoutDashboard, Key, LogOut, Gauge } from "lucide-react";
+import { LayoutDashboard, Key, LogOut, Gauge, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -13,6 +13,7 @@ interface SidebarProps {
     name?: string | null;
     email?: string | null;
   };
+  isAdmin: boolean;
 }
 
 const navItems = [
@@ -20,7 +21,7 @@ const navItems = [
   { href: "/assinaturas", label: "Assinaturas", icon: Key },
 ];
 
-export function Sidebar({ user }: SidebarProps) {
+export function Sidebar({ user, isAdmin }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -38,10 +39,7 @@ export function Sidebar({ user }: SidebarProps) {
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname.startsWith(item.href);
+          const isActive = pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
@@ -58,6 +56,21 @@ export function Sidebar({ user }: SidebarProps) {
             </Link>
           );
         })}
+
+        {isAdmin && (
+          <Link
+            href="/admin/usuarios"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+              pathname.startsWith("/admin/usuarios")
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            <Users size={18} />
+            Usuários
+          </Link>
+        )}
       </nav>
 
       <div className="p-4 border-t">

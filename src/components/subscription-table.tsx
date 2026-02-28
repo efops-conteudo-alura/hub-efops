@@ -53,6 +53,7 @@ const BILLING_LABELS: Record<string, string> = {
   MONTHLY: "Mensal",
   ANNUALLY: "Anual",
   ONE_TIME: "Único",
+  USAGE: "Por Uso",
 };
 
 function exportToCSV(data: Subscription[]) {
@@ -98,8 +99,10 @@ function exportToCSV(data: Subscription[]) {
 
 export function SubscriptionTable({
   subscriptions,
+  isAdmin,
 }: {
   subscriptions: Subscription[];
+  isAdmin: boolean;
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -232,14 +235,14 @@ export function SubscriptionTable({
               <TableHead>Valor</TableHead>
               <TableHead>Ciclo</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="w-[90px]">Ações</TableHead>
+              {isAdmin && <TableHead className="w-[90px]">Ações</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={isAdmin ? 8 : 7}
                   className="text-center text-muted-foreground py-10"
                 >
                   Nenhuma assinatura encontrada
@@ -286,52 +289,56 @@ export function SubscriptionTable({
                     {s.isActive ? "Ativa" : "Inativa"}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Link href={`/assinaturas/${s.id}/editar`}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Edit size={14} />
+                {isAdmin && (
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Link href={`/assinaturas/${s.id}/editar`}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Edit size={14} />
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => setDeleteId(s.id)}
+                      >
+                        <Trash2 size={14} />
                       </Button>
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => setDeleteId(s.id)}
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                  </div>
-                </TableCell>
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
 
-      <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir esta assinatura? Esta ação não
-              pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleting}
-            >
-              {deleting ? "Excluindo..." : "Excluir"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {isAdmin && (
+        <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirmar exclusão</DialogTitle>
+              <DialogDescription>
+                Tem certeza que deseja excluir esta assinatura? Esta ação não
+                pode ser desfeita.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteId(null)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? "Excluindo..." : "Excluir"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

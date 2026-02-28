@@ -11,9 +11,11 @@ export default async function DashboardLayout({
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
+  const isAdmin = session.user.role === "ADMIN";
+
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar user={session.user} />
+      <Sidebar user={session.user} isAdmin={isAdmin} />
       <main className="flex-1 overflow-auto">{children}</main>
     </div>
   );

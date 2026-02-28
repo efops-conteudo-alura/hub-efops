@@ -1,10 +1,15 @@
 import { prisma } from "@/lib/db";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { SubscriptionTable } from "@/components/subscription-table";
 
 export default async function AssinaturasPage() {
+  const session = await getServerSession(authOptions);
+  const isAdmin = session?.user?.role === "ADMIN";
+
   const subscriptions = await prisma.subscription.findMany({
     orderBy: { createdAt: "desc" },
     select: {
@@ -36,15 +41,17 @@ export default async function AssinaturasPage() {
             {subscriptions.length === 1 ? "item" : "itens"} cadastrados
           </p>
         </div>
-        <Link href="/assinaturas/nova">
-          <Button>
-            <Plus size={16} className="mr-2" />
-            Nova Assinatura
-          </Button>
-        </Link>
+        {isAdmin && (
+          <Link href="/assinaturas/nova">
+            <Button>
+              <Plus size={16} className="mr-2" />
+              Nova Assinatura
+            </Button>
+          </Link>
+        )}
       </div>
 
-      <SubscriptionTable subscriptions={subscriptions} />
+      <SubscriptionTable subscriptions={subscriptions} isAdmin={isAdmin} />
     </div>
   );
 }
