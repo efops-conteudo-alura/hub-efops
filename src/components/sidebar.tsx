@@ -7,6 +7,7 @@ import { LayoutDashboard, Key, LogOut, Gauge, Users, Bot, GitBranch, BookOpen } 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface SidebarProps {
   user: {
@@ -92,6 +93,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
             </p>
           </div>
         </div>
+        <ThemeToggle />
         <Button
           variant="ghost"
           size="sm"
