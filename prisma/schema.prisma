@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subscription {
+  id           String       @id @default(cuid())
+  name         String
+  planName     String?
+  description  String?
+  url          String?
+  loginUser    String?
+  loginPass    String?
+  loginType    LoginType    @default(PASSWORD)
+  cost         Float?
+  currency     String       @default("BRL")
+  billingCycle BillingCycle @default(MONTHLY)
+  costCenter   String?
+  team         String?
+  responsible  String?
+  isActive     Boolean      @default(true)
+  renewalDate  DateTime?
+  notes        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum BillingCycle {
+  MONTHLY
+  ANNUALLY
+  ONE_TIME
+  USAGE
+}
+
+enum LoginType {
+  PASSWORD
+  CODE
+}
