@@ -23,12 +23,12 @@ function AutomationThumbnail({ url, type }: { url: string | null; type: string }
   const badgeBg = isAgent ? "bg-purple-500" : "bg-blue-500";
 
   return (
-    <div className="relative w-full aspect-square overflow-hidden rounded-t-lg">
+    <div className="relative w-full h-20 overflow-hidden rounded-t-lg">
       {url ? (
         <img src={url} alt="" className="w-full h-full object-cover" />
       ) : (
         <div className={`w-full h-full flex items-center justify-center ${bgColor}`}>
-          <Icon size={56} className={iconColor} />
+          <Icon size={36} className={iconColor} />
         </div>
       )}
       <div className={`absolute bottom-2 left-2 ${badgeBg} rounded-full p-1.5 shadow`}>
@@ -112,7 +112,7 @@ export default async function AutomacoesPage() {
           {isAdmin && <p className="text-sm text-muted-foreground mt-1">Clique em "Nova Automação / Agente" para começar.</p>}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {automations.map((a) => (
             <Link key={a.id} href={`/automacoes/${a.id}`}>
               <Card className="hover:border-primary/50 transition-colors cursor-pointer overflow-hidden flex flex-col">

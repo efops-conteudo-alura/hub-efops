@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteAutomationButton } from "./delete-button";
+import { EditAutomationDialog } from "./edit-automation-dialog";
 
 const TYPE_LABELS = { AUTOMATION: "Automação", AGENT: "Agente de IA" };
 const STATUS_LABELS = { ACTIVE: "Ativa", INACTIVE: "Inativa", TESTING: "Em teste" };
@@ -32,7 +33,12 @@ export default async function AutomationDetailPage({ params }: { params: Promise
             Voltar
           </Link>
         </Button>
-        {isAdmin && <DeleteAutomationButton id={automation.id} />}
+        {isAdmin && (
+          <div className="flex gap-2">
+            <EditAutomationDialog automation={automation} />
+            <DeleteAutomationButton id={automation.id} />
+          </div>
+        )}
       </div>
 
       <div className="flex items-start gap-4 mb-8">
