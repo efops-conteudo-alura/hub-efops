@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Bot, Zap, Clock, TrendingUp, Wrench, User } from "lucide-react";
+import { ArrowLeft, Bot, Zap, Clock, TrendingUp, Wrench, User, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +62,17 @@ export default async function AutomationDetailPage({ params }: { params: Promise
             <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1">
               <User size={14} /> por {automation.creator}
             </p>
+          )}
+          {automation.link && (
+            <a
+              href={automation.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 mt-3 text-sm font-medium text-primary hover:underline"
+            >
+              <ExternalLink size={14} />
+              Acessar automação
+            </a>
           )}
         </div>
       </div>

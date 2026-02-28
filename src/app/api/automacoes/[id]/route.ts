@@ -23,7 +23,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
   const body = await request.json();
   const {
-    name, type, shortDesc, fullDesc, thumbnailUrl, status,
+    name, type, shortDesc, fullDesc, thumbnailUrl, link, status,
     creator, tools, roiHoursSaved, roiMonthlySavings, roiDescription,
   } = body;
 
@@ -35,6 +35,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       shortDesc: shortDesc || null,
       fullDesc: fullDesc || null,
       thumbnailUrl: thumbnailUrl || null,
+      link: link || null,
       status,
       creator: creator || null,
       tools: tools || [],

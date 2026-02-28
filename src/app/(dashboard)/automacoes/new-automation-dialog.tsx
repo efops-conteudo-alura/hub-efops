@@ -17,7 +17,7 @@ import {
 
 const EMPTY_FORM = {
   name: "", type: "AUTOMATION", shortDesc: "", fullDesc: "",
-  thumbnailUrl: "", status: "ACTIVE", creator: "",
+  thumbnailUrl: "", link: "", status: "ACTIVE", creator: "",
   roiHoursSaved: "", roiMonthlySavings: "", roiDescription: "",
 };
 
@@ -118,6 +118,11 @@ export function NewAutomationDialog() {
             <div className="space-y-2">
               <Label>URL da thumbnail <span className="text-xs text-muted-foreground">(opcional)</span></Label>
               <Input value={form.thumbnailUrl} onChange={(e) => set("thumbnailUrl", e.target.value)} placeholder="https://..." />
+            </div>
+
+            <div className="space-y-2 col-span-2">
+              <Label>Link da automação <span className="text-xs text-muted-foreground">(opcional)</span></Label>
+              <Input value={form.link} onChange={(e) => set("link", e.target.value)} placeholder="https://..." />
             </div>
           </div>
 

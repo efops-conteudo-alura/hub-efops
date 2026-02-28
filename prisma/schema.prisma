@@ -63,6 +63,7 @@ model Automation {
   shortDesc         String?
   fullDesc          String?
   thumbnailUrl      String?
+  link              String?
   status            AutomationStatus @default(ACTIVE)
   creator           String?
   tools             String[]

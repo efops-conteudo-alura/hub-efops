@@ -16,14 +16,24 @@ const STATUS_VARIANTS = {
 } as const;
 
 function AutomationThumbnail({ url, type }: { url: string | null; type: string }) {
-  if (url) {
-    return <img src={url} alt="" className="w-full h-32 object-cover rounded-t-lg" />;
-  }
+  const isAgent = type === "AGENT";
+  const Icon = isAgent ? Bot : Zap;
+  const iconColor = isAgent ? "text-purple-500" : "text-blue-500";
+  const bgColor = isAgent ? "bg-purple-100 dark:bg-purple-950" : "bg-blue-100 dark:bg-blue-950";
+  const badgeBg = isAgent ? "bg-purple-500" : "bg-blue-500";
+
   return (
-    <div className={`w-full h-32 rounded-t-lg flex items-center justify-center ${type === "AGENT" ? "bg-purple-100 dark:bg-purple-950" : "bg-blue-100 dark:bg-blue-950"}`}>
-      {type === "AGENT"
-        ? <Bot size={40} className="text-purple-500" />
-        : <Zap size={40} className="text-blue-500" />}
+    <div className="relative w-full aspect-square overflow-hidden rounded-t-lg">
+      {url ? (
+        <img src={url} alt="" className="w-full h-full object-cover" />
+      ) : (
+        <div className={`w-full h-full flex items-center justify-center ${bgColor}`}>
+          <Icon size={56} className={iconColor} />
+        </div>
+      )}
+      <div className={`absolute bottom-2 left-2 ${badgeBg} rounded-full p-1.5 shadow`}>
+        <Icon size={14} className="text-white" />
+      </div>
     </div>
   );
 }
@@ -105,38 +115,27 @@ export default async function AutomacoesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {automations.map((a) => (
             <Link key={a.id} href={`/automacoes/${a.id}`}>
-              <Card className="hover:border-primary/50 transition-colors cursor-pointer overflow-hidden h-full flex flex-col">
+              <Card className="hover:border-primary/50 transition-colors cursor-pointer overflow-hidden flex flex-col">
                 <AutomationThumbnail url={a.thumbnailUrl} type={a.type} />
-                <CardHeader className="pb-2 pt-4">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <Badge variant={a.type === "AGENT" ? "outline" : "secondary"} className="text-xs">
-                      {TYPE_LABELS[a.type]}
-                    </Badge>
-                    <Badge variant={STATUS_VARIANTS[a.status]} className="text-xs">
-                      {STATUS_LABELS[a.status]}
-                    </Badge>
+                <CardContent className="pt-3 pb-3 flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <Badge variant={STATUS_VARIANTS[a.status]} className="text-xs">{STATUS_LABELS[a.status]}</Badge>
+                    {a.creator && <p className="text-xs text-muted-foreground truncate ml-2">por {a.creator}</p>}
                   </div>
-                  <p className="font-semibold leading-tight">{a.name}</p>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col justify-between pt-0">
+                  <p className="font-semibold leading-tight line-clamp-1">{a.name}</p>
                   {a.shortDesc && (
-                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{a.shortDesc}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{a.shortDesc}</p>
                   )}
-                  <div className="space-y-2 mt-auto">
-                    {a.tools.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {a.tools.slice(0, 3).map((t) => (
-                          <Badge key={t} variant="outline" className="text-xs py-0">{t}</Badge>
-                        ))}
-                        {a.tools.length > 3 && (
-                          <Badge variant="outline" className="text-xs py-0">+{a.tools.length - 3}</Badge>
-                        )}
-                      </div>
-                    )}
-                    {a.creator && (
-                      <p className="text-xs text-muted-foreground">por {a.creator}</p>
-                    )}
-                  </div>
+                  {a.tools.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {a.tools.slice(0, 2).map((t) => (
+                        <Badge key={t} variant="outline" className="text-xs py-0">{t}</Badge>
+                      ))}
+                      {a.tools.length > 2 && (
+                        <Badge variant="outline" className="text-xs py-0">+{a.tools.length - 2}</Badge>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </Link>
