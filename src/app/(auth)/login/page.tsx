@@ -63,13 +63,12 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password">Senha <span className="text-xs text-muted-foreground">(opcional para usuários sem senha)</span></Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
                 placeholder="••••••••"
-                required
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}

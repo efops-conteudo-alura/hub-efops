@@ -100,18 +100,20 @@ export function CreateUserDialog() {
               required
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="u-password">Senha</Label>
-            <Input
-              id="u-password"
-              type="password"
-              value={form.password}
-              onChange={(e) => set("password", e.target.value)}
-              placeholder="Mínimo 8 caracteres"
-              minLength={8}
-              required
-            />
-          </div>
+          {form.role === "ADMIN" && (
+            <div className="space-y-2">
+              <Label htmlFor="u-password">Senha</Label>
+              <Input
+                id="u-password"
+                type="password"
+                value={form.password}
+                onChange={(e) => set("password", e.target.value)}
+                placeholder="Mínimo 8 caracteres"
+                minLength={8}
+                required
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="u-role">Nível de Acesso</Label>
             <Select value={form.role} onValueChange={(v) => set("role", v)}>

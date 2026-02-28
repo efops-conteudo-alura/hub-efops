@@ -12,7 +12,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Senha", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email) return null;
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
@@ -20,15 +20,20 @@ export const authOptions: NextAuthOptions = {
 
         if (!user) return null;
 
+        // Users without password (read-only): email is enough
+        if (!user.password) {
+          if (user.role === "USER") {
+            return { id: user.id, email: user.email, name: user.name, role: user.role };
+          }
+          return null;
+        }
+
+        // Users with password: must verify it
+        if (!credentials.password) return null;
         const passwordMatch = await bcrypt.compare(credentials.password, user.password);
         if (!passwordMatch) return null;
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        };
+        return { id: user.id, email: user.email, name: user.name, role: user.role };
       },
     }),
   ],

@@ -25,9 +25,14 @@ export async function POST(request: NextRequest) {
   }
 
   const { name, email, password, role } = await request.json();
+  const targetRole = role || "USER";
 
-  if (!name || !email || !password) {
-    return NextResponse.json({ error: "Preencha todos os campos" }, { status: 400 });
+  if (!name || !email) {
+    return NextResponse.json({ error: "Preencha nome e email" }, { status: 400 });
+  }
+
+  if (targetRole === "ADMIN" && !password) {
+    return NextResponse.json({ error: "Admins precisam de senha" }, { status: 400 });
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -35,9 +40,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Email já cadastrado" }, { status: 400 });
   }
 
-  const hashed = await bcrypt.hash(password, 12);
+  const hashedPassword = password ? await bcrypt.hash(password, 12) : null;
   const user = await prisma.user.create({
-    data: { name, email, password: hashed, role: role || "USER" },
+    data: { name, email, password: hashedPassword, role: targetRole },
     select: { id: true, name: true, email: true, role: true },
   });
 
