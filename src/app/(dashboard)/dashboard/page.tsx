@@ -4,8 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, DollarSign, Package, Plus, Key, Bot, GitBranch, BookOpen, ArrowRight } from "lucide-react";
+import { CheckCircle, XCircle, DollarSign, Package, Key, Bot, GitBranch, BookOpen, ArrowRight } from "lucide-react";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -55,19 +54,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Bem-vindo, {session?.user?.name}!
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/assinaturas/nova">
-            <Plus size={16} className="mr-2" />
-            Nova Assinatura
-          </Link>
-        </Button>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground">
+          Bem-vindo, {session?.user?.name}!
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
