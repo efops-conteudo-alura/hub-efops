@@ -17,7 +17,7 @@ import type { NodeLink } from "./nodes/process-node";
 interface ProcessData {
   id?: string;
   title?: string;
-  description?: string;
+  description?: string | null;
   tags?: string[];
   status?: string;
   flowData?: string | null;
