@@ -15,7 +15,7 @@ import { CreateUserDialog } from "./create-user-dialog";
 
 export default async function UsuariosPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard");
+  if (!session || session.user.role !== "ADMIN") redirect("/home");
 
   const users = await prisma.user.findMany({
     select: { id: true, name: true, email: true, role: true, createdAt: true },
