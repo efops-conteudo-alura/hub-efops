@@ -12,6 +12,7 @@ model User {
   name      String
   email     String   @unique
   password  String?
+  image     String?  // base64 data URL ou URL externa
   role      Role     @default(USER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

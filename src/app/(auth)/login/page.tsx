@@ -62,8 +62,12 @@ export default function LoginPage() {
                 required
               />
             </div>
+            <p className="text-xs text-muted-foreground bg-muted rounded-md px-3 py-2 leading-relaxed">
+              Usuários comuns entram <strong>só com o email</strong>, sem senha.
+              Para acessar como <strong>administrador</strong>, preencha também a senha.
+            </p>
             <div className="space-y-2">
-              <Label htmlFor="password">Senha <span className="text-xs text-muted-foreground">(opcional para usuários sem senha)</span></Label>
+              <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 name="password"

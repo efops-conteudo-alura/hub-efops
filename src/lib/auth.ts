@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
         // Users without password (read-only): email is enough
         if (!user.password) {
           if (user.role === "USER") {
-            return { id: user.id, email: user.email, name: user.name, role: user.role };
+            return { id: user.id, email: user.email, name: user.name, image: user.image, role: user.role };
           }
           return null;
         }
@@ -33,16 +33,21 @@ export const authOptions: NextAuthOptions = {
         const passwordMatch = await bcrypt.compare(credentials.password, user.password);
         if (!passwordMatch) return null;
 
-        return { id: user.id, email: user.email, name: user.name, role: user.role };
+        return { id: user.id, email: user.email, name: user.name, image: user.image, role: user.role };
       },
     }),
   ],
   session: { strategy: "jwt" },
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.role = (user as unknown as { role: string }).role;
+        token.picture = user.image ?? null;
+      }
+      if (trigger === "update" && session) {
+        if (session.name !== undefined) token.name = session.name;
+        if (session.image !== undefined) token.picture = session.image;
       }
       return token;
     },
@@ -50,6 +55,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.image = (token.picture as string | null | undefined) ?? null;
       }
       return session;
     },

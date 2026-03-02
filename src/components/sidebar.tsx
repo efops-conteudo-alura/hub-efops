@@ -10,13 +10,15 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ProfileDialog } from "@/components/profile-dialog";
 
 interface SidebarProps {
   user: {
     name?: string | null;
     email?: string | null;
+    image?: string | null;
   };
   isAdmin: boolean;
 }
@@ -39,6 +41,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   // Colapsa por padrão no mobile
   useEffect(() => {
@@ -120,8 +123,13 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
       <div className={cn("p-3 border-t", collapsed && "flex flex-col items-center gap-2")}>
         {!collapsed ? (
           <>
-            <div className="flex items-center gap-3 mb-3">
+            <button
+              className="flex items-center gap-3 mb-3 w-full rounded-md p-1 hover:bg-muted transition-colors text-left"
+              onClick={() => setProfileOpen(true)}
+              title="Editar perfil"
+            >
               <Avatar className="h-8 w-8 shrink-0">
+                {user.image && <AvatarImage src={user.image} alt={user.name ?? ""} />}
                 <AvatarFallback>
                   {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
@@ -130,7 +138,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
                 <p className="text-sm font-medium truncate">{user.name}</p>
                 <p className="text-xs text-muted-foreground truncate">{user.email}</p>
               </div>
-            </div>
+            </button>
             <ThemeToggle />
             <Button
               variant="ghost"
@@ -144,11 +152,18 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
           </>
         ) : (
           <>
-            <Avatar className="h-8 w-8">
-              <AvatarFallback>
-                {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
+            <button
+              title="Editar perfil"
+              onClick={() => setProfileOpen(true)}
+              className="rounded-full"
+            >
+              <Avatar className="h-8 w-8">
+                {user.image && <AvatarImage src={user.image} alt={user.name ?? ""} />}
+                <AvatarFallback>
+                  {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </button>
             <ThemeToggle />
             <button
               title="Sair"
@@ -244,8 +259,13 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
                 })}
               </div>
               <div className="p-3 border-t">
-                <div className="flex items-center gap-3 mb-3">
+                <button
+                  className="flex items-center gap-3 mb-3 w-full rounded-md p-1 hover:bg-muted transition-colors text-left"
+                  onClick={() => { setMobileOpen(false); setProfileOpen(true); }}
+                  title="Editar perfil"
+                >
                   <Avatar className="h-8 w-8 shrink-0">
+                    {user.image && <AvatarImage src={user.image} alt={user.name ?? ""} />}
                     <AvatarFallback>
                       {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "U"}
                     </AvatarFallback>
@@ -254,7 +274,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
                     <p className="text-sm font-medium truncate">{user.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                   </div>
-                </div>
+                </button>
                 <ThemeToggle />
                 <Button
                   variant="ghost"
@@ -270,6 +290,13 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
           </div>
         </>
       )}
+
+      <ProfileDialog
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        user={user}
+        isAdmin={isAdmin}
+      />
     </>
   );
 }
