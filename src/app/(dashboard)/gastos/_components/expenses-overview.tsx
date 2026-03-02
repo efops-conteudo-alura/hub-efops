@@ -153,11 +153,11 @@ export function ExpensesOverview({ isAdmin }: Props) {
                 <XAxis dataKey="month" tickFormatter={formatMonth} tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} width={56} />
                 <Tooltip
-                  formatter={(v: number, name: string) => [
-                    formatBRL(v),
+                  formatter={(v: number | undefined, name: string | undefined) => [
+                    v != null ? formatBRL(v) : "",
                     name === "total" ? "Total" : "Média 3 meses",
                   ]}
-                  labelFormatter={formatMonth}
+                  labelFormatter={(m) => formatMonth(String(m))}
                 />
                 <Legend formatter={(v) => v === "total" ? "Total" : "Média 3 meses"} />
                 <Line type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={2} dot={false} />

@@ -164,7 +164,7 @@ export function ExpensesByCategory() {
                     v != null ? formatBRL(v) : "",
                     ALL_CATEGORIES.find((c) => c.value === name)?.label ?? name ?? "",
                   ]}
-                  labelFormatter={formatMonth}
+                  labelFormatter={(m) => formatMonth(String(m))}
                 />
                 <Legend formatter={(v) => ALL_CATEGORIES.find((c) => c.value === v)?.label ?? v} />
                 {selectedCategories.map((cat) => (
