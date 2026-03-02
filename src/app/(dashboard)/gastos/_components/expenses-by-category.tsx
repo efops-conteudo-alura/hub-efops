@@ -160,9 +160,9 @@ export function ExpensesByCategory() {
                 <XAxis dataKey="month" tickFormatter={formatMonth} tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} width={56} />
                 <Tooltip
-                  formatter={(v: number | undefined, name: string) => [
+                  formatter={(v: number | undefined, name: string | undefined) => [
                     v != null ? formatBRL(v) : "",
-                    ALL_CATEGORIES.find((c) => c.value === name)?.label ?? name,
+                    ALL_CATEGORIES.find((c) => c.value === name)?.label ?? name ?? "",
                   ]}
                   labelFormatter={formatMonth}
                 />
