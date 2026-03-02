@@ -84,3 +84,30 @@ enum AutomationStatus {
   INACTIVE
   TESTING
 }
+
+model Expense {
+  id          String          @id @default(cuid())
+  month       String          // formato "2026-02"
+  date        String?         // formato "2026-02-14" (opcional, quando há data exata)
+  value       Float           // em BRL
+  category    ExpenseCategory
+  description String?         // nome do instrutor/prestador
+  source      ExpenseSource   @default(MANUAL)
+  externalId  String?         @unique // task ID do ClickUp (deduplicação)
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+enum ExpenseCategory {
+  INSTRUTOR
+  EDITOR_FREELANCER
+  EDITOR_EXTERNO
+  SUPORTE_EDUCACIONAL
+}
+
+enum ExpenseSource {
+  CLICKUP
+  UPLOAD
+  MANUAL
+}

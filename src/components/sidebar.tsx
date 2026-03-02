@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   House, BarChart2, Key, LogOut, Gauge, Users, Bot,
-  GitBranch, BookOpen, ChevronLeft, ChevronRight, Menu, X,
+  GitBranch, BookOpen, ChevronLeft, ChevronRight, Menu, X, Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ const mainNavItems = [
   { href: "/home", label: "Home", icon: House },
   { href: "/assinaturas", label: "Licenças", icon: Key },
   { href: "/automacoes", label: "Automações & Agentes", icon: Bot },
+  { href: "/gastos", label: "Gastos Externos", icon: Receipt },
   { href: "/processos", label: "Processos & Fluxos", icon: GitBranch },
   { href: "/documentacoes", label: "Documentações", icon: BookOpen },
 ];
