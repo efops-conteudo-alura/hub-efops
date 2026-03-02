@@ -112,3 +112,22 @@ enum ExpenseSource {
   UPLOAD
   MANUAL
 }
+
+model Process {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  tags        String[]
+  status      ProcessStatus @default(DRAFT)
+  creatorId   String
+  creatorName String
+  flowData    String?       // JSON.stringify({ nodes, edges })
+  richText    String?       // JSON.stringify(TipTap document)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+enum ProcessStatus {
+  DRAFT
+  PUBLISHED
+}

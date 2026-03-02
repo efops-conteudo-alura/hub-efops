@@ -1,31 +1,37 @@
-import { GitBranch } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { redirect } from "next/navigation";
+import { ProcessList } from "./_components/process-list";
 
-export default function ProcessosPage() {
+export default async function ProcessosPage() {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/login");
+
+  const processes = await prisma.process.findMany({
+    where: {
+      OR: [
+        { status: "PUBLISHED" },
+        { creatorId: session.user.id },
+      ],
+    },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      tags: true,
+      status: true,
+      creatorId: true,
+      creatorName: true,
+      updatedAt: true,
+    },
+  });
+
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <GitBranch size={28} className="text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold">Processos & Fluxos</h1>
-            <p className="text-muted-foreground">
-              Mapeamento e documentação de processos do departamento
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-dashed p-12 text-center">
-        <GitBranch size={40} className="mx-auto text-muted-foreground/40 mb-4" />
-        <div className="flex justify-center mb-3">
-          <Badge variant="outline">Em breve</Badge>
-        </div>
-        <p className="text-muted-foreground font-medium">Módulo em construção</p>
-        <p className="text-sm text-muted-foreground mt-1">
-          Visualização e gestão de processos e fluxos operacionais.
-        </p>
-      </div>
-    </div>
+    <ProcessList
+      processes={processes.map((p) => ({ ...p, updatedAt: p.updatedAt.toISOString() }))}
+      currentUserId={session.user.id}
+    />
   );
 }
