@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BarChart2 } from "lucide-react";
+import { MonthPicker } from "./month-picker";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
@@ -96,25 +96,15 @@ export function ExpensesByCategory() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">De</span>
-          <Input
-            type="month"
-            className="w-36 text-sm"
-            value={monthFrom}
-            onChange={(e) => setMonthFrom(e.target.value)}
-          />
+          <MonthPicker value={monthFrom} onChange={setMonthFrom} placeholder="Início" />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Até</span>
-          <Input
-            type="month"
-            className="w-36 text-sm"
-            value={monthTo}
-            onChange={(e) => setMonthTo(e.target.value)}
-          />
+          <MonthPicker value={monthTo} onChange={setMonthTo} placeholder="Fim" />
         </div>
         {(monthFrom || monthTo) && (
           <Button variant="ghost" size="sm" onClick={() => { setMonthFrom(""); setMonthTo(""); }}>
-            Limpar
+            Limpar tudo
           </Button>
         )}
       </div>
