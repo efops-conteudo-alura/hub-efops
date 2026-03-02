@@ -69,7 +69,8 @@ export function ProfileDialog({ open, onOpenChange, user, isAdmin }: Props) {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erro ao salvar");
 
-      await update({ name: json.name, image: json.image });
+      // Só atualiza o nome no token (imagem vem do DB via router.refresh)
+      await update({ name: json.name });
       router.refresh();
 
       setSuccess(true);
