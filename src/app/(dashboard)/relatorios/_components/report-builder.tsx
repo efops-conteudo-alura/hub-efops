@@ -154,15 +154,39 @@ export function ReportBuilder() {
             </div>
 
             {field.type === "select" && (
-              <div className="space-y-1.5">
-                <Label>Opções <span className="text-muted-foreground text-xs">(separadas por vírgula)</span></Label>
-                <Input
-                  value={field.options?.join(", ") ?? ""}
-                  onChange={(e) =>
-                    updateField(field.id, "options", e.target.value.split(",").map((o) => o.trim()).filter(Boolean))
-                  }
-                  placeholder="Ex: Sim, Não, Talvez"
-                />
+              <div className="space-y-2">
+                <Label>Opções</Label>
+                {(field.options ?? []).map((opt, optIdx) => (
+                  <div key={optIdx} className="flex gap-2">
+                    <Input
+                      value={opt}
+                      onChange={(e) => {
+                        const next = [...(field.options ?? [])];
+                        next[optIdx] = e.target.value;
+                        updateField(field.id, "options", next);
+                      }}
+                      placeholder={`Opção ${optIdx + 1}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = (field.options ?? []).filter((_, i) => i !== optIdx);
+                        updateField(field.id, "options", next);
+                      }}
+                      className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                      title="Remover opção"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => updateField(field.id, "options", [...(field.options ?? []), ""])}
+                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  <Plus size={12} /> Adicionar opção
+                </button>
               </div>
             )}
 

@@ -8,7 +8,7 @@ import { TableProperties } from "lucide-react";
 const TYPES = [
   {
     key: "planilha",
-    label: "Planilha & Formulário",
+    label: "Formulário & Planilha",
     description: "Crie campos personalizados e compartilhe um formulário de coleta. As respostas são organizadas em tabela exportável.",
     icon: TableProperties,
     available: true,
