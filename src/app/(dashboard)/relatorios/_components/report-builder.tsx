@@ -31,15 +31,28 @@ function generateId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-export function ReportBuilder() {
+interface ReportBuilderProps {
+  reportId?: string;
+  initialTitle?: string;
+  initialObjective?: string;
+  initialFields?: ReportField[];
+}
+
+export function ReportBuilder({
+  reportId,
+  initialTitle = "",
+  initialObjective = "",
+  initialFields,
+}: ReportBuilderProps) {
   const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [objective, setObjective] = useState("");
-  const [fields, setFields] = useState<ReportField[]>([
-    { id: generateId(), label: "", type: "text", required: false },
-  ]);
+  const [title, setTitle] = useState(initialTitle);
+  const [objective, setObjective] = useState(initialObjective);
+  const [fields, setFields] = useState<ReportField[]>(
+    initialFields ?? [{ id: generateId(), label: "", type: "text", required: false }]
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isEdit = !!reportId;
 
   function addField() {
     setFields((prev) => [...prev, { id: generateId(), label: "", type: "text", required: false }]);
@@ -63,14 +76,16 @@ export function ReportBuilder() {
     setError(null);
 
     try {
-      const res = await fetch("/api/relatorios", {
-        method: "POST",
+      const url = isEdit ? `/api/relatorios/${reportId}` : "/api/relatorios";
+      const method = isEdit ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, objective, fields: validFields }),
       });
       const json = await res.json();
-      if (!res.ok) { setError(json.error ?? "Erro ao criar relatório."); return; }
-      router.push(`/relatorios/${json.id}`);
+      if (!res.ok) { setError(json.error ?? "Erro ao salvar relatório."); return; }
+      router.push(`/relatorios/${isEdit ? reportId : json.id}`);
     } catch {
       setError("Não foi possível conectar ao servidor.");
     } finally {
@@ -213,7 +228,10 @@ export function ReportBuilder() {
           Cancelar
         </Button>
         <Button type="submit" disabled={submitting}>
-          {submitting ? <><Loader2 size={14} className="animate-spin mr-1" /> Criando...</> : "Criar relatório"}
+          {submitting
+            ? <><Loader2 size={14} className="animate-spin mr-1" /> {isEdit ? "Salvando..." : "Criando..."}</>
+            : isEdit ? "Salvar alterações" : "Criar relatório"
+          }
         </Button>
       </div>
     </form>

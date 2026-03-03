@@ -13,7 +13,8 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { Copy, Check, Download, Trash2, Pencil } from "lucide-react";
+import Link from "next/link";
+import { Copy, Check, Download, Trash2, Pencil, Settings2 } from "lucide-react";
 
 interface ReportField {
   id: string;
@@ -127,6 +128,11 @@ export function ReportView({ report }: Props) {
           )}
         </div>
         <div className="flex gap-2 shrink-0">
+          <Link href={`/relatorios/${report.id}/editar`}>
+            <Button variant="outline" size="sm">
+              <Settings2 size={14} className="mr-1" /> Editar formulário
+            </Button>
+          </Link>
           <a href={`/api/relatorios/${report.id}/export`}>
             <Button variant="outline" size="sm">
               <Download size={14} className="mr-1" /> Exportar Excel

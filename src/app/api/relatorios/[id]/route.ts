@@ -23,6 +23,42 @@ export async function GET(
   return NextResponse.json(report);
 }
 
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  const body = await request.json();
+  const { title, objective, fields } = body as {
+    title?: string;
+    objective?: string;
+    fields?: unknown[];
+  };
+
+  if (!title?.trim()) {
+    return NextResponse.json({ error: "Título obrigatório" }, { status: 400 });
+  }
+  if (!Array.isArray(fields) || fields.length === 0) {
+    return NextResponse.json({ error: "Adicione ao menos um campo" }, { status: 400 });
+  }
+
+  const report = await prisma.report.update({
+    where: { id },
+    data: {
+      title: title.trim(),
+      objective: objective?.trim() || null,
+      fields: fields as object[],
+    },
+  });
+
+  return NextResponse.json(report);
+}
+
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
