@@ -21,19 +21,33 @@ export async function POST(request: NextRequest) {
   }
 
   let html: string;
+
   try {
-    const buffer = await file.arrayBuffer();
-    const result = await mammoth.convertToHtml(
-      { buffer: Buffer.from(buffer) },
-      {
-        // Imagens são substituídas por um placeholder — evita travar em documentos
-        // com muitas imagens grandes (base64 embutido é muito pesado)
-        convertImage: mammoth.images.imgElement(() =>
-          Promise.resolve({ src: "", alt: "[imagem não importada]" })
-        ),
-      }
-    );
-    html = result.value;
+    const arrayBuf = await file.arrayBuffer();
+    const nodeBuf = Buffer.from(arrayBuf);
+
+    // Tenta converter com formatação, ignorando imagens
+    try {
+      const result = await mammoth.convertToHtml(
+        { buffer: nodeBuf },
+        {
+          convertImage: mammoth.images.imgElement(() =>
+            Promise.resolve({ src: "", alt: "[imagem]" })
+          ),
+        }
+      );
+      html = result.value;
+    } catch {
+      // Fallback: extrai só o texto puro (funciona para exports do Notion e outros formatos incomuns)
+      const textResult = await mammoth.extractRawText({ buffer: nodeBuf });
+      // Converte parágrafos de texto em HTML simples
+      html = textResult.value
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => `<p>${line}</p>`)
+        .join("");
+    }
   } catch {
     return NextResponse.json(
       { error: "Não foi possível processar o arquivo. Certifique-se de que é um .docx válido." },
@@ -49,7 +63,7 @@ export async function POST(request: NextRequest) {
   const doc = await prisma.documentation.create({
     data: {
       title,
-      content: html,
+      content: html || "<p></p>",
       tags: [],
       status: "DRAFT",
       creatorId: session.user.id,

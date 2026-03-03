@@ -53,10 +53,20 @@ export function DocUploadDialog({ open, onClose }: Props) {
       });
 
       clearTimeout(timeout);
-      const data = await res.json();
+
+      // Lê a resposta como texto primeiro — garante que funciona mesmo se o
+      // servidor retornar HTML de erro 500 em vez de JSON
+      const text = await res.text();
+      let data: { error?: string; id?: string } = {};
+      try { data = JSON.parse(text); } catch { /* corpo não é JSON */ }
 
       if (!res.ok) {
-        setError(data.error ?? "Erro ao processar o arquivo");
+        setError(data.error ?? `Erro ao processar o arquivo (HTTP ${res.status})`);
+        return;
+      }
+
+      if (!data.id) {
+        setError("Resposta inválida do servidor.");
         return;
       }
 
@@ -67,7 +77,7 @@ export function DocUploadDialog({ open, onClose }: Props) {
       if ((err as Error).name === "AbortError") {
         setError("Importação cancelada.");
       } else {
-        setError("Erro de conexão ao processar o arquivo.");
+        setError("Não foi possível conectar ao servidor.");
       }
     } finally {
       setLoading(false);
