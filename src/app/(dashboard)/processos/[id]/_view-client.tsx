@@ -8,8 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Trash2, Zap, Bot, Link as LinkIcon, ExternalLink, Loader2 } from "lucide-react";
-import Image from "next/image";
+import { Trash2, Zap, Link as LinkIcon, ExternalLink, Loader2 } from "lucide-react";
 import { FlowCanvas, useNodesState, useEdgesState } from "../_components/flow-canvas";
 import { RichTextEditor } from "../_components/rich-text-editor";
 import type { NodeLink } from "../_components/nodes/process-node";
@@ -54,57 +53,34 @@ function parseRichText(raw?: string | null): object | null {
 }
 
 function AutomationCard({ link, data }: { link: NodeLink & { type: "AUTOMATION" }; data?: AutomationData }) {
-  const isAgent = link.automationType === "AGENT";
-  const colorClass = isAgent ? "bg-purple-100 dark:bg-purple-950/40" : "bg-blue-100 dark:bg-blue-950/40";
-  const iconColor = isAgent ? "text-purple-500" : "text-blue-500";
-  const Icon = isAgent ? Bot : Zap;
-
   return (
     <a
       href={`/automacoes/${link.targetId}`}
-      className="block rounded-lg border border-border hover:border-primary/50 transition-colors overflow-hidden"
+      className="block rounded-lg border border-border hover:border-primary/50 transition-colors p-3"
     >
-      {/* Thumbnail */}
-      <div className={`h-20 relative flex items-center justify-center ${colorClass}`}>
-        {data?.thumbnailUrl ? (
-          <Image src={data.thumbnailUrl} alt={data.name} fill className="object-cover" />
-        ) : (
-          <Icon size={28} className={iconColor} />
-        )}
-        <div className={`absolute top-2 left-2 p-1 rounded-full ${isAgent ? "bg-purple-500" : "bg-blue-500"}`}>
-          <Icon size={10} className="text-white" />
-        </div>
+      <div className="flex items-center gap-2 mb-1">
+        <Badge variant="outline" className="text-xs">
+          {data ? STATUS_LABELS[data.status] ?? data.status : "—"}
+        </Badge>
       </div>
-
-      {/* Content */}
-      <div className="p-3">
-        <div className="flex items-center justify-between gap-2 mb-1.5">
-          <Badge variant="outline" className="text-xs">
-            {data ? STATUS_LABELS[data.status] ?? data.status : "—"}
-          </Badge>
-          {data?.creator && (
-            <span className="text-xs text-muted-foreground truncate">por {data.creator}</span>
+      <p className="font-semibold text-sm leading-tight line-clamp-1">
+        {data?.name ?? link.targetTitle}
+      </p>
+      {data?.shortDesc && (
+        <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-snug">
+          {data.shortDesc}
+        </p>
+      )}
+      {data?.tools && data.tools.length > 0 && (
+        <div className="flex gap-1 mt-2 flex-wrap">
+          {data.tools.slice(0, 2).map((t) => (
+            <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>
+          ))}
+          {data.tools.length > 2 && (
+            <Badge variant="secondary" className="text-xs">+{data.tools.length - 2}</Badge>
           )}
         </div>
-        <p className="font-semibold text-sm leading-tight line-clamp-1">
-          {data?.name ?? link.targetTitle}
-        </p>
-        {data?.shortDesc && (
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-snug">
-            {data.shortDesc}
-          </p>
-        )}
-        {data?.tools && data.tools.length > 0 && (
-          <div className="flex gap-1 mt-2 flex-wrap">
-            {data.tools.slice(0, 2).map((t) => (
-              <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>
-            ))}
-            {data.tools.length > 2 && (
-              <Badge variant="secondary" className="text-xs">+{data.tools.length - 2}</Badge>
-            )}
-          </div>
-        )}
-      </div>
+      )}
     </a>
   );
 }
