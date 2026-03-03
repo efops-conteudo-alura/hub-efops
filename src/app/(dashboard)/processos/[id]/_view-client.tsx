@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ReactFlowProvider, type Node, type Edge, MarkerType } from "@xyflow/react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Trash2, Zap, Bot, Link as LinkIcon, ExternalLink } from "lucide-react";
+import { Trash2, Zap, Bot, Link as LinkIcon, ExternalLink, Loader2 } from "lucide-react";
+import Image from "next/image";
 import { FlowCanvas, useNodesState, useEdgesState } from "../_components/flow-canvas";
 import { RichTextEditor } from "../_components/rich-text-editor";
 import type { NodeLink } from "../_components/nodes/process-node";
@@ -19,6 +20,21 @@ interface Props {
   richText?: string | null;
   showContent?: boolean;
 }
+
+interface AutomationData {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  shortDesc?: string | null;
+  thumbnailUrl?: string | null;
+  creator?: string | null;
+  tools: string[];
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "Ativa", INACTIVE: "Inativa", TESTING: "Testando",
+};
 
 function parseFlowData(raw?: string | null): { nodes: Node[]; edges: Edge[] } {
   if (!raw) return { nodes: [], edges: [] };
@@ -37,16 +53,99 @@ function parseRichText(raw?: string | null): object | null {
   try { return JSON.parse(raw); } catch { return null; }
 }
 
+function AutomationCard({ link, data }: { link: NodeLink & { type: "AUTOMATION" }; data?: AutomationData }) {
+  const isAgent = link.automationType === "AGENT";
+  const colorClass = isAgent ? "bg-purple-100 dark:bg-purple-950/40" : "bg-blue-100 dark:bg-blue-950/40";
+  const iconColor = isAgent ? "text-purple-500" : "text-blue-500";
+  const Icon = isAgent ? Bot : Zap;
+
+  return (
+    <a
+      href={`/automacoes/${link.targetId}`}
+      className="block rounded-lg border border-border hover:border-primary/50 transition-colors overflow-hidden"
+    >
+      {/* Thumbnail */}
+      <div className={`h-20 relative flex items-center justify-center ${colorClass}`}>
+        {data?.thumbnailUrl ? (
+          <Image src={data.thumbnailUrl} alt={data.name} fill className="object-cover" />
+        ) : (
+          <Icon size={28} className={iconColor} />
+        )}
+        <div className={`absolute top-2 left-2 p-1 rounded-full ${isAgent ? "bg-purple-500" : "bg-blue-500"}`}>
+          <Icon size={10} className="text-white" />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-3">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <Badge variant="outline" className="text-xs">
+            {data ? STATUS_LABELS[data.status] ?? data.status : "—"}
+          </Badge>
+          {data?.creator && (
+            <span className="text-xs text-muted-foreground truncate">por {data.creator}</span>
+          )}
+        </div>
+        <p className="font-semibold text-sm leading-tight line-clamp-1">
+          {data?.name ?? link.targetTitle}
+        </p>
+        {data?.shortDesc && (
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-snug">
+            {data.shortDesc}
+          </p>
+        )}
+        {data?.tools && data.tools.length > 0 && (
+          <div className="flex gap-1 mt-2 flex-wrap">
+            {data.tools.slice(0, 2).map((t) => (
+              <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>
+            ))}
+            {data.tools.length > 2 && (
+              <Badge variant="secondary" className="text-xs">+{data.tools.length - 2}</Badge>
+            )}
+          </div>
+        )}
+      </div>
+    </a>
+  );
+}
+
 function NodeLinksDialog({ nodeId, nodes, open, onClose }: {
   nodeId: string | null;
   nodes: Node[];
   open: boolean;
   onClose: () => void;
 }) {
-  if (!nodeId) return null;
-  const node = nodes.find(n => n.id === nodeId);
+  const [automationData, setAutomationData] = useState<Record<string, AutomationData>>({});
+  const [loading, setLoading] = useState(false);
+
+  const node = nodeId ? nodes.find(n => n.id === nodeId) : null;
   const links: NodeLink[] = (node?.data as { links?: NodeLink[] })?.links ?? [];
   const label = (node?.data as { label?: string })?.label || "Nó";
+
+  // Busca dados de automações ao abrir
+  useEffect(() => {
+    if (!open || !links.length) return;
+    const automationLinks = links.filter(l => l.type === "AUTOMATION");
+    if (!automationLinks.length) return;
+
+    setLoading(true);
+    Promise.all(
+      automationLinks.map(l =>
+        fetch(`/api/automacoes/${l.targetId}`)
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null)
+      )
+    ).then(results => {
+      const map: Record<string, AutomationData> = {};
+      results.forEach((r, i) => {
+        if (r) map[(automationLinks[i] as { targetId: string }).targetId] = r;
+      });
+      setAutomationData(map);
+    }).finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, nodeId]);
+
+  if (!nodeId) return null;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -60,7 +159,13 @@ function NodeLinksDialog({ nodeId, nodes, open, onClose }: {
         {links.length === 0 ? (
           <p className="text-sm text-muted-foreground py-2">Nenhum link cadastrado para este nó.</p>
         ) : (
-          <div className="space-y-2 mt-1">
+          <div className="space-y-3 mt-1">
+            {loading && (
+              <div className="flex justify-center py-2">
+                <Loader2 size={16} className="animate-spin text-muted-foreground" />
+              </div>
+            )}
+
             {links.map((link, i) => {
               if (link.type === "URL") {
                 return (
@@ -69,36 +174,26 @@ function NodeLinksDialog({ nodeId, nodes, open, onClose }: {
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between gap-2 px-3 py-2 rounded border border-border hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border border-border hover:bg-muted/50 hover:border-primary/50 transition-colors"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <LinkIcon size={14} className="text-muted-foreground shrink-0" />
-                      <span className="text-sm truncate">{link.title}</span>
-                      <Badge variant="outline" className="text-xs shrink-0">URL</Badge>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{link.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">{link.url}</p>
+                      </div>
                     </div>
-                    <ExternalLink size={12} className="text-muted-foreground shrink-0" />
+                    <ExternalLink size={13} className="text-muted-foreground shrink-0" />
                   </a>
                 );
               }
 
-              const isAgent = link.automationType === "AGENT";
               return (
-                <a
+                <AutomationCard
                   key={i}
-                  href={`/automacoes`}
-                  className="flex items-center justify-between gap-2 px-3 py-2 rounded border border-border hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    {isAgent
-                      ? <Bot size={14} className="text-amber-500 shrink-0" />
-                      : <Zap size={14} className="text-amber-500 shrink-0" />}
-                    <span className="text-sm truncate">{link.targetTitle}</span>
-                    <Badge variant="outline" className="text-xs shrink-0">
-                      {isAgent ? "Agente" : "Automação"}
-                    </Badge>
-                  </div>
-                  <ExternalLink size={12} className="text-muted-foreground shrink-0" />
-                </a>
+                  link={link}
+                  data={automationData[link.targetId]}
+                />
               );
             })}
           </div>
