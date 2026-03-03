@@ -121,7 +121,7 @@ export function FlowCanvas({
           onDragOver={readOnly ? undefined : handleDragOver}
           nodesDraggable={!readOnly}
           nodesConnectable={!readOnly}
-          elementsSelectable={!readOnly}
+          elementsSelectable={true}
           connectionMode={ConnectionMode.Loose}
           defaultEdgeOptions={{
             type: "smoothstep",
@@ -129,7 +129,7 @@ export function FlowCanvas({
           }}
           fitView
           fitViewOptions={{ padding: 0.2 }}
-          deleteKeyCode="Delete"
+          deleteKeyCode={readOnly ? null : "Delete"}
         >
           <Background />
           <Controls showInteractive={false} />
