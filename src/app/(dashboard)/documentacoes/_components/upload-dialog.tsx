@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Upload, FileText, Loader2 } from "lucide-react";
+import { Upload, FileText, Loader2, X } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -16,36 +16,63 @@ interface Props {
 export function DocUploadDialog({ open, onClose }: Props) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
 
-  function handleClose() {
-    if (loading) return;
+  const handleClose = useCallback(() => {
+    // Cancela o pedido em curso, se houver
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setLoading(false);
     setFile(null);
     setError(null);
     onClose();
-  }
+  }, [onClose]);
 
   async function handleUpload() {
     if (!file) return;
     setLoading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append("file", file);
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-    const res = await fetch("/api/documentacoes/upload", { method: "POST", body: formData });
-    const data = await res.json();
-    setLoading(false);
+    // Timeout de 30 s
+    const timeout = setTimeout(() => controller.abort(), 30_000);
 
-    if (!res.ok) {
-      setError(data.error ?? "Erro ao processar o arquivo");
-      return;
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/documentacoes/upload", {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Erro ao processar o arquivo");
+        return;
+      }
+
+      handleClose();
+      router.push(`/documentacoes/${data.id}/editar`);
+    } catch (err) {
+      clearTimeout(timeout);
+      if ((err as Error).name === "AbortError") {
+        setError("Importação cancelada.");
+      } else {
+        setError("Erro de conexão ao processar o arquivo.");
+      }
+    } finally {
+      setLoading(false);
+      abortRef.current = null;
     }
-
-    handleClose();
-    router.push(`/documentacoes/${data.id}/editar`);
   }
 
   return (
@@ -62,8 +89,10 @@ export function DocUploadDialog({ open, onClose }: Props) {
         </p>
 
         <div
-          className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors"
-          onClick={() => inputRef.current?.click()}
+          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+            loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-muted/50"
+          }`}
+          onClick={() => !loading && inputRef.current?.click()}
         >
           <input
             ref={inputRef}
@@ -71,6 +100,7 @@ export function DocUploadDialog({ open, onClose }: Props) {
             accept=".docx"
             className="hidden"
             onChange={(e) => { setFile(e.target.files?.[0] ?? null); setError(null); }}
+            disabled={loading}
           />
           {file ? (
             <div className="flex items-center justify-center gap-2 text-sm">
@@ -90,7 +120,9 @@ export function DocUploadDialog({ open, onClose }: Props) {
         )}
 
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={handleClose} disabled={loading}>Cancelar</Button>
+          <Button variant="ghost" onClick={handleClose}>
+            {loading ? <><X size={14} className="mr-1" /> Cancelar</> : "Cancelar"}
+          </Button>
           <Button onClick={handleUpload} disabled={!file || loading}>
             {loading ? <><Loader2 size={14} className="animate-spin mr-1" /> Importando...</> : "Importar"}
           </Button>
