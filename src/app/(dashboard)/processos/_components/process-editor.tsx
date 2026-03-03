@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { type Node, type Edge, useNodesState, useEdgesState } from "@xyflow/react";
+import { type Node, type Edge, useNodesState, useEdgesState, MarkerType } from "@xyflow/react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +30,15 @@ interface Props {
 
 function parseFlowData(raw?: string | null): { nodes: Node[]; edges: Edge[] } {
   if (!raw) return { nodes: [], edges: [] };
-  try { return JSON.parse(raw); } catch { return { nodes: [], edges: [] }; }
+  try {
+    const data = JSON.parse(raw);
+    // Garante que todas as arestas tenham seta
+    const edges = (data.edges ?? []).map((e: Edge) => ({
+      ...e,
+      markerEnd: e.markerEnd ?? { type: MarkerType.ArrowClosed, width: 18, height: 18 },
+    }));
+    return { nodes: data.nodes ?? [], edges };
+  } catch { return { nodes: [], edges: [] }; }
 }
 
 function parseRichText(raw?: string | null): object | null {

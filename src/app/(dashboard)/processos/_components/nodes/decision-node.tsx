@@ -2,8 +2,27 @@
 
 import { useState, useCallback } from "react";
 import { Handle, Position, NodeProps, useReactFlow } from "@xyflow/react";
-import { Zap } from "lucide-react";
-import type { FlowNodeData } from "./process-node";
+import type { FlowNodeData, NodeLink } from "./process-node";
+import { Zap, Bot, Link as LinkIcon } from "lucide-react";
+
+function NodeBadge({ links, nodeId, onOpenLinks }: { links: NodeLink[]; nodeId: string; onOpenLinks?: (id: string) => void }) {
+  const hasLinks = links?.length > 0;
+  const isAgent = links?.some(l => l.type === "AUTOMATION" && l.automationType === "AGENT");
+  const isUrl = !isAgent && links?.every(l => l.type === "URL");
+  const Icon = isAgent ? Bot : isUrl ? LinkIcon : Zap;
+
+  return (
+    <button
+      className={`absolute -top-2.5 -right-2.5 rounded-full p-0.5 shadow z-10 transition-colors ${
+        hasLinks ? "bg-amber-400 hover:bg-amber-500" : "bg-muted border border-border hover:bg-accent"
+      }`}
+      title={hasLinks ? "Ver links" : "Adicionar link"}
+      onClick={(e) => { e.stopPropagation(); onOpenLinks?.(nodeId); }}
+    >
+      <Icon size={10} className={hasLinks ? "text-white" : "text-muted-foreground"} />
+    </button>
+  );
+}
 
 export function DecisionNode({ id, data, selected }: NodeProps) {
   const nodeData = data as FlowNodeData;
@@ -16,24 +35,40 @@ export function DecisionNode({ id, data, selected }: NodeProps) {
   );
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 120, height: 80 }}>
-      <Handle type="source" position={Position.Top} id="t" style={{ top: 0 }} className="!w-2 !h-2" />
-      <Handle type="source" position={Position.Bottom} id="b" style={{ bottom: 0 }} className="!w-2 !h-2" />
-      <Handle type="source" position={Position.Left} id="l" style={{ left: 0 }} className="!w-2 !h-2" />
-      <Handle type="source" position={Position.Right} id="r" style={{ right: 0 }} className="!w-2 !h-2" />
+    <div className="relative flex items-center justify-center" style={{ width: 140, height: 90 }}>
+      {/* Handles posicionadas nas pontas do losango */}
+      <Handle type="source" position={Position.Top} id="t" className="!w-2 !h-2 !bg-amber-200" style={{ top: -4 }} />
+      <Handle type="source" position={Position.Bottom} id="b" className="!w-2 !h-2 !bg-amber-200" style={{ bottom: -4 }} />
+      <Handle type="source" position={Position.Left} id="l" className="!w-2 !h-2 !bg-amber-200" style={{ left: -4 }} />
+      <Handle type="source" position={Position.Right} id="r" className="!w-2 !h-2 !bg-amber-200" style={{ right: -4 }} />
 
+      {/* Losango via clip-path */}
       <div
-        className={`absolute inset-0 rounded border-2 bg-amber-50 dark:bg-amber-950/30 ${
-          selected ? "border-amber-500 shadow-md" : "border-amber-300 dark:border-amber-700"
-        }`}
-        style={{ transform: "rotate(45deg)", transformOrigin: "center" }}
+        className="absolute inset-0"
+        style={{
+          clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
+          backgroundColor: selected ? "#f59e0b" : "#d97706",
+        }}
       />
 
-      <div className="relative z-10 flex items-center justify-center w-full h-full">
+      {/* Anel de seleção */}
+      {selected && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
+            boxShadow: "0 0 0 2px #fde68a",
+            outline: "2px solid #fde68a",
+          }}
+        />
+      )}
+
+      {/* Label */}
+      <div className="relative z-10 flex items-center justify-center" style={{ width: "70%", textAlign: "center" }}>
         {editing ? (
           <input
             autoFocus
-            className="bg-transparent text-xs text-center outline-none w-20"
+            className="bg-transparent text-xs text-center outline-none text-white w-full"
             value={nodeData.label}
             onChange={(e) => handleLabelChange(e.target.value)}
             onBlur={() => setEditing(false)}
@@ -41,7 +76,7 @@ export function DecisionNode({ id, data, selected }: NodeProps) {
           />
         ) : (
           <span
-            className="text-xs font-medium text-amber-900 dark:text-amber-100 text-center px-2 leading-snug"
+            className="text-xs font-semibold text-white leading-tight cursor-default"
             onDoubleClick={() => setEditing(true)}
           >
             {nodeData.label || "Decisão"}
@@ -49,17 +84,7 @@ export function DecisionNode({ id, data, selected }: NodeProps) {
         )}
       </div>
 
-      <button
-        className={`absolute -top-2.5 -right-2.5 rounded-full p-0.5 shadow z-20 transition-colors ${
-          nodeData.links?.length > 0
-            ? "bg-amber-400 hover:bg-amber-500"
-            : "bg-muted border border-border hover:bg-accent"
-        }`}
-        title={nodeData.links?.length > 0 ? "Ver links" : "Adicionar link"}
-        onClick={(e) => { e.stopPropagation(); nodeData.onOpenLinks?.(id); }}
-      >
-        <Zap size={10} className={nodeData.links?.length > 0 ? "text-white" : "text-muted-foreground"} />
-      </button>
+      <NodeBadge links={nodeData.links ?? []} nodeId={id} onOpenLinks={nodeData.onOpenLinks} />
     </div>
   );
 }

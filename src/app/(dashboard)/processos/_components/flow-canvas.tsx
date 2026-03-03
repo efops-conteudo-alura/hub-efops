@@ -3,7 +3,7 @@
 import { useCallback, useRef } from "react";
 import {
   ReactFlow, Background, Controls, MiniMap,
-  addEdge, useNodesState, useEdgesState, ConnectionMode,
+  addEdge, useNodesState, useEdgesState, ConnectionMode, MarkerType,
   type Connection, type Edge, type Node,
   type NodeTypes, type OnNodesChange, type OnEdgesChange,
 } from "@xyflow/react";
@@ -55,7 +55,12 @@ export function FlowCanvas({
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      const newEdges = addEdge({ ...connection, type: "smoothstep", animated: false }, edges);
+      const newEdges = addEdge({
+        ...connection,
+        type: "smoothstep",
+        animated: false,
+        markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18 },
+      }, edges);
       onNodesEdgesChange(nodes, newEdges);
     },
     [edges, nodes, onNodesEdgesChange]
@@ -104,7 +109,7 @@ export function FlowCanvas({
         </div>
       )}
 
-      <div ref={reactFlowWrapper} style={{ height: 440 }}>
+      <div ref={reactFlowWrapper} style={{ height: 660 }}>
         <ReactFlow
           nodes={nodesWithCallback}
           edges={edges}
@@ -118,6 +123,10 @@ export function FlowCanvas({
           nodesConnectable={!readOnly}
           elementsSelectable={!readOnly}
           connectionMode={ConnectionMode.Loose}
+          defaultEdgeOptions={{
+            type: "smoothstep",
+            markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18 },
+          }}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           deleteKeyCode="Delete"

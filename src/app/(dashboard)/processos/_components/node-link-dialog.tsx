@@ -7,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Zap, X, Loader2, Link as LinkIcon, Search } from "lucide-react";
+import { Zap, Bot, X, Loader2, Link as LinkIcon, Search } from "lucide-react";
 import type { NodeLink } from "./nodes/process-node";
 
 interface Automation {
@@ -64,7 +64,12 @@ export function NodeLinkDialog({ open, nodeId, links, onClose, onSave }: Props) 
     } else {
       setLocalLinks([
         ...localLinks,
-        { type: "AUTOMATION", targetId: automation.id, targetTitle: automation.name },
+        {
+          type: "AUTOMATION",
+          targetId: automation.id,
+          targetTitle: automation.name,
+          automationType: automation.type === "AGENT" ? "AGENT" : "AUTOMATION",
+        },
       ]);
     }
   }
@@ -117,6 +122,8 @@ export function NodeLinkDialog({ open, nodeId, links, onClose, onSave }: Props) 
                   <div className="flex items-center gap-2 min-w-0">
                     {link.type === "URL"
                       ? <LinkIcon size={12} className="text-muted-foreground shrink-0" />
+                      : link.automationType === "AGENT"
+                      ? <Bot size={12} className="text-amber-500 shrink-0" />
                       : <Zap size={12} className="text-amber-500 shrink-0" />
                     }
                     <span className="truncate">

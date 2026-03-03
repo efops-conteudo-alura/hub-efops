@@ -2,8 +2,27 @@
 
 import { useState, useCallback } from "react";
 import { Handle, Position, NodeProps, useReactFlow } from "@xyflow/react";
-import { Zap } from "lucide-react";
-import type { FlowNodeData } from "./process-node";
+import { Zap, Bot, Link as LinkIcon } from "lucide-react";
+import type { FlowNodeData, NodeLink } from "./process-node";
+
+function NodeBadge({ links, nodeId, onOpenLinks }: { links: NodeLink[]; nodeId: string; onOpenLinks?: (id: string) => void }) {
+  const hasLinks = links?.length > 0;
+  const isAgent = links?.some(l => l.type === "AUTOMATION" && l.automationType === "AGENT");
+  const isUrl = !isAgent && links?.every(l => l.type === "URL");
+  const Icon = isAgent ? Bot : isUrl ? LinkIcon : Zap;
+
+  return (
+    <button
+      className={`absolute -top-2.5 -right-2.5 rounded-full p-0.5 shadow z-10 transition-colors ${
+        hasLinks ? "bg-amber-400 hover:bg-amber-500" : "bg-muted border border-border hover:bg-accent"
+      }`}
+      title={hasLinks ? "Ver links" : "Adicionar link"}
+      onClick={(e) => { e.stopPropagation(); onOpenLinks?.(nodeId); }}
+    >
+      <Icon size={10} className={hasLinks ? "text-white" : "text-muted-foreground"} />
+    </button>
+  );
+}
 
 export function TerminalNode({ id, data, selected }: NodeProps) {
   const nodeData = data as FlowNodeData;
@@ -17,20 +36,20 @@ export function TerminalNode({ id, data, selected }: NodeProps) {
 
   return (
     <div
-      className={`relative min-w-[100px] min-h-[44px] px-5 py-2.5 border-2 bg-green-50 dark:bg-green-950/30 flex items-center justify-center text-center cursor-default select-none ${
-        selected ? "border-green-500 shadow-md" : "border-green-300 dark:border-green-700"
+      className={`relative min-w-[100px] min-h-[44px] px-5 py-2.5 flex items-center justify-center text-center cursor-default select-none bg-green-500 text-white ${
+        selected ? "ring-2 ring-green-300 ring-offset-1" : ""
       }`}
       style={{ borderRadius: "9999px" }}
     >
-      <Handle type="source" position={Position.Top} id="t" className="!w-2 !h-2" />
-      <Handle type="source" position={Position.Bottom} id="b" className="!w-2 !h-2" />
-      <Handle type="source" position={Position.Left} id="l" className="!w-2 !h-2" />
-      <Handle type="source" position={Position.Right} id="r" className="!w-2 !h-2" />
+      <Handle type="source" position={Position.Top} id="t" className="!w-2 !h-2 !bg-green-200" />
+      <Handle type="source" position={Position.Bottom} id="b" className="!w-2 !h-2 !bg-green-200" />
+      <Handle type="source" position={Position.Left} id="l" className="!w-2 !h-2 !bg-green-200" />
+      <Handle type="source" position={Position.Right} id="r" className="!w-2 !h-2 !bg-green-200" />
 
       {editing ? (
         <input
           autoFocus
-          className="bg-transparent text-sm text-center outline-none w-full"
+          className="bg-transparent text-sm text-center outline-none w-full text-white"
           value={nodeData.label}
           onChange={(e) => handleLabelChange(e.target.value)}
           onBlur={() => setEditing(false)}
@@ -38,24 +57,14 @@ export function TerminalNode({ id, data, selected }: NodeProps) {
         />
       ) : (
         <span
-          className="text-sm font-medium text-green-900 dark:text-green-100"
+          className="text-sm font-medium"
           onDoubleClick={() => setEditing(true)}
         >
           {nodeData.label || "Início / Fim"}
         </span>
       )}
 
-      <button
-        className={`absolute -top-2.5 -right-2.5 rounded-full p-0.5 shadow z-10 transition-colors ${
-          nodeData.links?.length > 0
-            ? "bg-amber-400 hover:bg-amber-500"
-            : "bg-muted border border-border hover:bg-accent"
-        }`}
-        title={nodeData.links?.length > 0 ? "Ver links" : "Adicionar link"}
-        onClick={(e) => { e.stopPropagation(); nodeData.onOpenLinks?.(id); }}
-      >
-        <Zap size={10} className={nodeData.links?.length > 0 ? "text-white" : "text-muted-foreground"} />
-      </button>
+      <NodeBadge links={nodeData.links ?? []} nodeId={id} onOpenLinks={nodeData.onOpenLinks} />
     </div>
   );
 }
