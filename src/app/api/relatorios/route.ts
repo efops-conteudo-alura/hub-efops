@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     data: {
       title: title.trim(),
       objective: objective?.trim() || null,
-      fields,
+      fields: fields as object[],
     },
   });
 
