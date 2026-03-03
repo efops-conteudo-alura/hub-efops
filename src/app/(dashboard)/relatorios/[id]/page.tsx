@@ -42,7 +42,7 @@ export default async function ReportPage({
           id: report.id,
           title: report.title,
           objective: report.objective,
-          fields: report.fields as ReportField[],
+          fields: report.fields as unknown as ReportField[],
           token: report.token,
           responses: report.responses.map((r) => ({
             id: r.id,
