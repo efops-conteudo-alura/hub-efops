@@ -8,10 +8,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
-  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
+} from "@/components/ui/dialog";
 import { Copy, Check, Download, Trash2 } from "lucide-react";
 
 interface ReportField {
@@ -43,6 +41,7 @@ export function ReportView({ report }: Props) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const publicUrl =
     typeof window !== "undefined"
@@ -82,31 +81,35 @@ export function ReportView({ report }: Props) {
               <Download size={14} className="mr-1" /> Exportar Excel
             </Button>
           </a>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                <Trash2 size={14} className="mr-1" /> Excluir
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Excluir relatório?</AlertDialogTitle>
-                <AlertDialogDescription>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:text-destructive"
+            onClick={() => setConfirmOpen(true)}
+          >
+            <Trash2 size={14} className="mr-1" /> Excluir
+          </Button>
+
+          <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <DialogContent className="sm:max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Excluir relatório?</DialogTitle>
+                <DialogDescription>
                   Todas as respostas também serão removidas. Esta ação não pode ser desfeita.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="flex gap-2 justify-end">
+                <Button variant="ghost" onClick={() => setConfirmOpen(false)}>Cancelar</Button>
+                <Button
+                  variant="destructive"
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
                   {deleting ? "Excluindo..." : "Excluir"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
