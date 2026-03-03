@@ -29,7 +29,7 @@ export async function GET(
 
   if (!report) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const fields = report.fields as ReportField[];
+  const fields = report.fields as unknown as ReportField[];
   const header = [...fields.map((f) => f.label), "Respondido em"];
 
   const rows = report.responses.map((r) => {

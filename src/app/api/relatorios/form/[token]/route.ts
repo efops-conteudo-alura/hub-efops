@@ -37,7 +37,7 @@ export async function POST(
   }
 
   // Valida campos obrigatórios
-  const fields = report.fields as ReportField[];
+  const fields = report.fields as unknown as ReportField[];
   const missing = fields.filter((f) => f.required && !data[f.id]?.trim());
   if (missing.length > 0) {
     return NextResponse.json(

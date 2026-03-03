@@ -46,7 +46,7 @@ export default async function ReportPage({
           token: report.token,
           responses: report.responses.map((r) => ({
             id: r.id,
-            data: r.data as Record<string, string>,
+            data: r.data as unknown as Record<string, string>,
             createdAt: r.createdAt.toISOString(),
           })),
         }}
