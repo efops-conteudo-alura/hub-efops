@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { SubscriptionTable } from "@/components/subscription-table";
+import { SubscriptionUploadButton } from "./_components/upload-button";
 
 export default async function AssinaturasPage() {
   const session = await getServerSession(authOptions);
@@ -42,12 +43,15 @@ export default async function AssinaturasPage() {
           </p>
         </div>
         {isAdmin && (
-          <Link href="/assinaturas/nova">
-            <Button>
-              <Plus size={16} className="mr-2" />
-              Nova Assinatura
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <SubscriptionUploadButton />
+            <Link href="/assinaturas/nova">
+              <Button>
+                <Plus size={16} className="mr-2" />
+                Nova Assinatura
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
 

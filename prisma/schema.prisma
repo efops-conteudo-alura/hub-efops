@@ -131,3 +131,21 @@ enum ProcessStatus {
   DRAFT
   PUBLISHED
 }
+
+model Documentation {
+  id          String              @id @default(cuid())
+  title       String
+  description String?
+  content     String?             // JSON (TipTap) ou HTML string (import .docx)
+  tags        String[]
+  status      DocumentationStatus @default(DRAFT)
+  creatorId   String
+  creatorName String
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+enum DocumentationStatus {
+  DRAFT
+  PUBLISHED
+}

@@ -6,6 +6,7 @@ import { Bot, Zap, Clock, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { NewAutomationDialog } from "./new-automation-dialog";
+import { AutomacaoUploadButton } from "./_components/upload-button";
 
 const TYPE_LABELS = { AUTOMATION: "Automação", AGENT: "Agente de IA" };
 const STATUS_LABELS = { ACTIVE: "Ativa", INACTIVE: "Inativa", TESTING: "Em teste" };
@@ -62,7 +63,12 @@ export default async function AutomacoesPage() {
             </p>
           </div>
         </div>
-        {isAdmin && <NewAutomationDialog />}
+        {isAdmin && (
+          <div className="flex gap-2">
+            <AutomacaoUploadButton />
+            <NewAutomationDialog />
+          </div>
+        )}
       </div>
 
       {automations.length > 0 && (
