@@ -22,10 +22,10 @@ export function TriggerNode({ id, data, selected }: NodeProps) {
       }`}
       style={{ borderRadius: "12px" }}
     >
-      <Handle type="target" position={Position.Top} className="!w-2 !h-2" />
-      <Handle type="source" position={Position.Bottom} className="!w-2 !h-2" />
-      <Handle type="target" position={Position.Left} className="!w-2 !h-2" />
-      <Handle type="source" position={Position.Right} className="!w-2 !h-2" />
+      <Handle type="source" position={Position.Top} id="t" className="!w-2 !h-2" />
+      <Handle type="source" position={Position.Bottom} id="b" className="!w-2 !h-2" />
+      <Handle type="source" position={Position.Left} id="l" className="!w-2 !h-2" />
+      <Handle type="source" position={Position.Right} id="r" className="!w-2 !h-2" />
 
       {editing ? (
         <input
@@ -45,15 +45,17 @@ export function TriggerNode({ id, data, selected }: NodeProps) {
         </span>
       )}
 
-      {nodeData.links?.length > 0 && (
-        <button
-          className="absolute -top-2 -right-2 bg-amber-400 rounded-full p-0.5 shadow z-10"
-          title="Ver automações linkadas"
-          onClick={(e) => { e.stopPropagation(); nodeData.onOpenLinks?.(id); }}
-        >
-          <Zap size={10} className="text-white" />
-        </button>
-      )}
+      <button
+        className={`absolute -top-2.5 -right-2.5 rounded-full p-0.5 shadow z-10 transition-colors ${
+          nodeData.links?.length > 0
+            ? "bg-amber-400 hover:bg-amber-500"
+            : "bg-muted border border-border hover:bg-accent"
+        }`}
+        title={nodeData.links?.length > 0 ? "Ver links" : "Adicionar link"}
+        onClick={(e) => { e.stopPropagation(); nodeData.onOpenLinks?.(id); }}
+      >
+        <Zap size={10} className={nodeData.links?.length > 0 ? "text-white" : "text-muted-foreground"} />
+      </button>
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useCallback, useRef } from "react";
 import {
   ReactFlow, Background, Controls, MiniMap,
-  addEdge, useNodesState, useEdgesState,
+  addEdge, useNodesState, useEdgesState, ConnectionMode,
   type Connection, type Edge, type Node,
   type NodeTypes, type OnNodesChange, type OnEdgesChange,
 } from "@xyflow/react";
@@ -117,6 +117,7 @@ export function FlowCanvas({
           nodesDraggable={!readOnly}
           nodesConnectable={!readOnly}
           elementsSelectable={!readOnly}
+          connectionMode={ConnectionMode.Loose}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           deleteKeyCode="Delete"
