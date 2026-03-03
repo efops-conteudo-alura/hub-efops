@@ -9,17 +9,79 @@ const LOGIN_TYPE_MAP: Record<string, LoginType> = {
   senha: "PASSWORD",
   código: "CODE",
   codigo: "CODE",
+  password: "PASSWORD",
+  code: "CODE",
 };
 
 const BILLING_CYCLE_MAP: Record<string, BillingCycle> = {
   mensal: "MONTHLY",
+  monthly: "MONTHLY",
   anual: "ANNUALLY",
+  annually: "ANNUALLY",
   único: "ONE_TIME",
   unico: "ONE_TIME",
+  one_time: "ONE_TIME",
   uso: "USAGE",
+  usage: "USAGE",
 };
 
 const CURRENCY_VALID = ["BRL", "USD", "EUR"];
+
+// Mapeamento de nomes de coluna → campo interno
+const COL_ALIASES: Record<string, string> = {
+  nome: "nome", name: "nome",
+  plano: "plano", plan: "plano", planname: "plano",
+  descricao: "descricao", descrição: "descricao", description: "descricao",
+  url: "url", site: "url", link: "url",
+  loginuser: "loginUser", usuario: "loginUser", "login/email": "loginUser", login: "loginUser", email: "loginUser",
+  logintype: "loginType", "tipo de login": "loginType", tipologin: "loginType",
+  custo: "custo", cost: "custo", valor: "custo", price: "custo",
+  moeda: "moeda", currency: "moeda",
+  ciclo: "ciclo", cycle: "ciclo", "ciclo de cobrança": "ciclo", billingcycle: "ciclo",
+  centrocusto: "centroCusto", "centro de custo": "centroCusto", costcenter: "centroCusto",
+  time: "time", team: "time", equipe: "time",
+  responsavel: "responsavel", responsável: "responsavel", responsible: "responsavel",
+  ativa: "ativa", ativo: "ativa", active: "ativa", isactive: "ativa", status: "ativa",
+  datarenovacao: "dataRenovacao", "data de renovação": "dataRenovacao", "data renovacao": "dataRenovacao", renewaldate: "dataRenovacao",
+  notas: "notas", notes: "notas", observacoes: "notas", observações: "notas",
+};
+
+function normalizeKey(s: string) {
+  return s.toLowerCase().trim().replace(/\s+/g, " ");
+}
+
+function buildColMap(header: string[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  header.forEach((h, i) => {
+    const key = COL_ALIASES[normalizeKey(h)];
+    if (key && !(key in map)) map[key] = i;
+  });
+  return map;
+}
+
+function col(row: string[], map: Record<string, number>, key: string): string {
+  const i = map[key];
+  return i !== undefined ? String(row[i] ?? "").trim() : "";
+}
+
+function colRaw(row: string[], map: Record<string, number>, key: string): unknown {
+  const i = map[key];
+  return i !== undefined ? row[i] : undefined;
+}
+
+function parseDate(raw: unknown): Date | null {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  const brMatch = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (brMatch) return new Date(`${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`);
+  const isoMatch = s.match(/^\d{4}-\d{2}-\d{2}$/);
+  if (isoMatch) return new Date(s);
+  if (typeof raw === "number") {
+    const date = new Date((raw - 25569) * 86400 * 1000);
+    return isNaN(date.getTime()) ? null : date;
+  }
+  return null;
+}
 
 function buildTemplate(): Buffer {
   const wb = XLSX.utils.book_new();
@@ -34,23 +96,6 @@ function buildTemplate(): Buffer {
   ];
   XLSX.utils.book_append_sheet(wb, ws, "Licenças");
   return XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
-}
-
-function parseDate(raw: unknown): Date | null {
-  if (!raw) return null;
-  const s = String(raw).trim();
-  // DD/MM/AAAA
-  const brMatch = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if (brMatch) return new Date(`${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`);
-  // AAAA-MM-DD
-  const isoMatch = s.match(/^\d{4}-\d{2}-\d{2}$/);
-  if (isoMatch) return new Date(s);
-  // Número serial do Excel
-  if (typeof raw === "number") {
-    const date = new Date((raw - 25569) * 86400 * 1000);
-    return isNaN(date.getTime()) ? null : date;
-  }
-  return null;
 }
 
 export async function GET() {
@@ -82,14 +127,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Arquivo vazio ou sem dados" }, { status: 400 });
   }
 
-  const [header, ...dataRows] = rows as string[][];
-  const expectedHeaders = ["nome", "plano", "descricao", "url", "loginUser", "loginType", "custo", "moeda", "ciclo", "centroCusto", "time", "responsavel", "ativa", "dataRenovacao", "notas"];
-  const hasValidHeader = expectedHeaders.every(
-    (h, i) => String(header[i] ?? "").toLowerCase().trim() === h
-  );
-  if (!hasValidHeader) {
+  const [rawHeader, ...dataRows] = rows as string[][];
+  const colMap = buildColMap(rawHeader);
+
+  if (!("nome" in colMap)) {
     return NextResponse.json(
-      { error: `Cabeçalho inválido. Baixe o template para ver o formato correto.` },
+      { error: 'Coluna obrigatória "nome" não encontrada. Verifique os cabeçalhos.' },
       { status: 400 }
     );
   }
@@ -102,43 +145,43 @@ export async function POST(request: NextRequest) {
     if (!row || row.every((c) => c === null || c === undefined || c === "")) continue;
 
     const lineNum = i + 2;
-    const nome = String(row[0] ?? "").trim();
+    const nome = col(row, colMap, "nome");
     if (!nome) { errors.push(`Linha ${lineNum}: nome obrigatório`); continue; }
 
-    const loginTypeRaw = String(row[5] ?? "").toLowerCase().trim();
+    const loginTypeRaw = col(row, colMap, "loginType").toLowerCase();
     const loginType: LoginType = LOGIN_TYPE_MAP[loginTypeRaw] ?? "PASSWORD";
 
-    const cicloRaw = String(row[8] ?? "").toLowerCase().trim();
+    const cicloRaw = col(row, colMap, "ciclo").toLowerCase();
     const billingCycle: BillingCycle = BILLING_CYCLE_MAP[cicloRaw] ?? "MONTHLY";
 
-    const moedaRaw = String(row[7] ?? "BRL").toUpperCase().trim();
+    const moedaRaw = col(row, colMap, "moeda").toUpperCase();
     const currency = CURRENCY_VALID.includes(moedaRaw) ? moedaRaw : "BRL";
 
-    const custoRaw = row[6];
-    const cost = custoRaw !== undefined && custoRaw !== "" ? parseFloat(String(custoRaw).replace(",", ".")) : null;
+    const custoStr = col(row, colMap, "custo").replace(",", ".");
+    const cost = custoStr ? parseFloat(custoStr) : null;
 
-    const ativaRaw = String(row[12] ?? "SIM").toLowerCase().trim();
-    const isActive = ativaRaw !== "não" && ativaRaw !== "nao" && ativaRaw !== "false";
+    const ativaRaw = col(row, colMap, "ativa").toLowerCase();
+    const isActive = ativaRaw !== "não" && ativaRaw !== "nao" && ativaRaw !== "false" && ativaRaw !== "0";
 
-    const renewalDate = parseDate(row[13]);
+    const renewalDate = parseDate(colRaw(row, colMap, "dataRenovacao"));
 
     await prisma.subscription.create({
       data: {
         name: nome,
-        planName: row[1] ? String(row[1]).trim() : null,
-        description: row[2] ? String(row[2]).trim() : null,
-        url: row[3] ? String(row[3]).trim() : null,
-        loginUser: row[4] ? String(row[4]).trim() : null,
+        planName: col(row, colMap, "plano") || null,
+        description: col(row, colMap, "descricao") || null,
+        url: col(row, colMap, "url") || null,
+        loginUser: col(row, colMap, "loginUser") || null,
         loginType,
         cost: cost && !isNaN(cost) ? cost : null,
         currency,
         billingCycle,
-        costCenter: row[9] ? String(row[9]).trim() : null,
-        team: row[10] ? String(row[10]).trim() : null,
-        responsible: row[11] ? String(row[11]).trim() : null,
+        costCenter: col(row, colMap, "centroCusto") || null,
+        team: col(row, colMap, "time") || null,
+        responsible: col(row, colMap, "responsavel") || null,
         isActive,
         renewalDate,
-        notes: row[14] ? String(row[14]).trim() : null,
+        notes: col(row, colMap, "notas") || null,
       },
     });
     inserted++;

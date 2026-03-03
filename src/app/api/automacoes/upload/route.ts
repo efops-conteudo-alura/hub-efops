@@ -11,16 +11,65 @@ const TYPE_MAP: Record<string, AutomationType> = {
   automation: "AUTOMATION",
   agente: "AGENT",
   agent: "AGENT",
+  "agente de ia": "AGENT",
 };
 
 const STATUS_MAP: Record<string, AutomationStatus> = {
   ativa: "ACTIVE",
+  ativo: "ACTIVE",
   active: "ACTIVE",
   inativa: "INACTIVE",
+  inativo: "INACTIVE",
   inactive: "INACTIVE",
   testando: "TESTING",
+  "em teste": "TESTING",
   testing: "TESTING",
 };
+
+const COL_ALIASES: Record<string, string> = {
+  nome: "nome", name: "nome",
+  tipo: "tipo", type: "tipo",
+  descricaocurta: "descricaoCurta", "descricao curta": "descricaoCurta", "descrição curta": "descricaoCurta",
+  shortdesc: "descricaoCurta", "breve descricao": "descricaoCurta", "breve descrição": "descricaoCurta",
+  descricaocompleta: "descricaoCompleta", "descricao completa": "descricaoCompleta",
+  "descrição completa": "descricaoCompleta", fulldesc: "descricaoCompleta", descricao: "descricaoCompleta",
+  urlimagem: "urlImagem", "url imagem": "urlImagem", imagem: "urlImagem", thumbnail: "urlImagem",
+  link: "link", url: "link",
+  status: "status",
+  criador: "criador", creator: "criador", "criado por": "criador",
+  ferramentas: "ferramentas", tools: "ferramentas", "ferramentas utilizadas": "ferramentas",
+  horaseeconomizadas: "horasEconomizadas", "horas economizadas": "horasEconomizadas",
+  hourssaved: "horasEconomizadas", roi_horas: "horasEconomizadas",
+  economramensal: "economiaMensal", "economia mensal": "economiaMensal",
+  monthlysavings: "economiaMensal", roi_valor: "economiaMensal",
+  descricaoroi: "descricaoROI", "descricao roi": "descricaoROI", "descrição roi": "descricaoROI",
+  roi: "descricaoROI", roidescription: "descricaoROI",
+};
+
+function normalizeKey(s: string) {
+  return s.toLowerCase().trim().replace(/\s+/g, " ");
+}
+
+function buildColMap(header: string[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  header.forEach((h, i) => {
+    const key = COL_ALIASES[normalizeKey(h)];
+    if (key && !(key in map)) map[key] = i;
+  });
+  return map;
+}
+
+function col(row: string[], map: Record<string, number>, key: string): string {
+  const i = map[key];
+  return i !== undefined ? String(row[i] ?? "").trim() : "";
+}
+
+function colNum(row: string[], map: Record<string, number>, key: string): number | null {
+  const i = map[key];
+  if (i === undefined || row[i] === undefined || row[i] === "") return null;
+  const n = parseFloat(String(row[i]).replace(",", "."));
+  return isNaN(n) ? null : n;
+}
 
 function buildTemplate(): Buffer {
   const wb = XLSX.utils.book_new();
@@ -66,14 +115,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Arquivo vazio ou sem dados" }, { status: 400 });
   }
 
-  const [header, ...dataRows] = rows as string[][];
-  const expectedHeaders = ["nome", "tipo", "descricaoCurta", "descricaoCompleta", "urlImagem", "link", "status", "criador", "ferramentas", "horasEconomizadas", "economiaMensal", "descricaoROI"];
-  const hasValidHeader = expectedHeaders.every(
-    (h, i) => String(header[i] ?? "").toLowerCase().trim() === h
-  );
-  if (!hasValidHeader) {
+  const [rawHeader, ...dataRows] = rows as string[][];
+  const colMap = buildColMap(rawHeader);
+
+  if (!("nome" in colMap)) {
     return NextResponse.json(
-      { error: `Cabeçalho inválido. Baixe o template para ver o formato correto.` },
+      { error: 'Coluna obrigatória "nome" não encontrada. Verifique os cabeçalhos.' },
       { status: 400 }
     );
   }
@@ -86,39 +133,34 @@ export async function POST(request: NextRequest) {
     if (!row || row.every((c) => c === null || c === undefined || c === "")) continue;
 
     const lineNum = i + 2;
-    const nome = String(row[0] ?? "").trim();
+    const nome = col(row, colMap, "nome");
     if (!nome) { errors.push(`Linha ${lineNum}: nome obrigatório`); continue; }
 
-    const tipoRaw = String(row[1] ?? "").toLowerCase().trim();
+    const tipoRaw = col(row, colMap, "tipo").toLowerCase();
     const type: AutomationType = TYPE_MAP[tipoRaw] ?? "AUTOMATION";
 
-    const statusRaw = String(row[6] ?? "").toLowerCase().trim();
+    const statusRaw = col(row, colMap, "status").toLowerCase();
     const status: AutomationStatus = STATUS_MAP[statusRaw] ?? "ACTIVE";
 
-    const ferramentasRaw = row[8] ? String(row[8]).trim() : "";
+    const ferramentasRaw = col(row, colMap, "ferramentas");
     const tools = ferramentasRaw
       ? ferramentasRaw.split(",").map((t) => t.trim()).filter(Boolean)
       : [];
-
-    const horasRaw = row[9];
-    const roiHoursSaved = horasRaw !== undefined && horasRaw !== "" ? parseFloat(String(horasRaw)) : null;
-    const economiaRaw = row[10];
-    const roiMonthlySavings = economiaRaw !== undefined && economiaRaw !== "" ? parseFloat(String(economiaRaw)) : null;
 
     await prisma.automation.create({
       data: {
         name: nome,
         type,
-        shortDesc: row[2] ? String(row[2]).trim() : null,
-        fullDesc: row[3] ? String(row[3]).trim() : null,
-        thumbnailUrl: row[4] ? String(row[4]).trim() : null,
-        link: row[5] ? String(row[5]).trim() : null,
+        shortDesc: col(row, colMap, "descricaoCurta") || null,
+        fullDesc: col(row, colMap, "descricaoCompleta") || null,
+        thumbnailUrl: col(row, colMap, "urlImagem") || null,
+        link: col(row, colMap, "link") || null,
         status,
-        creator: row[7] ? String(row[7]).trim() : null,
+        creator: col(row, colMap, "criador") || null,
         tools,
-        roiHoursSaved: roiHoursSaved && !isNaN(roiHoursSaved) ? roiHoursSaved : null,
-        roiMonthlySavings: roiMonthlySavings && !isNaN(roiMonthlySavings) ? roiMonthlySavings : null,
-        roiDescription: row[11] ? String(row[11]).trim() : null,
+        roiHoursSaved: colNum(row, colMap, "horasEconomizadas"),
+        roiMonthlySavings: colNum(row, colMap, "economiaMensal"),
+        roiDescription: col(row, colMap, "descricaoROI") || null,
       },
     });
     inserted++;
