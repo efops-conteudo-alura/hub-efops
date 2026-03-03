@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Loader2 } from "lucide-react";
 
@@ -168,10 +167,12 @@ export function ReportBuilder() {
             )}
 
             <div className="flex items-center gap-2">
-              <Checkbox
+              <input
+                type="checkbox"
                 id={`required-${field.id}`}
                 checked={field.required}
-                onCheckedChange={(v) => updateField(field.id, "required", !!v)}
+                onChange={(e) => updateField(field.id, "required", e.target.checked)}
+                className="h-4 w-4 rounded border-input accent-primary cursor-pointer"
               />
               <Label htmlFor={`required-${field.id}`} className="text-sm cursor-pointer">
                 Campo obrigatório
