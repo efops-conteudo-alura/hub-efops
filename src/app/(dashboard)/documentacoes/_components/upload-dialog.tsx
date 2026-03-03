@@ -43,12 +43,16 @@ export function DocUploadDialog({ open, onClose }: Props) {
     const timeout = setTimeout(() => controller.abort(), 30_000);
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      // Envia o ficheiro como binário puro para contornar o limite do parser
+      // multipart do Next.js — o nome e tamanho vão via query params
+      const url =
+        `/api/documentacoes/upload?filename=${encodeURIComponent(file.name)}` +
+        `&size=${file.size}`;
 
-      const res = await fetch("/api/documentacoes/upload", {
+      const res = await fetch(url, {
         method: "POST",
-        body: formData,
+        body: file,
+        headers: { "Content-Type": "application/octet-stream" },
         signal: controller.signal,
       });
 

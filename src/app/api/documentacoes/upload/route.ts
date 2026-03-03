@@ -4,30 +4,32 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import mammoth from "mammoth";
 
+const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
+
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const formData = await request.formData();
-  const file = formData.get("file") as File | null;
-  if (!file) return NextResponse.json({ error: "Arquivo não enviado" }, { status: 400 });
+  // Ficheiro enviado como binário puro — nome e tamanho via query params
+  const { searchParams } = new URL(request.url);
+  const filename = searchParams.get("filename") ?? "documento.docx";
+  const sizeParam = parseInt(searchParams.get("size") ?? "0", 10);
 
-  if (!file.name.toLowerCase().endsWith(".docx")) {
+  if (!filename.toLowerCase().endsWith(".docx")) {
     return NextResponse.json({ error: "Apenas arquivos .docx são suportados" }, { status: 400 });
   }
 
-  if (file.size > 10 * 1024 * 1024) {
-    return NextResponse.json({ error: "Arquivo muito grande (máximo 10 MB)" }, { status: 400 });
+  if (sizeParam > MAX_BYTES) {
+    return NextResponse.json({ error: "Arquivo muito grande (máximo 20 MB)" }, { status: 400 });
   }
 
   let html: string;
-
   try {
-    const arrayBuf = await file.arrayBuffer();
+    const arrayBuf = await request.arrayBuffer();
     const nodeBuf = Buffer.from(arrayBuf);
 
-    // Tenta converter com formatação, ignorando imagens
     try {
+      // Tenta converter com formatação, ignorando imagens
       const result = await mammoth.convertToHtml(
         { buffer: nodeBuf },
         {
@@ -38,14 +40,13 @@ export async function POST(request: NextRequest) {
       );
       html = result.value;
     } catch {
-      // Fallback: extrai só o texto puro (funciona para exports do Notion e outros formatos incomuns)
+      // Fallback: texto simples — funciona para exports do Notion e formatos incomuns
       const textResult = await mammoth.extractRawText({ buffer: nodeBuf });
-      // Converte parágrafos de texto em HTML simples
       html = textResult.value
         .split("\n")
-        .map((line) => line.trim())
+        .map((l) => l.trim())
         .filter(Boolean)
-        .map((line) => `<p>${line}</p>`)
+        .map((l) => `<p>${l}</p>`)
         .join("");
     }
   } catch {
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const title = file.name
+  const title = filename
     .replace(/\.docx$/i, "")
     .replace(/[-_]/g, " ")
     .trim();
