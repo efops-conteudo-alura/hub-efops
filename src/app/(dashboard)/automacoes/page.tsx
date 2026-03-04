@@ -3,12 +3,11 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Bot, Zap, Clock, TrendingUp } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { NewAutomationDialog } from "./new-automation-dialog";
 import { AutomacaoUploadButton } from "./_components/upload-button";
 
-const TYPE_LABELS = { AUTOMATION: "Automação", AGENT: "Agente de IA" };
 const STATUS_LABELS = { ACTIVE: "Ativa", INACTIVE: "Inativa", TESTING: "Em teste" };
 const STATUS_VARIANTS = {
   ACTIVE: "default",
@@ -118,12 +117,12 @@ export default async function AutomacoesPage() {
           {isAdmin && <p className="text-sm text-muted-foreground mt-1">Clique em "Nova Automação / Agente" para começar.</p>}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {automations.map((a) => (
-            <Link key={a.id} href={`/automacoes/${a.id}`}>
-              <Card className="hover:border-primary/50 transition-colors cursor-pointer overflow-hidden flex flex-col">
+            <Link key={a.id} href={`/automacoes/${a.id}`} className="h-full">
+              <Card className="hover:border-primary/50 transition-colors cursor-pointer overflow-hidden flex flex-col h-full">
                 <AutomationThumbnail url={a.thumbnailUrl} type={a.type} />
-                <CardContent className="pt-3 pb-3 flex flex-col gap-1">
+                <CardContent className="pt-3 pb-3 flex flex-col gap-1 flex-1">
                   <div className="flex items-center justify-between">
                     <Badge variant={STATUS_VARIANTS[a.status]} className="text-xs">{STATUS_LABELS[a.status]}</Badge>
                     {a.creator && <p className="text-xs text-muted-foreground truncate ml-2">por {a.creator}</p>}
