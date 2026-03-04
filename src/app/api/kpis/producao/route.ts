@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { month, cursos, artigos, carreiras, trilhas } = body;
+  const { month, cursos, artigos, carreiras, niveis, trilhas } = body;
 
   if (!month || !/^\d{4}-\d{2}$/.test(month)) {
     return NextResponse.json({ error: "month deve estar no formato AAAA-MM" }, { status: 400 });
@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       cursos: parseInt(cursos) || 0,
       artigos: parseInt(artigos) || 0,
       carreiras: parseInt(carreiras) || 0,
+      niveis: parseInt(niveis) || 0,
       trilhas: parseInt(trilhas) || 0,
     },
   });

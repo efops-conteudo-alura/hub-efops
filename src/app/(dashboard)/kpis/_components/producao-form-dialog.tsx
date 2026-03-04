@@ -12,6 +12,7 @@ export interface KpiProducao {
   cursos: number;
   artigos: number;
   carreiras: number;
+  niveis: number;
   trilhas: number;
 }
 
@@ -22,7 +23,7 @@ interface ProducaoFormDialogProps {
   onSaved: (record: KpiProducao) => void;
 }
 
-const EMPTY = { month: "", cursos: "0", artigos: "0", carreiras: "0", trilhas: "0" };
+const EMPTY = { month: "", cursos: "0", artigos: "0", carreiras: "0", niveis: "0", trilhas: "0" };
 
 export function ProducaoFormDialog({ open, onOpenChange, record, onSaved }: ProducaoFormDialogProps) {
   const [values, setValues] = useState(EMPTY);
@@ -36,6 +37,7 @@ export function ProducaoFormDialog({ open, onOpenChange, record, onSaved }: Prod
         cursos: String(record.cursos),
         artigos: String(record.artigos),
         carreiras: String(record.carreiras),
+        niveis: String(record.niveis),
         trilhas: String(record.trilhas),
       });
     } else {
@@ -62,6 +64,7 @@ export function ProducaoFormDialog({ open, onOpenChange, record, onSaved }: Prod
           cursos: parseInt(values.cursos) || 0,
           artigos: parseInt(values.artigos) || 0,
           carreiras: parseInt(values.carreiras) || 0,
+          niveis: parseInt(values.niveis) || 0,
           trilhas: parseInt(values.trilhas) || 0,
         }),
       });
@@ -81,7 +84,8 @@ export function ProducaoFormDialog({ open, onOpenChange, record, onSaved }: Prod
   const fields: { key: keyof typeof values; label: string }[] = [
     { key: "cursos", label: "Cursos" },
     { key: "artigos", label: "Artigos" },
-    { key: "carreiras", label: "Carreiras" },
+    { key: "carreiras", label: "Carreiras (completas)" },
+    { key: "niveis", label: "Níveis de Carreira" },
     { key: "trilhas", label: "Trilhas" },
   ];
 

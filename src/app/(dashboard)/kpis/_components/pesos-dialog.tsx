@@ -11,6 +11,7 @@ interface Pesos {
   curso: number;
   artigo: number;
   carreira: number;
+  nivel: number;
   trilha: number;
 }
 
@@ -26,6 +27,7 @@ export function PesosDialog({ open, onOpenChange, pesos, onSaved }: PesosDialogP
     curso: String(pesos.curso),
     artigo: String(pesos.artigo),
     carreira: String(pesos.carreira),
+    nivel: String(pesos.nivel),
     trilha: String(pesos.trilha),
   });
   const [saving, setSaving] = useState(false);
@@ -40,6 +42,7 @@ export function PesosDialog({ open, onOpenChange, pesos, onSaved }: PesosDialogP
           curso: parseFloat(values.curso) || 0,
           artigo: parseFloat(values.artigo) || 0,
           carreira: parseFloat(values.carreira) || 0,
+          nivel: parseFloat(values.nivel) || 0,
           trilha: parseFloat(values.trilha) || 0,
         }),
       });
@@ -59,9 +62,9 @@ export function PesosDialog({ open, onOpenChange, pesos, onSaved }: PesosDialogP
           <DialogTitle>Configurar Pesos de Produção</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-2">
-          {(["curso", "artigo", "carreira", "trilha"] as const).map((field) => (
+          {(["curso", "artigo", "carreira", "nivel", "trilha"] as const).map((field) => (
             <div key={field} className="flex items-center gap-4">
-              <Label className="w-24 capitalize">{field === "artigo" ? "Artigo" : field === "curso" ? "Curso" : field === "carreira" ? "Carreira" : "Trilha"}</Label>
+              <Label className="w-32 capitalize">{field === "artigo" ? "Artigo" : field === "curso" ? "Curso" : field === "carreira" ? "Carreira" : field === "nivel" ? "Nível" : "Trilha"}</Label>
               <Input
                 type="number"
                 min="0"

@@ -176,6 +176,7 @@ model KpiPesos {
   curso    Float  @default(25)
   artigo   Float  @default(5)
   carreira Float  @default(2)
+  nivel    Float  @default(5)
   trilha   Float  @default(2)
 }
 
@@ -185,11 +186,24 @@ model KpiProducao {
   cursos    Int      @default(0)
   artigos   Int      @default(0)
   carreiras Int      @default(0)
+  niveis    Int      @default(0)
   trilhas   Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([month])
+}
+
+model KpiCarreiraLevel {
+  id               String    @id @default(cuid())
+  carreiraSlug     String    // ex: "engenharia-de-dados"
+  carreiraName     String    // ex: "Engenharia de Dados"
+  levelName        String    // ex: "Base — Python, SQL e Fundamentos de Nuvem"
+  isPublished      Boolean   @default(false)
+  firstPublishedAt DateTime? // quando nosso sistema detectou publicado pela 1ª vez
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([carreiraSlug, levelName])
 }
 
 model KpiEdicao {

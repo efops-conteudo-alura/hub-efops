@@ -16,17 +16,25 @@ export default async function KpisPage() {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "ADMIN") redirect("/home");
 
-  const [producao, edicao, pesos] = await Promise.all([
+  const [producao, edicao, pesos, levels] = await Promise.all([
     prisma.kpiProducao.findMany({ orderBy: { month: "desc" } }),
     prisma.kpiEdicao.findMany({ orderBy: { month: "desc" } }),
     getPesos(),
+    prisma.kpiCarreiraLevel.findMany({ orderBy: [{ carreiraName: "asc" }, { levelName: "asc" }] }),
   ]);
+
+  const serializedLevels = levels.map((l) => ({
+    ...l,
+    firstPublishedAt: l.firstPublishedAt?.toISOString() ?? null,
+    updatedAt: l.updatedAt.toISOString(),
+  }));
 
   return (
     <KpisOverview
       initialProducao={producao}
       initialEdicao={edicao}
       initialPesos={pesos}
+      initialLevels={serializedLevels}
     />
   );
 }

@@ -7,14 +7,17 @@ import { cn } from "@/lib/utils";
 import { ProducaoTable } from "./producao-table";
 import { EdicaoTable } from "./edicao-table";
 import { PesosDialog } from "./pesos-dialog";
+import { CarreirasPanel } from "./carreiras-panel";
 import type { KpiProducao } from "./producao-form-dialog";
 import type { KpiEdicao } from "./edicao-form-dialog";
+import type { CarreiraLevel } from "./carreiras-panel";
 
 interface Pesos {
   id: string;
   curso: number;
   artigo: number;
   carreira: number;
+  nivel: number;
   trilha: number;
 }
 
@@ -22,11 +25,12 @@ interface KpisOverviewProps {
   initialProducao: KpiProducao[];
   initialEdicao: KpiEdicao[];
   initialPesos: Pesos;
+  initialLevels: CarreiraLevel[];
 }
 
-type Tab = "producao" | "edicao";
+type Tab = "producao" | "edicao" | "carreiras";
 
-export function KpisOverview({ initialProducao, initialEdicao, initialPesos }: KpisOverviewProps) {
+export function KpisOverview({ initialProducao, initialEdicao, initialPesos, initialLevels }: KpisOverviewProps) {
   const [producao, setProducao] = useState(initialProducao);
   const [edicao, setEdicao] = useState(initialEdicao);
   const [pesos, setPesos] = useState(initialPesos);
@@ -36,6 +40,7 @@ export function KpisOverview({ initialProducao, initialEdicao, initialPesos }: K
   const tabs: { key: Tab; label: string }[] = [
     { key: "producao", label: "Produção de Conteúdo" },
     { key: "edicao", label: "Edição" },
+    { key: "carreiras", label: "Carreiras Alura" },
   ];
 
   return (
@@ -48,9 +53,11 @@ export function KpisOverview({ initialProducao, initialEdicao, initialPesos }: K
             <p className="text-muted-foreground text-sm">Indicadores mensais de produção e edição</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setPesosOpen(true)}>
-          <Settings2 size={14} className="mr-2" /> Configurar Pesos
-        </Button>
+        {activeTab !== "carreiras" && (
+          <Button variant="outline" size="sm" onClick={() => setPesosOpen(true)}>
+            <Settings2 size={14} className="mr-2" /> Configurar Pesos
+          </Button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -74,7 +81,7 @@ export function KpisOverview({ initialProducao, initialEdicao, initialPesos }: K
       {activeTab === "producao" && (
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Pesos: Curso={pesos.curso} · Artigo={pesos.artigo} · Carreira={pesos.carreira} · Trilha={pesos.trilha}
+            Pesos: Curso={pesos.curso} · Artigo={pesos.artigo} · Carreira={pesos.carreira} · Nível={pesos.nivel} · Trilha={pesos.trilha}
           </p>
           <ProducaoTable data={producao} pesos={pesos} onChange={setProducao} />
         </div>
@@ -82,6 +89,10 @@ export function KpisOverview({ initialProducao, initialEdicao, initialPesos }: K
 
       {activeTab === "edicao" && (
         <EdicaoTable data={edicao} onChange={setEdicao} />
+      )}
+
+      {activeTab === "carreiras" && (
+        <CarreirasPanel initialLevels={initialLevels} />
       )}
 
       <PesosDialog

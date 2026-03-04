@@ -11,7 +11,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const { id } = await params;
   const body = await request.json();
-  const { month, cursos, artigos, carreiras, trilhas } = body;
+  const { month, cursos, artigos, carreiras, niveis, trilhas } = body;
 
   if (month && !/^\d{4}-\d{2}$/.test(month)) {
     return NextResponse.json({ error: "month deve estar no formato AAAA-MM" }, { status: 400 });
@@ -24,6 +24,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       ...(cursos !== undefined ? { cursos: parseInt(cursos) } : {}),
       ...(artigos !== undefined ? { artigos: parseInt(artigos) } : {}),
       ...(carreiras !== undefined ? { carreiras: parseInt(carreiras) } : {}),
+      ...(niveis !== undefined ? { niveis: parseInt(niveis) } : {}),
       ...(trilhas !== undefined ? { trilhas: parseInt(trilhas) } : {}),
     },
   });

@@ -11,6 +11,7 @@ interface Pesos {
   curso: number;
   artigo: number;
   carreira: number;
+  nivel: number;
   trilha: number;
 }
 
@@ -21,7 +22,7 @@ interface ProducaoTableProps {
 }
 
 function calcScore(row: KpiProducao, pesos: Pesos) {
-  return row.cursos * pesos.curso + row.artigos * pesos.artigo + row.carreiras * pesos.carreira + row.trilhas * pesos.trilha;
+  return row.cursos * pesos.curso + row.artigos * pesos.artigo + row.carreiras * pesos.carreira + row.niveis * pesos.nivel + row.trilhas * pesos.trilha;
 }
 
 function formatMonth(month: string) {
@@ -77,6 +78,7 @@ export function ProducaoTable({ data, pesos, onChange }: ProducaoTableProps) {
                 <TableHead className="text-center">Cursos</TableHead>
                 <TableHead className="text-center">Artigos</TableHead>
                 <TableHead className="text-center">Carreiras</TableHead>
+                <TableHead className="text-center">Níveis</TableHead>
                 <TableHead className="text-center">Trilhas</TableHead>
                 <TableHead className="text-center font-semibold">Score</TableHead>
                 <TableHead className="w-10" />
@@ -89,6 +91,7 @@ export function ProducaoTable({ data, pesos, onChange }: ProducaoTableProps) {
                   <TableCell className="text-center">{row.cursos}</TableCell>
                   <TableCell className="text-center">{row.artigos}</TableCell>
                   <TableCell className="text-center">{row.carreiras}</TableCell>
+                  <TableCell className="text-center">{row.niveis}</TableCell>
                   <TableCell className="text-center">{row.trilhas}</TableCell>
                   <TableCell className="text-center font-bold text-primary">{calcScore(row, pesos)}</TableCell>
                   <TableCell>
