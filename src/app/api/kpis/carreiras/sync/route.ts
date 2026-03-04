@@ -25,23 +25,18 @@ function extractCareers(html: string): CareerInfo[] {
     const slug = m[1];
     if (seen.has(slug)) continue;
     seen.add(slug);
-    careers.push({ slug, name: "" });
+    careers.push({ slug, name: slugToName(slug) });
   }
 
-  const namedRe = /href="\/carreiras\/([\w-]+)"[^>]*>([^<]{3,80})<\/a>/g;
-  const nameMap = new Map<string, string>();
-  while ((m = namedRe.exec(html)) !== null) {
-    const slug = m[1];
-    const text = m[2].trim();
-    if (text && !nameMap.has(slug)) {
-      nameMap.set(slug, text);
-    }
-  }
+  return careers;
+}
 
-  return careers.map((c) => ({
-    slug: c.slug,
-    name: nameMap.get(c.slug) ?? slugToName(c.slug),
-  }));
+// Extrai o nome da carreira a partir do h1 da página individual
+function extractCareerName(html: string): string | null {
+  const m = /<h1[^>]*>([\s\S]*?)<\/h1>/i.exec(html);
+  if (!m) return null;
+  const text = m[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+  return text.length >= 3 ? text : null;
 }
 
 function slugToName(slug: string): string {
@@ -57,21 +52,20 @@ function extractLevels(html: string): LevelInfo[] {
   let m: RegExpExecArray | null;
 
   while ((m = headingRe.exec(html)) !== null) {
-    const text = m[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    const raw = m[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 
+    const isComingSoon = /\[em\s+breve\]/i.test(raw);
+    const levelName = raw.replace(/\[em\s+breve\]\s*/i, "").trim();
+
+    // Só captura headings que parecem ser níveis de carreira (base ou nível X)
+    // [EM BREVE] sozinho (sem base/nível) indica cursos — ignorar
     const isLevel =
-      /\bbase\b/i.test(text) ||
-      /\bn[ií]vel\s+\d/i.test(text) ||
-      /\[em\s+breve\]/i.test(text);
+      /\bbase\b/i.test(levelName) ||
+      /\bn[ií]vel\s+\d/i.test(levelName);
 
-    if (!isLevel || text.length < 4) continue;
+    if (!isLevel || levelName.length < 4) continue;
 
-    const isComingSoon = /\[em\s+breve\]/i.test(text);
-    const levelName = text.replace(/\[em\s+breve\]\s*/i, "").trim();
-
-    if (levelName) {
-      levels.push({ levelName, isPublished: !isComingSoon });
-    }
+    levels.push({ levelName, isPublished: !isComingSoon });
   }
 
   return levels;
@@ -110,7 +104,12 @@ export async function POST() {
         });
         if (!res.ok) return { career, levels: [] as LevelInfo[] };
         const html = await res.text();
-        return { career, levels: extractLevels(html) };
+        // Usa o h1 da página como nome — mais confiável que o texto do link na listagem
+        const pageName = extractCareerName(html);
+        return {
+          career: { ...career, name: pageName || career.name },
+          levels: extractLevels(html),
+        };
       })
     );
 
@@ -123,7 +122,8 @@ export async function POST() {
       if (result.status === "rejected") continue;
       const { career, levels } = result.value;
 
-      for (const level of levels) {
+      for (let idx = 0; idx < levels.length; idx++) {
+        const level = levels[idx];
         totalNiveis++;
 
         const existing = await prisma.kpiCarreiraLevel.findUnique({
@@ -136,6 +136,7 @@ export async function POST() {
               carreiraSlug: career.slug,
               carreiraName: career.name,
               levelName: level.levelName,
+              order: idx,
               isPublished: level.isPublished,
               firstPublishedAt: level.isPublished ? now : null,
             },
@@ -148,6 +149,7 @@ export async function POST() {
             data: {
               isPublished: level.isPublished,
               carreiraName: career.name,
+              order: idx, // atualiza ordem caso o site tenha mudado
               firstPublishedAt: justPublished ? now : existing.firstPublishedAt,
             },
           });
@@ -163,9 +165,9 @@ export async function POST() {
       await prisma.kpiPesos.create({ data: { lastSyncAt: now } });
     }
 
-    // 5. Retorna todos os níveis atualizados
+    // 5. Retorna todos os níveis ordenados por carreira + posição no site
     const allLevels = await prisma.kpiCarreiraLevel.findMany({
-      orderBy: [{ carreiraName: "asc" }, { levelName: "asc" }],
+      orderBy: [{ carreiraName: "asc" }, { order: "asc" }],
     });
 
     return NextResponse.json({
@@ -193,7 +195,7 @@ export async function GET() {
   }
 
   const levels = await prisma.kpiCarreiraLevel.findMany({
-    orderBy: [{ carreiraName: "asc" }, { levelName: "asc" }],
+    orderBy: [{ carreiraName: "asc" }, { order: "asc" }],
   });
 
   return NextResponse.json(levels);

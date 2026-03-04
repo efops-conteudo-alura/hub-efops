@@ -200,6 +200,7 @@ model KpiCarreiraLevel {
   carreiraSlug     String    // ex: "engenharia-de-dados"
   carreiraName     String    // ex: "Engenharia de Dados"
   levelName        String    // ex: "Base — Python, SQL e Fundamentos de Nuvem"
+  order            Int       @default(0) // posição no site (DOM order)
   isPublished      Boolean   @default(false)
   firstPublishedAt DateTime? // quando nosso sistema detectou publicado pela 1ª vez
   createdAt        DateTime  @default(now()) // quando o nível foi visto pela 1ª vez (independente de estar publicado)

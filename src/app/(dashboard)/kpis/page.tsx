@@ -20,7 +20,7 @@ export default async function KpisPage() {
     prisma.kpiProducao.findMany({ orderBy: { month: "desc" } }),
     prisma.kpiEdicao.findMany({ orderBy: { month: "desc" } }),
     getPesos(),
-    prisma.kpiCarreiraLevel.findMany({ orderBy: [{ carreiraName: "asc" }, { levelName: "asc" }] }),
+    prisma.kpiCarreiraLevel.findMany({ orderBy: [{ carreiraName: "asc" }, { order: "asc" }] }),
   ]);
 
   const serializedLevels = levels.map((l) => ({

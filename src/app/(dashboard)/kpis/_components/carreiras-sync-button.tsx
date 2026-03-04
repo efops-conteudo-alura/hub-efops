@@ -10,6 +10,7 @@ export interface CarreiraLevel {
   carreiraSlug: string;
   carreiraName: string;
   levelName: string;
+  order: number;
   isPublished: boolean;
   firstPublishedAt: string | null;
   createdAt: string;
