@@ -168,3 +168,41 @@ model ReportResponse {
   data      Json     // Record<fieldId, string>
   createdAt DateTime @default(now())
 }
+
+// KPIs de Conteúdo
+
+model KpiPesos {
+  id       String @id @default(cuid())
+  curso    Float  @default(25)
+  artigo   Float  @default(5)
+  carreira Float  @default(2)
+  trilha   Float  @default(2)
+}
+
+model KpiProducao {
+  id        String   @id @default(cuid())
+  month     String   // YYYY-MM
+  cursos    Int      @default(0)
+  artigos   Int      @default(0)
+  carreiras Int      @default(0)
+  trilhas   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([month])
+}
+
+model KpiEdicao {
+  id                String   @id @default(cuid())
+  month             String   // YYYY-MM
+  correcoes         Int      @default(0)
+  entregasConteudo  Int      @default(0)
+  entregasStart     Int      @default(0)
+  entregasLatam     Int      @default(0)
+  entregasMarketing Int      @default(0)
+  entregasOutras    Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([month])
+}
