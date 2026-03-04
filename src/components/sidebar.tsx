@@ -28,7 +28,6 @@ const mainNavItems = [
   { href: "/home", label: "Home", icon: House },
   { href: "/assinaturas", label: "Licenças", icon: Key },
   { href: "/automacoes", label: "Automações & Agentes", icon: Bot },
-  { href: "/gastos", label: "Gastos Externos", icon: Receipt },
   { href: "/processos", label: "Processos & Fluxos", icon: GitBranch },
   { href: "/documentacoes", label: "Documentações", icon: BookOpen },
 ];
@@ -67,6 +66,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
     ...(isAdmin
       ? [
           { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
+          { href: "/gastos", label: "Gastos Externos", icon: Receipt },
           { href: "/admin/usuarios", label: "Usuários", icon: Users },
         ]
       : []),
