@@ -10,7 +10,7 @@ import { PesosDialog } from "./pesos-dialog";
 import { CarreirasPanel } from "./carreiras-panel";
 import type { KpiProducao } from "./producao-form-dialog";
 import type { KpiEdicao } from "./edicao-form-dialog";
-import type { CarreiraLevel } from "./carreiras-panel";
+import type { CarreiraLevel } from "./carreiras-sync-button";
 
 interface Pesos {
   id: string;

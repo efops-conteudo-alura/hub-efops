@@ -172,12 +172,13 @@ model ReportResponse {
 // KPIs de Conteúdo
 
 model KpiPesos {
-  id       String @id @default(cuid())
-  curso    Float  @default(25)
-  artigo   Float  @default(5)
-  carreira Float  @default(2)
-  nivel    Float  @default(5)
-  trilha   Float  @default(2)
+  id         String    @id @default(cuid())
+  curso      Float     @default(25)
+  artigo     Float     @default(5)
+  carreira   Float     @default(2)
+  nivel      Float     @default(5)
+  trilha     Float     @default(2)
+  lastSyncAt DateTime?
 }
 
 model KpiProducao {
@@ -201,6 +202,7 @@ model KpiCarreiraLevel {
   levelName        String    // ex: "Base — Python, SQL e Fundamentos de Nuvem"
   isPublished      Boolean   @default(false)
   firstPublishedAt DateTime? // quando nosso sistema detectou publicado pela 1ª vez
+  createdAt        DateTime  @default(now()) // quando o nível foi visto pela 1ª vez (independente de estar publicado)
   updatedAt        DateTime  @updatedAt
 
   @@unique([carreiraSlug, levelName])

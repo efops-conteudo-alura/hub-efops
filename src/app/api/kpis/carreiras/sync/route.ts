@@ -19,19 +19,15 @@ function extractCareers(html: string): CareerInfo[] {
   const seen = new Set<string>();
   const careers: CareerInfo[] = [];
 
-  // Extrai links /carreiras/slug da página de listagem
   const linkRe = /href="\/carreiras\/([\w-]+)"/g;
   let m: RegExpExecArray | null;
   while ((m = linkRe.exec(html)) !== null) {
     const slug = m[1];
-    // Ignora slugs que parecem ser de outra coisa (e.g., âncoras, etc.)
     if (seen.has(slug)) continue;
     seen.add(slug);
     careers.push({ slug, name: "" });
   }
 
-  // Tenta extrair o nome visível associado a cada slug
-  // Pattern: <a href="/carreiras/slug"...>...texto...</a>
   const namedRe = /href="\/carreiras\/([\w-]+)"[^>]*>([^<]{3,80})<\/a>/g;
   const nameMap = new Map<string, string>();
   while ((m = namedRe.exec(html)) !== null) {
@@ -57,15 +53,12 @@ function slugToName(slug: string): string {
 
 function extractLevels(html: string): LevelInfo[] {
   const levels: LevelInfo[] = [];
-  // Captura conteúdo de headings h3-h6
   const headingRe = /<h[3-6][^>]*>([\s\S]*?)<\/h[3-6]>/gi;
   let m: RegExpExecArray | null;
 
   while ((m = headingRe.exec(html)) !== null) {
-    // Remove tags internas (spans, etc.)
     const text = m[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 
-    // Filtra apenas headings que parecem ser níveis de carreira
     const isLevel =
       /\bbase\b/i.test(text) ||
       /\bn[ií]vel\s+\d/i.test(text) ||
@@ -91,6 +84,10 @@ export async function POST() {
   }
 
   try {
+    // 0. Lê previousSyncAt antes de atualizar
+    const pesos = await prisma.kpiPesos.findFirst();
+    const previousSyncAt = pesos?.lastSyncAt ?? null;
+
     // 1. Busca a página de listagem de carreiras
     const listingRes = await fetch("https://www.alura.com.br/carreiras", {
       headers: { "User-Agent": UA },
@@ -129,13 +126,11 @@ export async function POST() {
       for (const level of levels) {
         totalNiveis++;
 
-        // Busca registro existente
         const existing = await prisma.kpiCarreiraLevel.findUnique({
           where: { carreiraSlug_levelName: { carreiraSlug: career.slug, levelName: level.levelName } },
         });
 
         if (!existing) {
-          // Primeiro sync deste nível
           await prisma.kpiCarreiraLevel.create({
             data: {
               carreiraSlug: career.slug,
@@ -147,13 +142,12 @@ export async function POST() {
           });
           if (level.isPublished) newPublished++;
         } else {
-          // Atualiza: se recém publicado, registra data
           const justPublished = !existing.isPublished && level.isPublished;
           await prisma.kpiCarreiraLevel.update({
             where: { id: existing.id },
             data: {
               isPublished: level.isPublished,
-              carreiraName: career.name, // atualiza nome caso mude
+              carreiraName: career.name,
               firstPublishedAt: justPublished ? now : existing.firstPublishedAt,
             },
           });
@@ -162,7 +156,14 @@ export async function POST() {
       }
     }
 
-    // 4. Retorna todos os níveis atualizados
+    // 4. Atualiza lastSyncAt no KpiPesos
+    if (pesos) {
+      await prisma.kpiPesos.update({ where: { id: pesos.id }, data: { lastSyncAt: now } });
+    } else {
+      await prisma.kpiPesos.create({ data: { lastSyncAt: now } });
+    }
+
+    // 5. Retorna todos os níveis atualizados
     const allLevels = await prisma.kpiCarreiraLevel.findMany({
       orderBy: [{ carreiraName: "asc" }, { levelName: "asc" }],
     });
@@ -170,6 +171,7 @@ export async function POST() {
     return NextResponse.json({
       success: true,
       syncedAt: now,
+      previousSyncAt,
       careersProcessed: careers.length,
       levelsProcessed: totalNiveis,
       newPublished,

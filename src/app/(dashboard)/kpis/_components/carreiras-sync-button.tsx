@@ -5,18 +5,20 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface CarreiraLevel {
+export interface CarreiraLevel {
   id: string;
   carreiraSlug: string;
   carreiraName: string;
   levelName: string;
   isPublished: boolean;
   firstPublishedAt: string | null;
+  createdAt: string;
   updatedAt: string;
 }
 
-interface SyncResult {
+export interface SyncResult {
   syncedAt: string;
+  previousSyncAt: string | null;
   careersProcessed: number;
   levelsProcessed: number;
   newPublished: number;

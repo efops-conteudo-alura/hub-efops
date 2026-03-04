@@ -26,6 +26,7 @@ export default async function KpisPage() {
   const serializedLevels = levels.map((l) => ({
     ...l,
     firstPublishedAt: l.firstPublishedAt?.toISOString() ?? null,
+    createdAt: l.createdAt.toISOString(),
     updatedAt: l.updatedAt.toISOString(),
   }));
 

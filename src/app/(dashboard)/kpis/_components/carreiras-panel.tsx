@@ -1,29 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { CarreirasSyncButton } from "./carreiras-sync-button";
-import { CheckCircle2, Clock } from "lucide-react";
+import { CarreirasSyncButton, type CarreiraLevel, type SyncResult } from "./carreiras-sync-button";
+import { CheckCircle2, Clock, ExternalLink, Sparkles } from "lucide-react";
 
-export interface CarreiraLevel {
-  id: string;
-  carreiraSlug: string;
-  carreiraName: string;
-  levelName: string;
-  isPublished: boolean;
-  firstPublishedAt: string | null;
-  updatedAt: string;
-}
-
-interface SyncResult {
-  syncedAt: string;
-  careersProcessed: number;
-  levelsProcessed: number;
-  newPublished: number;
-  levels: CarreiraLevel[];
-}
+export type { CarreiraLevel };
 
 interface CarreirasPanelProps {
   initialLevels: CarreiraLevel[];
@@ -34,14 +17,25 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
+function isNew(level: CarreiraLevel, previousSyncAt: string | null): boolean {
+  if (!previousSyncAt) return false;
+  // Nível recém publicado desde o sync anterior
+  if (level.firstPublishedAt && new Date(level.firstPublishedAt) > new Date(previousSyncAt)) return true;
+  // Nível nunca visto antes (carreira nova ou nível novo em breve)
+  if (new Date(level.createdAt) > new Date(previousSyncAt)) return true;
+  return false;
+}
+
 export function CarreirasPanel({ initialLevels }: CarreirasPanelProps) {
   const [levels, setLevels] = useState<CarreiraLevel[]>(initialLevels);
   const [filter, setFilter] = useState("");
   const [lastSync, setLastSync] = useState<string | null>(null);
+  const [previousSyncAt, setPreviousSyncAt] = useState<string | null>(null);
 
   function handleSynced(result: SyncResult) {
     setLevels(result.levels);
     setLastSync(result.syncedAt);
+    setPreviousSyncAt(result.previousSyncAt);
   }
 
   const filtered = useMemo(() => {
@@ -54,7 +48,20 @@ export function CarreirasPanel({ initialLevels }: CarreirasPanelProps) {
     );
   }, [levels, filter]);
 
+  // Agrupa por carreira
+  const grouped = useMemo(() => {
+    const map = new Map<string, { slug: string; name: string; levels: CarreiraLevel[] }>();
+    for (const level of filtered) {
+      if (!map.has(level.carreiraSlug)) {
+        map.set(level.carreiraSlug, { slug: level.carreiraSlug, name: level.carreiraName, levels: [] });
+      }
+      map.get(level.carreiraSlug)!.levels.push(level);
+    }
+    return Array.from(map.values());
+  }, [filtered]);
+
   const publishedCount = levels.filter((l) => l.isPublished).length;
+  const newCount = previousSyncAt ? levels.filter((l) => isNew(l, previousSyncAt)).length : 0;
 
   return (
     <div className="space-y-4">
@@ -68,6 +75,11 @@ export function CarreirasPanel({ initialLevels }: CarreirasPanelProps) {
           )}
         </div>
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          {newCount > 0 && (
+            <span className="text-primary font-semibold flex items-center gap-1">
+              <Sparkles size={13} /> {newCount} novos
+            </span>
+          )}
           <span><span className="font-semibold text-foreground">{publishedCount}</span> publicados</span>
           <span><span className="font-semibold text-foreground">{levels.length - publishedCount}</span> em breve</span>
         </div>
@@ -85,39 +97,70 @@ export function CarreirasPanel({ initialLevels }: CarreirasPanelProps) {
             onChange={(e) => setFilter(e.target.value)}
             className="max-w-sm"
           />
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Carreira</TableHead>
-                  <TableHead>Nível</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="text-center">Detectado em</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((level) => (
-                  <TableRow key={level.id}>
-                    <TableCell className="font-medium text-sm">{level.carreiraName}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-xs truncate">{level.levelName}</TableCell>
-                    <TableCell className="text-center">
-                      {level.isPublished ? (
-                        <Badge variant="default" className="gap-1">
-                          <CheckCircle2 size={11} /> Publicado
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="gap-1">
-                          <Clock size={11} /> Em breve
+
+          <div className="space-y-6">
+            {grouped.map((career) => {
+              const careerIsNew = previousSyncAt
+                ? career.levels.every((l) => new Date(l.createdAt) > new Date(previousSyncAt!))
+                : false;
+
+              return (
+                <div key={career.slug} className="rounded-md border overflow-hidden">
+                  {/* Cabeçalho da carreira */}
+                  <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-muted/50 border-b">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm">{career.name}</span>
+                      {careerIsNew && (
+                        <Badge variant="default" className="gap-1 text-xs py-0">
+                          <Sparkles size={10} /> NOVO
                         </Badge>
                       )}
-                    </TableCell>
-                    <TableCell className="text-center text-sm text-muted-foreground">
-                      {formatDate(level.firstPublishedAt)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </div>
+                    <a
+                      href={`https://www.alura.com.br/carreiras/${career.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Ver carreira <ExternalLink size={11} />
+                    </a>
+                  </div>
+
+                  {/* Níveis */}
+                  <div className="divide-y">
+                    {career.levels.map((level) => {
+                      const levelIsNew = isNew(level, previousSyncAt);
+                      return (
+                        <div key={level.id} className="flex items-center gap-3 px-4 py-2.5">
+                          <div className="flex-1 flex items-center gap-2 min-w-0">
+                            <span className="text-sm truncate">{level.levelName}</span>
+                            {levelIsNew && !careerIsNew && (
+                              <Badge variant="default" className="gap-1 text-xs py-0 shrink-0">
+                                <Sparkles size={10} /> NOVO
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="shrink-0">
+                            {level.isPublished ? (
+                              <Badge variant="default" className="gap-1">
+                                <CheckCircle2 size={11} /> Publicado
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="gap-1">
+                                <Clock size={11} /> Em breve
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground w-24 text-right shrink-0">
+                            {formatDate(level.firstPublishedAt)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </>
       )}
