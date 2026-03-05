@@ -19,13 +19,23 @@ export interface KpiProducao {
 interface ProducaoFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Mês no formato YYYY-MM — pré-definido, não editável */
+  month: string;
   record?: KpiProducao | null;
   onSaved: (record: KpiProducao) => void;
 }
 
-const EMPTY = { month: "", cursos: "0", artigos: "0", carreiras: "0", niveis: "0", trilhas: "0" };
+const MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
-export function ProducaoFormDialog({ open, onOpenChange, record, onSaved }: ProducaoFormDialogProps) {
+function fmtMonthLabel(month: string) {
+  const [year, m] = month.split("-");
+  return `${MONTH_NAMES[parseInt(m) - 1]} / ${year}`;
+}
+
+const EMPTY = { cursos: "0", artigos: "0", carreiras: "0", niveis: "0", trilhas: "0" };
+
+export function ProducaoFormDialog({ open, onOpenChange, month, record, onSaved }: ProducaoFormDialogProps) {
   const [values, setValues] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -33,7 +43,6 @@ export function ProducaoFormDialog({ open, onOpenChange, record, onSaved }: Prod
   useEffect(() => {
     if (record) {
       setValues({
-        month: record.month,
         cursos: String(record.cursos),
         artigos: String(record.artigos),
         carreiras: String(record.carreiras),
@@ -47,10 +56,6 @@ export function ProducaoFormDialog({ open, onOpenChange, record, onSaved }: Prod
   }, [record, open]);
 
   async function handleSave() {
-    if (!values.month || !/^\d{4}-\d{2}$/.test(values.month)) {
-      setError("Mês deve estar no formato AAAA-MM (ex: 2026-02)");
-      return;
-    }
     setSaving(true);
     setError("");
     try {
@@ -60,7 +65,7 @@ export function ProducaoFormDialog({ open, onOpenChange, record, onSaved }: Prod
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          month: values.month,
+          month,
           cursos: parseInt(values.cursos) || 0,
           artigos: parseInt(values.artigos) || 0,
           carreiras: parseInt(values.carreiras) || 0,
@@ -93,18 +98,10 @@ export function ProducaoFormDialog({ open, onOpenChange, record, onSaved }: Prod
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{record ? "Editar" : "Adicionar"} KPI de Produção</DialogTitle>
+          <DialogTitle>{record ? "Editar" : "Adicionar"} Publicação</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-2">
-          <div className="grid gap-1.5">
-            <Label>Mês (AAAA-MM)</Label>
-            <Input
-              placeholder="2026-02"
-              value={values.month}
-              disabled={!!record}
-              onChange={(e) => setValues((v) => ({ ...v, month: e.target.value }))}
-            />
-          </div>
+          <p className="text-sm font-medium text-muted-foreground">{fmtMonthLabel(month)}</p>
           {fields.map(({ key, label }) => (
             <div key={key} className="grid gap-1.5">
               <Label>{label}</Label>

@@ -21,12 +21,21 @@ export interface KpiEdicao {
 interface EdicaoFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Mês no formato YYYY-MM — pré-definido, não editável */
+  month: string;
   record?: KpiEdicao | null;
   onSaved: (record: KpiEdicao) => void;
 }
 
+const MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+function fmtMonthLabel(month: string) {
+  const [year, m] = month.split("-");
+  return `${MONTH_NAMES[parseInt(m) - 1]} / ${year}`;
+}
+
 const EMPTY = {
-  month: "",
   correcoes: "0",
   entregasConteudo: "0",
   entregasStart: "0",
@@ -35,7 +44,7 @@ const EMPTY = {
   entregasOutras: "0",
 };
 
-export function EdicaoFormDialog({ open, onOpenChange, record, onSaved }: EdicaoFormDialogProps) {
+export function EdicaoFormDialog({ open, onOpenChange, month, record, onSaved }: EdicaoFormDialogProps) {
   const [values, setValues] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -43,7 +52,6 @@ export function EdicaoFormDialog({ open, onOpenChange, record, onSaved }: Edicao
   useEffect(() => {
     if (record) {
       setValues({
-        month: record.month,
         correcoes: String(record.correcoes),
         entregasConteudo: String(record.entregasConteudo),
         entregasStart: String(record.entregasStart),
@@ -65,10 +73,6 @@ export function EdicaoFormDialog({ open, onOpenChange, record, onSaved }: Edicao
     (parseInt(values.entregasOutras) || 0);
 
   async function handleSave() {
-    if (!values.month || !/^\d{4}-\d{2}$/.test(values.month)) {
-      setError("Mês deve estar no formato AAAA-MM (ex: 2026-02)");
-      return;
-    }
     setSaving(true);
     setError("");
     try {
@@ -78,7 +82,7 @@ export function EdicaoFormDialog({ open, onOpenChange, record, onSaved }: Edicao
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          month: values.month,
+          month,
           correcoes: parseInt(values.correcoes) || 0,
           entregasConteudo: parseInt(values.entregasConteudo) || 0,
           entregasStart: parseInt(values.entregasStart) || 0,
@@ -115,15 +119,7 @@ export function EdicaoFormDialog({ open, onOpenChange, record, onSaved }: Edicao
           <DialogTitle>{record ? "Editar" : "Adicionar"} KPI de Edição</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-2">
-          <div className="grid gap-1.5">
-            <Label>Mês (AAAA-MM)</Label>
-            <Input
-              placeholder="2026-02"
-              value={values.month}
-              disabled={!!record}
-              onChange={(e) => setValues((v) => ({ ...v, month: e.target.value }))}
-            />
-          </div>
+          <p className="text-sm font-medium text-muted-foreground">{fmtMonthLabel(month)}</p>
           <div className="grid gap-1.5">
             <Label>Correções</Label>
             <Input

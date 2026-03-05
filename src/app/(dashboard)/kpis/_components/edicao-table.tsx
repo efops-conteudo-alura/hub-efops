@@ -7,15 +7,16 @@ import { EdicaoFormDialog, type KpiEdicao } from "./edicao-form-dialog";
 import { fmtMonthShort, fmtMonthLong } from "./producao-table";
 
 interface EdicaoTableProps {
+  year: number;
   data: KpiEdicao[];
   onChange: (data: KpiEdicao[]) => void;
 }
 
-function totalEntregas(row: KpiEdicao) {
+export function totalEntregas(row: KpiEdicao) {
   return row.entregasConteudo + row.entregasStart + row.entregasLatam + row.entregasMarketing + row.entregasOutras;
 }
 
-function calcScoreEdicao(row: KpiEdicao): number {
+export function calcScoreEdicao(row: KpiEdicao): number {
   const total = totalEntregas(row);
   if (total === 0) return 0;
   return Math.round(200 * (1 - row.correcoes / total));
@@ -51,14 +52,29 @@ export function buildEdicaoTsv(data: KpiEdicao[]): string {
   return [...kpiRows, "", ...distRows].join("\n");
 }
 
-export function EdicaoTable({ data, onChange }: EdicaoTableProps) {
+function allMonthsOfYear(year: number): string[] {
+  return Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
+}
+
+export function EdicaoTable({ year, data, onChange }: EdicaoTableProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMonth, setDialogMonth] = useState("");
   const [editing, setEditing] = useState<KpiEdicao | null>(null);
 
-  const sorted = [...data].sort((a, b) => a.month.localeCompare(b.month));
+  const allMonths = allMonthsOfYear(year);
+  const dataByMonth = new Map(data.map((r) => [r.month, r]));
 
-  function openNew() { setEditing(null); setDialogOpen(true); }
-  function openEdit(row: KpiEdicao) { setEditing(row); setDialogOpen(true); }
+  function openAdd(month: string) {
+    setEditing(null);
+    setDialogMonth(month);
+    setDialogOpen(true);
+  }
+
+  function openEdit(row: KpiEdicao) {
+    setEditing(row);
+    setDialogMonth(row.month);
+    setDialogOpen(true);
+  }
 
   async function handleDelete(id: string) {
     if (!confirm("Apagar este registro?")) return;
@@ -79,96 +95,114 @@ export function EdicaoTable({ data, onChange }: EdicaoTableProps) {
     <div className="space-y-4">
       {/* KPIs de Edição */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-foreground">Pós-produção</p>
-          <Button size="sm" variant="outline" onClick={openNew}>
-            <Plus size={13} className="mr-1" /> Adicionar mês
-          </Button>
-        </div>
+        <p className="text-sm font-semibold text-foreground">Pós-produção</p>
 
-        {sorted.length === 0 ? (
-          <p className="text-center py-6 text-muted-foreground text-sm">Nenhum registro. Adicione o primeiro mês.</p>
-        ) : (
-          <div className="rounded-md border overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b bg-muted/40">
-                  <th className="px-3 py-2 text-left text-xs text-muted-foreground font-medium w-36" />
-                  {sorted.map((r) => (
-                    <th key={r.id} className={colHeader}>{fmtMonthShort(r.month)}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b hover:bg-muted/20">
-                  <td className={rowLabel}>Entregas</td>
-                  {sorted.map((r) => <td key={r.id} className={cell}>{totalEntregas(r)}</td>)}
-                </tr>
-                <tr className="border-b hover:bg-muted/20">
-                  <td className={rowLabel}>Correções</td>
-                  {sorted.map((r) => <td key={r.id} className={cell}>{r.correcoes}</td>)}
-                </tr>
-                <tr className="border-b bg-muted/20">
-                  <td className="px-3 py-2 text-sm font-semibold whitespace-nowrap">Score Edição</td>
-                  {sorted.map((r) => (
-                    <td key={r.id} className={cell + " font-bold text-primary"}>{calcScoreEdicao(r)}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td className="px-3 py-1" />
-                  {sorted.map((r) => (
-                    <td key={r.id} className="px-3 py-1 text-center">
-                      <div className="flex items-center justify-center gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(r)}>
-                          <Pencil size={11} />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDelete(r.id)}>
-                          <Trash2 size={11} />
-                        </Button>
-                      </div>
+        <div className="rounded-md border overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b bg-muted/40">
+                <th className="px-3 py-2 text-left text-xs text-muted-foreground font-medium w-36" />
+                {allMonths.map((m) => (
+                  <th key={m} className={colHeader}>{fmtMonthShort(m)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b hover:bg-muted/20">
+                <td className={rowLabel}>Entregas</td>
+                {allMonths.map((m) => {
+                  const r = dataByMonth.get(m);
+                  return <td key={m} className={cell + " text-muted-foreground"}>{r ? <span className="text-foreground">{totalEntregas(r)}</span> : "—"}</td>;
+                })}
+              </tr>
+              <tr className="border-b hover:bg-muted/20">
+                <td className={rowLabel}>Correções</td>
+                {allMonths.map((m) => {
+                  const r = dataByMonth.get(m);
+                  return <td key={m} className={cell + " text-muted-foreground"}>{r ? <span className="text-foreground">{r.correcoes}</span> : "—"}</td>;
+                })}
+              </tr>
+              <tr className="border-b bg-muted/20">
+                <td className="px-3 py-2 text-sm font-semibold whitespace-nowrap">Score Edição</td>
+                {allMonths.map((m) => {
+                  const r = dataByMonth.get(m);
+                  return (
+                    <td key={m} className={cell}>
+                      {r ? <span className="font-bold text-primary">{calcScoreEdicao(r)}</span> : <span className="text-muted-foreground">—</span>}
                     </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
+                  );
+                })}
+              </tr>
+              <tr>
+                <td className="px-3 py-1" />
+                {allMonths.map((m) => {
+                  const r = dataByMonth.get(m);
+                  return (
+                    <td key={m} className="px-3 py-1 text-center">
+                      {r ? (
+                        <div className="flex items-center justify-center gap-0.5">
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(r)}>
+                            <Pencil size={11} />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDelete(r.id)}>
+                            <Trash2 size={11} />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => openAdd(m)}>
+                          <Plus size={11} />
+                        </Button>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Distribuição de Entregas */}
-      {sorted.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-sm font-semibold text-foreground">Distribuição de Entregas</p>
-          <div className="rounded-md border overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="border-b bg-muted/40">
-                  <th className="px-3 py-2 text-left text-xs text-muted-foreground font-medium w-48" />
-                  {sorted.map((r) => (
-                    <th key={r.id} className={colHeader}>{fmtMonthShort(r.month)}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { label: "Entregas Conteúdo", getValue: (r: KpiEdicao) => pct(r.entregasConteudo, totalEntregas(r)) },
-                  { label: "Entregas Start", getValue: (r: KpiEdicao) => pct(r.entregasStart, totalEntregas(r)) },
-                  { label: "Entregas Latam", getValue: (r: KpiEdicao) => pct(r.entregasLatam, totalEntregas(r)) },
-                  { label: "Entregas Marketing", getValue: (r: KpiEdicao) => pct(r.entregasMarketing, totalEntregas(r)) },
-                  { label: "Outras (PM3, B2B, DHO…)", getValue: (r: KpiEdicao) => pct(r.entregasOutras, totalEntregas(r)) },
-                ].map(({ label, getValue }) => (
-                  <tr key={label} className="border-b hover:bg-muted/20">
-                    <td className={rowLabel + " w-48"}>{label}</td>
-                    {sorted.map((r) => <td key={r.id} className={cell}>{getValue(r)}</td>)}
-                  </tr>
+      <div className="space-y-2">
+        <p className="text-sm font-semibold text-foreground">Distribuição de Entregas</p>
+        <div className="rounded-md border overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b bg-muted/40">
+                <th className="px-3 py-2 text-left text-xs text-muted-foreground font-medium w-48" />
+                {allMonths.map((m) => (
+                  <th key={m} className={colHeader}>{fmtMonthShort(m)}</th>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { label: "Entregas Conteúdo", getValue: (r: KpiEdicao) => pct(r.entregasConteudo, totalEntregas(r)) },
+                { label: "Entregas Start", getValue: (r: KpiEdicao) => pct(r.entregasStart, totalEntregas(r)) },
+                { label: "Entregas Latam", getValue: (r: KpiEdicao) => pct(r.entregasLatam, totalEntregas(r)) },
+                { label: "Entregas Marketing", getValue: (r: KpiEdicao) => pct(r.entregasMarketing, totalEntregas(r)) },
+                { label: "Outras (PM3, B2B, DHO…)", getValue: (r: KpiEdicao) => pct(r.entregasOutras, totalEntregas(r)) },
+              ].map(({ label, getValue }) => (
+                <tr key={label} className="border-b hover:bg-muted/20">
+                  <td className={rowLabel + " w-48"}>{label}</td>
+                  {allMonths.map((m) => {
+                    const r = dataByMonth.get(m);
+                    return <td key={m} className={cell + " text-muted-foreground"}>{r ? <span className="text-foreground">{getValue(r)}</span> : "—"}</td>;
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
 
-      <EdicaoFormDialog open={dialogOpen} onOpenChange={setDialogOpen} record={editing} onSaved={handleSaved} />
+      <EdicaoFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        month={dialogMonth}
+        record={editing}
+        onSaved={handleSaved}
+      />
     </div>
   );
 }

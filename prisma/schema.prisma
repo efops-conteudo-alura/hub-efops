@@ -171,6 +171,12 @@ model ReportResponse {
 
 // KPIs de Conteúdo
 
+model KpiAno {
+  id        String   @id @default(cuid())
+  year      Int      @unique
+  createdAt DateTime @default(now())
+}
+
 model KpiPesos {
   id         String    @id @default(cuid())
   curso      Float     @default(25)

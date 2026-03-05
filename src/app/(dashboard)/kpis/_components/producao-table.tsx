@@ -14,6 +14,7 @@ interface Pesos {
 }
 
 interface ProducaoTableProps {
+  year: number;
   data: KpiProducao[];
   pesos: Pesos;
   onChange: (data: KpiProducao[]) => void;
@@ -60,20 +61,45 @@ export function buildProducaoTsv(data: KpiProducao[], pesos: Pesos): string {
   return [header, ...rows].join("\n");
 }
 
-export function ProducaoTable({ data, pesos, onChange }: ProducaoTableProps) {
+// Gera os 12 meses do ano no formato YYYY-MM
+function allMonthsOfYear(year: number): string[] {
+  return Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
+}
+
+export function ProducaoTable({ year, data, pesos, onChange }: ProducaoTableProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMonth, setDialogMonth] = useState("");
   const [editing, setEditing] = useState<KpiProducao | null>(null);
 
-  const sorted = [...data].sort((a, b) => a.month.localeCompare(b.month));
-  const scores = sorted.map((r) => calcScoreProducao(r, pesos));
+  const allMonths = allMonthsOfYear(year);
+  const dataByMonth = new Map(data.map((r) => [r.month, r]));
 
-  function mm3(idx: number): string {
+  // Para cálculo de MM3 precisamos dos meses com dados em ordem
+  const sortedWithData = allMonths
+    .map((m) => dataByMonth.get(m))
+    .filter((r): r is KpiProducao => r !== undefined);
+  const scoresByMonth = new Map(
+    sortedWithData.map((r) => [r.month, calcScoreProducao(r, pesos)])
+  );
+
+  function mm3(month: string): string {
+    const idx = sortedWithData.findIndex((r) => r.month === month);
     if (idx < 2) return "—";
-    return String(Math.round((scores[idx - 2] + scores[idx - 1] + scores[idx]) / 3));
+    const s = sortedWithData.slice(idx - 2, idx + 1).map((r) => scoresByMonth.get(r.month)!);
+    return String(Math.round((s[0] + s[1] + s[2]) / 3));
   }
 
-  function openNew() { setEditing(null); setDialogOpen(true); }
-  function openEdit(row: KpiProducao) { setEditing(row); setDialogOpen(true); }
+  function openAdd(month: string) {
+    setEditing(null);
+    setDialogMonth(month);
+    setDialogOpen(true);
+  }
+
+  function openEdit(row: KpiProducao) {
+    setEditing(row);
+    setDialogMonth(row.month);
+    setDialogOpen(true);
+  }
 
   async function handleDelete(id: string) {
     if (!confirm("Apagar este registro?")) return;
@@ -96,70 +122,91 @@ export function ProducaoTable({ data, pesos, onChange }: ProducaoTableProps) {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-foreground">Publicação de Conteúdo</p>
-        <Button size="sm" variant="outline" onClick={openNew}>
-          <Plus size={13} className="mr-1" /> Adicionar mês
-        </Button>
+      <p className="text-sm font-semibold text-foreground">Publicação de Conteúdo</p>
+
+      <div className="rounded-md border overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b bg-muted/40">
+              <th className="px-3 py-2 text-left text-xs text-muted-foreground font-medium w-36 whitespace-nowrap" />
+              {allMonths.map((m) => (
+                <th key={m} className="px-3 py-2 text-center text-xs font-semibold whitespace-nowrap">
+                  {fmtMonthShort(m)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {metrics.map(({ label, getValue }) => (
+              <tr key={label} className="border-b hover:bg-muted/20">
+                <td className="px-3 py-2 text-sm text-muted-foreground font-medium whitespace-nowrap">{label}</td>
+                {allMonths.map((m) => {
+                  const r = dataByMonth.get(m);
+                  return (
+                    <td key={m} className="px-3 py-2 text-sm text-center tabular-nums text-muted-foreground">
+                      {r ? <span className="text-foreground">{getValue(r)}</span> : "—"}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+            <tr className="border-b bg-muted/20">
+              <td className="px-3 py-2 text-sm font-semibold whitespace-nowrap">Score do mês</td>
+              {allMonths.map((m) => {
+                const score = scoresByMonth.get(m);
+                return (
+                  <td key={m} className="px-3 py-2 text-sm text-center font-bold tabular-nums">
+                    {score !== undefined ? <span className="text-primary">{score}</span> : <span className="text-muted-foreground">—</span>}
+                  </td>
+                );
+              })}
+            </tr>
+            <tr className="border-b">
+              <td className="px-3 py-2 text-sm text-muted-foreground font-medium whitespace-nowrap">MM 3 meses</td>
+              {allMonths.map((m) => {
+                const hasData = dataByMonth.has(m);
+                return (
+                  <td key={m} className="px-3 py-2 text-sm text-center text-muted-foreground tabular-nums">
+                    {hasData ? mm3(m) : "—"}
+                  </td>
+                );
+              })}
+            </tr>
+            <tr>
+              <td className="px-3 py-1" />
+              {allMonths.map((m) => {
+                const r = dataByMonth.get(m);
+                return (
+                  <td key={m} className="px-3 py-1 text-center">
+                    {r ? (
+                      <div className="flex items-center justify-center gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(r)}>
+                          <Pencil size={11} />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDelete(r.id)}>
+                          <Trash2 size={11} />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => openAdd(m)}>
+                        <Plus size={11} />
+                      </Button>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      {sorted.length === 0 ? (
-        <p className="text-center py-6 text-muted-foreground text-sm">Nenhum registro. Adicione o primeiro mês.</p>
-      ) : (
-        <div className="rounded-md border overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40">
-                <th className="px-3 py-2 text-left text-xs text-muted-foreground font-medium w-36 whitespace-nowrap" />
-                {sorted.map((r) => (
-                  <th key={r.id} className="px-3 py-2 text-center text-xs font-semibold whitespace-nowrap">
-                    {fmtMonthShort(r.month)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {metrics.map(({ label, getValue }) => (
-                <tr key={label} className="border-b hover:bg-muted/20">
-                  <td className="px-3 py-2 text-sm text-muted-foreground font-medium whitespace-nowrap">{label}</td>
-                  {sorted.map((r) => (
-                    <td key={r.id} className="px-3 py-2 text-sm text-center tabular-nums">{getValue(r)}</td>
-                  ))}
-                </tr>
-              ))}
-              <tr className="border-b bg-muted/20">
-                <td className="px-3 py-2 text-sm font-semibold whitespace-nowrap">Score do mês</td>
-                {scores.map((s, i) => (
-                  <td key={i} className="px-3 py-2 text-sm text-center font-bold text-primary tabular-nums">{s}</td>
-                ))}
-              </tr>
-              <tr className="border-b">
-                <td className="px-3 py-2 text-sm text-muted-foreground font-medium whitespace-nowrap">MM 3 meses</td>
-                {sorted.map((_, i) => (
-                  <td key={i} className="px-3 py-2 text-sm text-center text-muted-foreground tabular-nums">{mm3(i)}</td>
-                ))}
-              </tr>
-              <tr>
-                <td className="px-3 py-1" />
-                {sorted.map((r) => (
-                  <td key={r.id} className="px-3 py-1 text-center">
-                    <div className="flex items-center justify-center gap-0.5">
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(r)}>
-                        <Pencil size={11} />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDelete(r.id)}>
-                        <Trash2 size={11} />
-                      </Button>
-                    </div>
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <ProducaoFormDialog open={dialogOpen} onOpenChange={setDialogOpen} record={editing} onSaved={handleSaved} />
+      <ProducaoFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        month={dialogMonth}
+        record={editing}
+        onSaved={handleSaved}
+      />
     </div>
   );
 }
