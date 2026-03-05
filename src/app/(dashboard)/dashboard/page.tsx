@@ -3,10 +3,9 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
-  DollarSign, Key, Bot, Clock, TrendingUp, Users,
-  FileText, BookOpen, BarChart2, MessageSquare, AlertCircle,
+  DollarSign, Key, Bot, TrendingUp,
+  FileText, BookOpen, BarChart2, Clock,
 } from "lucide-react";
 import { GastosChart, type GastosChartRow } from "./_components/gastos-chart";
 
@@ -24,6 +23,16 @@ function getLast6Months(): string[] {
   return months;
 }
 
+function getLast3Months(): string[] {
+  const now = new Date();
+  const months: string[] = [];
+  for (let i = 2; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+  return months;
+}
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "ADMIN") redirect("/home");
@@ -31,26 +40,22 @@ export default async function DashboardPage() {
   const today = new Date();
   const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
   const last6Months = getLast6Months();
+  const last3Months = getLast3Months();
   const sixMonthsAgo = last6Months[0];
-  const in60days = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000);
 
   const [
-    gastosMes,
+    gastosUltimos3,
     gastosUltimos6,
     licencasAtivas,
-    renovacoes,
     roiTotals,
     activeAutomations,
-    kpiMes,
-    totalUsers,
-    totalWhitelist,
+    kpiUltimos3,
     teamData,
     processosPublicados,
     docsPublicadas,
     totalRelatorios,
-    totalRespostas,
   ] = await Promise.all([
-    prisma.expense.aggregate({ where: { month: currentMonth }, _sum: { value: true } }),
+    prisma.expense.aggregate({ where: { month: { in: last3Months } }, _sum: { value: true } }),
     prisma.expense.groupBy({
       by: ["month", "category"],
       where: { month: { gte: sixMonthsAgo } },
@@ -61,16 +66,9 @@ export default async function DashboardPage() {
       where: { isActive: true },
       select: { cost: true, billingCycle: true, team: true },
     }),
-    prisma.subscription.findMany({
-      where: { isActive: true, renewalDate: { gte: today, lte: in60days } },
-      select: { name: true, team: true, cost: true, currency: true, renewalDate: true },
-      orderBy: { renewalDate: "asc" },
-    }),
     prisma.automation.aggregate({ where: { status: "ACTIVE" }, _sum: { roiHoursSaved: true, roiMonthlySavings: true } }),
     prisma.automation.count({ where: { status: "ACTIVE" } }),
-    prisma.kpiProducao.findUnique({ where: { month: currentMonth } }),
-    prisma.user.count(),
-    prisma.allowedEmail.count(),
+    prisma.kpiProducao.findMany({ where: { month: { in: last3Months } } }),
     prisma.subscription.groupBy({
       by: ["team"],
       _count: { id: true },
@@ -80,7 +78,6 @@ export default async function DashboardPage() {
     prisma.process.count({ where: { status: "PUBLISHED" } }),
     prisma.documentation.count({ where: { status: "PUBLISHED" } }),
     prisma.report.count(),
-    prisma.reportResponse.count(),
   ]);
 
   // Custo mensal de licenças
@@ -102,9 +99,21 @@ export default async function DashboardPage() {
     ...(gastosMap[month] ?? {}),
   }));
 
+  // KPI produção — soma dos últimos 3 meses
+  const kpiTotais = kpiUltimos3.reduce(
+    (acc, k) => ({
+      cursos: acc.cursos + k.cursos,
+      artigos: acc.artigos + k.artigos,
+      carreiras: acc.carreiras + k.carreiras,
+      niveis: acc.niveis + k.niveis,
+      trilhas: acc.trilhas + k.trilhas,
+    }),
+    { cursos: 0, artigos: 0, carreiras: 0, niveis: 0, trilhas: 0 }
+  );
+
   const totalHoras = roiTotals._sum.roiHoursSaved ?? 0;
   const totalEconomia = roiTotals._sum.roiMonthlySavings ?? 0;
-  const gastoMesAtual = gastosMes._sum.value ?? 0;
+  const gastosTotal3Meses = gastosUltimos3._sum.value ?? 0;
 
   const maxTeamCount = teamData[0]?._count.id ?? 1;
 
@@ -119,7 +128,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Linha 1 — Cards de resumo */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-5">
             <div className="flex items-start gap-3">
@@ -127,8 +136,8 @@ export default async function DashboardPage() {
                 <DollarSign size={16} className="text-orange-600" />
               </div>
               <div>
-                <p className="text-xl font-bold leading-tight">{formatBRL(gastoMesAtual)}</p>
-                <p className="text-xs text-muted-foreground">gastos externos {currentMonth}</p>
+                <p className="text-xl font-bold leading-tight">{formatBRL(gastosTotal3Meses)}</p>
+                <p className="text-xs text-muted-foreground">gastos externos — últimos 3 meses</p>
               </div>
             </div>
           </CardContent>
@@ -155,29 +164,13 @@ export default async function DashboardPage() {
                 <Bot size={16} className="text-purple-600" />
               </div>
               <div>
-                <div className="flex items-baseline gap-1.5">
-                  <p className="text-xl font-bold leading-tight">
-                    {totalHoras > 0 ? `${totalHoras}h/sem` : "—"}
-                  </p>
-                </div>
+                <p className="text-xl font-bold leading-tight">
+                  {totalHoras > 0 ? `${totalHoras}h/sem` : "—"}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {activeAutomations} automações ativas
                   {totalEconomia > 0 && ` · ${formatBRL(totalEconomia)}/mês`}
                 </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-5">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-md bg-green-100 dark:bg-green-950 shrink-0">
-                <Users size={16} className="text-green-600" />
-              </div>
-              <div>
-                <p className="text-xl font-bold leading-tight">{totalUsers} / {totalWhitelist}</p>
-                <p className="text-xs text-muted-foreground">contas criadas / lista branca</p>
               </div>
             </div>
           </CardContent>
@@ -230,84 +223,42 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* Linha 3 — KPIs produção + Renovações */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp size={14} className="text-muted-foreground" />
-              Produção — {currentMonth}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!kpiMes ? (
-              <p className="text-sm text-muted-foreground italic">Sem dados de produção para este mês.</p>
-            ) : (
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: "Cursos", value: kpiMes.cursos },
-                  { label: "Artigos", value: kpiMes.artigos },
-                  { label: "Carreiras", value: kpiMes.carreiras },
-                  { label: "Níveis", value: kpiMes.niveis },
-                  { label: "Trilhas", value: kpiMes.trilhas },
-                ].map(({ label, value }) => (
-                  <div key={label} className="rounded-md border p-3 text-center">
-                    <p className="text-2xl font-bold">{value}</p>
-                    <p className="text-xs text-muted-foreground">{label}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <AlertCircle size={14} className="text-muted-foreground" />
-              Próximas renovações (60 dias)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {renovacoes.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">Nenhuma renovação nos próximos 60 dias.</p>
-            ) : (
-              <div className="divide-y text-sm">
-                {renovacoes.map((r, i) => {
-                  const dias = Math.ceil(
-                    (new Date(r.renewalDate!).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-                  );
-                  return (
-                    <div key={i} className="flex items-center justify-between py-2 first:pt-0 last:pb-0">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate">{r.name}</p>
-                        <p className="text-xs text-muted-foreground">{r.team || "Sem time"}</p>
-                      </div>
-                      <div className="ml-3 shrink-0 text-right">
-                        {r.cost && (
-                          <p className="text-xs text-muted-foreground">
-                            {r.currency} {r.cost.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                          </p>
-                        )}
-                        <Badge variant={dias <= 15 ? "destructive" : "secondary"} className="text-xs">
-                          {dias === 0 ? "hoje" : `${dias}d`}
-                        </Badge>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Linha 3 — KPIs de produção */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <TrendingUp size={14} className="text-muted-foreground" />
+            Produção — últimos 3 meses ({last3Months[0]} a {last3Months[2]})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {kpiUltimos3.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">Sem dados de produção para este período.</p>
+          ) : (
+            <div className="grid grid-cols-5 gap-3">
+              {[
+                { label: "Cursos", value: kpiTotais.cursos },
+                { label: "Artigos", value: kpiTotais.artigos },
+                { label: "Carreiras", value: kpiTotais.carreiras },
+                { label: "Níveis", value: kpiTotais.niveis },
+                { label: "Trilhas", value: kpiTotais.trilhas },
+              ].map(({ label, value }) => (
+                <div key={label} className="rounded-md border p-3 text-center">
+                  <p className="text-2xl font-bold">{value}</p>
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Linha 4 — Inventário do Hub */}
       <div>
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
           Inventário do Hub
         </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-5">
               <div className="flex items-center gap-3">
@@ -343,19 +294,6 @@ export default async function DashboardPage() {
                 <div>
                   <p className="text-2xl font-bold">{totalRelatorios}</p>
                   <p className="text-xs text-muted-foreground">relatórios criados</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-md bg-muted">
-                  <MessageSquare size={16} className="text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{totalRespostas}</p>
-                  <p className="text-xs text-muted-foreground">respostas recebidas</p>
                 </div>
               </div>
             </CardContent>
