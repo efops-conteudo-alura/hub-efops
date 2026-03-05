@@ -57,11 +57,11 @@ function extractLevels(html: string): LevelInfo[] {
     const isComingSoon = /\[em\s+breve\]/i.test(raw);
     const levelName = raw.replace(/\[em\s+breve\]\s*/i, "").trim();
 
-    // Só captura headings que parecem ser níveis de carreira (base ou nível X)
-    // [EM BREVE] sozinho (sem base/nível) indica cursos — ignorar
+    // Só captura headings que COMEÇAM com "Base" ou "Nível X"
+    // "base" no meio de uma frase (ex: "construindo a base") não conta
     const isLevel =
-      /\bbase\b/i.test(levelName) ||
-      /\bn[ií]vel\s+\d/i.test(levelName);
+      /^\s*base\b/i.test(levelName) ||
+      /^\s*n[ií]vel\s+\d/i.test(levelName);
 
     if (!isLevel || levelName.length < 4) continue;
 
@@ -117,6 +117,7 @@ export async function POST() {
     const now = new Date();
     let totalNiveis = 0;
     let newPublished = 0;
+    const processedKeys = new Set<string>(); // rastreia o que foi encontrado neste sync
 
     for (const result of results) {
       if (result.status === "rejected") continue;
@@ -125,6 +126,7 @@ export async function POST() {
       for (let idx = 0; idx < levels.length; idx++) {
         const level = levels[idx];
         totalNiveis++;
+        processedKeys.add(`${career.slug}::${level.levelName}`);
 
         const existing = await prisma.kpiCarreiraLevel.findUnique({
           where: { carreiraSlug_levelName: { carreiraSlug: career.slug, levelName: level.levelName } },
@@ -149,13 +151,20 @@ export async function POST() {
             data: {
               isPublished: level.isPublished,
               carreiraName: career.name,
-              order: idx, // atualiza ordem caso o site tenha mudado
+              order: idx,
               firstPublishedAt: justPublished ? now : existing.firstPublishedAt,
             },
           });
           if (justPublished) newPublished++;
         }
       }
+    }
+
+    // 3b. Remove registros que já não aparecem no site (cursos/itens capturados por engano antes)
+    const allExisting = await prisma.kpiCarreiraLevel.findMany({ select: { id: true, carreiraSlug: true, levelName: true } });
+    const toDelete = allExisting.filter((r) => !processedKeys.has(`${r.carreiraSlug}::${r.levelName}`));
+    if (toDelete.length > 0) {
+      await prisma.kpiCarreiraLevel.deleteMany({ where: { id: { in: toDelete.map((r) => r.id) } } });
     }
 
     // 4. Atualiza lastSyncAt no KpiPesos
