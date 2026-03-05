@@ -76,7 +76,7 @@ export async function PUT(
         userId: session.user.id,
         userName: session.user.name ?? session.user.email ?? "Desconhecido",
         action: "UPDATE",
-        changes,
+        changes: changes as unknown as import("@prisma/client").Prisma.InputJsonValue,
       },
     });
   }
