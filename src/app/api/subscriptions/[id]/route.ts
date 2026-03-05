@@ -102,7 +102,6 @@ export async function DELETE(
       userId: session.user.id,
       userName: session.user.name ?? session.user.email ?? "Desconhecido",
       action: "DELETE",
-      changes: null,
     },
   });
 

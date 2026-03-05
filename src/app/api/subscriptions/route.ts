@@ -69,7 +69,6 @@ export async function POST(request: NextRequest) {
       userId: session.user.id,
       userName: session.user.name ?? session.user.email ?? "Desconhecido",
       action: "CREATE",
-      changes: null,
     },
   });
 
