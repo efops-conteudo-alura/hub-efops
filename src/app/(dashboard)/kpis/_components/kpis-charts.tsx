@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import {
   LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
+import { Button } from "@/components/ui/button";
+import { MonthPicker } from "@/app/(dashboard)/gastos/_components/month-picker";
 import { type KpiProducao } from "./producao-form-dialog";
 import { type KpiEdicao } from "./edicao-form-dialog";
 import { calcScoreProducao, fmtMonthShort } from "./producao-table";
@@ -36,8 +39,19 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 const TOOLTIP_STYLE = { fontSize: 12, borderRadius: 6 };
 
 export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
+  const [monthFrom, setMonthFrom] = useState("");
+  const [monthTo, setMonthTo] = useState("");
+
+  function filterByPeriod<T extends { month: string }>(data: T[]): T[] {
+    return data.filter((r) => {
+      if (monthFrom && r.month < monthFrom) return false;
+      if (monthTo && r.month > monthTo) return false;
+      return true;
+    });
+  }
+
   // --- Produção ---
-  const sortedProd = [...producao].sort((a, b) => a.month.localeCompare(b.month));
+  const sortedProd = filterByPeriod([...producao]).sort((a, b) => a.month.localeCompare(b.month));
   const prodScores = sortedProd.map((r) => calcScoreProducao(r, pesos));
 
   const prodQtyData = sortedProd.map((r) => ({
@@ -56,7 +70,7 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
   }));
 
   // --- Edição ---
-  const sortedEd = [...edicao].sort((a, b) => a.month.localeCompare(b.month));
+  const sortedEd = filterByPeriod([...edicao]).sort((a, b) => a.month.localeCompare(b.month));
 
   const edEntregasData = sortedEd.map((r) => ({
     month: fmtMonthShort(r.month),
@@ -75,9 +89,24 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
   }));
 
   const noDataMsg = <p className="text-sm text-muted-foreground text-center py-8">Sem dados suficientes</p>;
+  const hasPeriod = monthFrom || monthTo;
 
   return (
     <div className="space-y-6">
+      {/* Filtro de período */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-sm text-muted-foreground">De</span>
+        <MonthPicker value={monthFrom} onChange={setMonthFrom} placeholder="Início" />
+        <span className="text-sm text-muted-foreground">Até</span>
+        <MonthPicker value={monthTo} onChange={setMonthTo} placeholder="Fim" />
+        {hasPeriod && (
+          <Button variant="ghost" size="sm" className="text-xs text-muted-foreground"
+            onClick={() => { setMonthFrom(""); setMonthTo(""); }}>
+            Limpar
+          </Button>
+        )}
+      </div>
+
       {/* Publicação */}
       <div>
         <p className="text-base font-semibold mb-3">Publicação de Conteúdo</p>
@@ -91,7 +120,7 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
                   <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="Cursos" stackId="a" fill="#6366f1" radius={[0,0,0,0]} />
+                  <Bar dataKey="Cursos" stackId="a" fill="#6366f1" />
                   <Bar dataKey="Artigos" stackId="a" fill="#f59e0b" />
                   <Bar dataKey="Carreiras" stackId="a" fill="#10b981" />
                   <Bar dataKey="Níveis" stackId="a" fill="#f43f5e" />
