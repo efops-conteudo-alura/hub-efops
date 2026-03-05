@@ -90,6 +90,22 @@ export function EdicaoTable({ year, data, onChange }: EdicaoTableProps) {
   const colHeader = "px-3 py-2 text-center text-xs font-semibold whitespace-nowrap";
   const rowLabel = "px-3 py-2 text-sm text-muted-foreground font-medium whitespace-nowrap w-36";
   const cell = "px-3 py-2 text-sm text-center tabular-nums";
+  const thTotal = "px-3 py-2 text-center text-xs font-semibold whitespace-nowrap border-l";
+  const tdTotal = "px-3 py-2 text-sm text-center tabular-nums border-l";
+
+  // Totais do ano
+  const dataWithValues = allMonths.map((m) => dataByMonth.get(m)).filter((r): r is KpiEdicao => r !== undefined);
+  const totalEntregasAno = dataWithValues.reduce((s, r) => s + totalEntregas(r), 0);
+  const totalCorrecoesAno = dataWithValues.reduce((s, r) => s + r.correcoes, 0);
+  const totalScoreEdicaoAno = totalEntregasAno > 0
+    ? Math.round(200 * (1 - totalCorrecoesAno / totalEntregasAno))
+    : 0;
+  const totalConteudoAno = dataWithValues.reduce((s, r) => s + r.entregasConteudo, 0);
+  const totalStartAno = dataWithValues.reduce((s, r) => s + r.entregasStart, 0);
+  const totalLatamAno = dataWithValues.reduce((s, r) => s + r.entregasLatam, 0);
+  const totalMarketingAno = dataWithValues.reduce((s, r) => s + r.entregasMarketing, 0);
+  const totalOutrasAno = dataWithValues.reduce((s, r) => s + r.entregasOutras, 0);
+  const hasData = dataWithValues.length > 0;
 
   return (
     <div className="space-y-4">
@@ -105,6 +121,7 @@ export function EdicaoTable({ year, data, onChange }: EdicaoTableProps) {
                 {allMonths.map((m) => (
                   <th key={m} className={colHeader}>{fmtMonthShort(m)}</th>
                 ))}
+                <th className={thTotal + " text-muted-foreground"}>Total no Ano</th>
               </tr>
             </thead>
             <tbody>
@@ -114,6 +131,7 @@ export function EdicaoTable({ year, data, onChange }: EdicaoTableProps) {
                   const r = dataByMonth.get(m);
                   return <td key={m} className={cell + " text-muted-foreground"}>{r ? <span className="text-foreground">{totalEntregas(r)}</span> : "—"}</td>;
                 })}
+                <td className={tdTotal + " font-semibold"}>{hasData ? totalEntregasAno : <span className="text-muted-foreground">—</span>}</td>
               </tr>
               <tr className="border-b hover:bg-muted/20">
                 <td className={rowLabel}>Correções</td>
@@ -121,6 +139,7 @@ export function EdicaoTable({ year, data, onChange }: EdicaoTableProps) {
                   const r = dataByMonth.get(m);
                   return <td key={m} className={cell + " text-muted-foreground"}>{r ? <span className="text-foreground">{r.correcoes}</span> : "—"}</td>;
                 })}
+                <td className={tdTotal + " font-semibold"}>{hasData ? totalCorrecoesAno : <span className="text-muted-foreground">—</span>}</td>
               </tr>
               <tr className="border-b bg-muted/20">
                 <td className="px-3 py-2 text-sm font-semibold whitespace-nowrap">Score Edição</td>
@@ -132,6 +151,7 @@ export function EdicaoTable({ year, data, onChange }: EdicaoTableProps) {
                     </td>
                   );
                 })}
+                <td className={tdTotal + " font-bold text-primary"}>{hasData ? totalScoreEdicaoAno : <span className="text-muted-foreground">—</span>}</td>
               </tr>
               <tr>
                 <td className="px-3 py-1" />
@@ -156,6 +176,7 @@ export function EdicaoTable({ year, data, onChange }: EdicaoTableProps) {
                     </td>
                   );
                 })}
+                <td className="px-3 py-1 border-l" />
               </tr>
             </tbody>
           </table>
@@ -173,22 +194,24 @@ export function EdicaoTable({ year, data, onChange }: EdicaoTableProps) {
                 {allMonths.map((m) => (
                   <th key={m} className={colHeader}>{fmtMonthShort(m)}</th>
                 ))}
+                <th className={thTotal + " text-muted-foreground"}>Total no Ano</th>
               </tr>
             </thead>
             <tbody>
               {[
-                { label: "Entregas Conteúdo", getValue: (r: KpiEdicao) => pct(r.entregasConteudo, totalEntregas(r)) },
-                { label: "Entregas Start", getValue: (r: KpiEdicao) => pct(r.entregasStart, totalEntregas(r)) },
-                { label: "Entregas Latam", getValue: (r: KpiEdicao) => pct(r.entregasLatam, totalEntregas(r)) },
-                { label: "Entregas Marketing", getValue: (r: KpiEdicao) => pct(r.entregasMarketing, totalEntregas(r)) },
-                { label: "Outras (PM3, B2B, DHO…)", getValue: (r: KpiEdicao) => pct(r.entregasOutras, totalEntregas(r)) },
-              ].map(({ label, getValue }) => (
+                { label: "Entregas Conteúdo", getValue: (r: KpiEdicao) => pct(r.entregasConteudo, totalEntregas(r)), anoTotal: pct(totalConteudoAno, totalEntregasAno) },
+                { label: "Entregas Start", getValue: (r: KpiEdicao) => pct(r.entregasStart, totalEntregas(r)), anoTotal: pct(totalStartAno, totalEntregasAno) },
+                { label: "Entregas Latam", getValue: (r: KpiEdicao) => pct(r.entregasLatam, totalEntregas(r)), anoTotal: pct(totalLatamAno, totalEntregasAno) },
+                { label: "Entregas Marketing", getValue: (r: KpiEdicao) => pct(r.entregasMarketing, totalEntregas(r)), anoTotal: pct(totalMarketingAno, totalEntregasAno) },
+                { label: "Outras (PM3, B2B, DHO…)", getValue: (r: KpiEdicao) => pct(r.entregasOutras, totalEntregas(r)), anoTotal: pct(totalOutrasAno, totalEntregasAno) },
+              ].map(({ label, getValue, anoTotal }) => (
                 <tr key={label} className="border-b hover:bg-muted/20">
                   <td className={rowLabel + " w-48"}>{label}</td>
                   {allMonths.map((m) => {
                     const r = dataByMonth.get(m);
                     return <td key={m} className={cell + " text-muted-foreground"}>{r ? <span className="text-foreground">{getValue(r)}</span> : "—"}</td>;
                   })}
+                  <td className={tdTotal + " font-semibold"}>{hasData ? anoTotal : <span className="text-muted-foreground">—</span>}</td>
                 </tr>
               ))}
             </tbody>

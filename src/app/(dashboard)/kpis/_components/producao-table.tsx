@@ -120,6 +120,12 @@ export function ProducaoTable({ year, data, pesos, onChange }: ProducaoTableProp
     { label: "# Trilhas", getValue: (r) => r.trilhas },
   ];
 
+  // Totais do ano (apenas meses com dados)
+  const totalScoreAno = sortedWithData.reduce((s, r) => s + calcScoreProducao(r, pesos), 0);
+
+  const thTotal = "px-3 py-2 text-center text-xs font-semibold whitespace-nowrap border-l";
+  const tdTotal = "px-3 py-2 text-sm text-center tabular-nums border-l";
+
   return (
     <div className="space-y-2">
       <p className="text-sm font-semibold text-foreground">Publicação de Conteúdo</p>
@@ -134,22 +140,29 @@ export function ProducaoTable({ year, data, pesos, onChange }: ProducaoTableProp
                   {fmtMonthShort(m)}
                 </th>
               ))}
+              <th className={thTotal + " text-muted-foreground"}>Total no Ano</th>
             </tr>
           </thead>
           <tbody>
-            {metrics.map(({ label, getValue }) => (
-              <tr key={label} className="border-b hover:bg-muted/20">
-                <td className="px-3 py-2 text-sm text-muted-foreground font-medium whitespace-nowrap">{label}</td>
-                {allMonths.map((m) => {
-                  const r = dataByMonth.get(m);
-                  return (
-                    <td key={m} className="px-3 py-2 text-sm text-center tabular-nums text-muted-foreground">
-                      {r ? <span className="text-foreground">{getValue(r)}</span> : "—"}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+            {metrics.map(({ label, getValue }) => {
+              const total = sortedWithData.reduce((s, r) => s + getValue(r), 0);
+              return (
+                <tr key={label} className="border-b hover:bg-muted/20">
+                  <td className="px-3 py-2 text-sm text-muted-foreground font-medium whitespace-nowrap">{label}</td>
+                  {allMonths.map((m) => {
+                    const r = dataByMonth.get(m);
+                    return (
+                      <td key={m} className="px-3 py-2 text-sm text-center tabular-nums text-muted-foreground">
+                        {r ? <span className="text-foreground">{getValue(r)}</span> : "—"}
+                      </td>
+                    );
+                  })}
+                  <td className={tdTotal + " font-semibold"}>
+                    {sortedWithData.length > 0 ? total : <span className="text-muted-foreground">—</span>}
+                  </td>
+                </tr>
+              );
+            })}
             <tr className="border-b bg-muted/20">
               <td className="px-3 py-2 text-sm font-semibold whitespace-nowrap">Score do mês</td>
               {allMonths.map((m) => {
@@ -160,6 +173,9 @@ export function ProducaoTable({ year, data, pesos, onChange }: ProducaoTableProp
                   </td>
                 );
               })}
+              <td className={tdTotal + " font-bold text-primary"}>
+                {sortedWithData.length > 0 ? totalScoreAno : <span className="text-muted-foreground">—</span>}
+              </td>
             </tr>
             <tr className="border-b">
               <td className="px-3 py-2 text-sm text-muted-foreground font-medium whitespace-nowrap">MM 3 meses</td>
@@ -171,6 +187,7 @@ export function ProducaoTable({ year, data, pesos, onChange }: ProducaoTableProp
                   </td>
                 );
               })}
+              <td className={tdTotal + " text-muted-foreground"}>—</td>
             </tr>
             <tr>
               <td className="px-3 py-1" />
@@ -195,6 +212,7 @@ export function ProducaoTable({ year, data, pesos, onChange }: ProducaoTableProp
                   </td>
                 );
               })}
+              <td className="px-3 py-1 border-l" />
             </tr>
           </tbody>
         </table>
