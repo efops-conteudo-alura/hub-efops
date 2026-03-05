@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Settings2 } from "lucide-react";
+import { TrendingUp, Settings2, ClipboardCopy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ProducaoTable } from "./producao-table";
-import { EdicaoTable } from "./edicao-table";
+import { ProducaoTable, buildProducaoTsv } from "./producao-table";
+import { EdicaoTable, buildEdicaoTsv } from "./edicao-table";
 import { PesosDialog } from "./pesos-dialog";
 import { CarreirasPanel } from "./carreiras-panel";
 import type { KpiProducao } from "./producao-form-dialog";
@@ -28,20 +28,29 @@ interface KpisOverviewProps {
   initialLevels: CarreiraLevel[];
 }
 
-type Tab = "producao" | "edicao" | "carreiras";
+type Tab = "publicacao" | "carreiras";
 
 export function KpisOverview({ initialProducao, initialEdicao, initialPesos, initialLevels }: KpisOverviewProps) {
   const [producao, setProducao] = useState(initialProducao);
   const [edicao, setEdicao] = useState(initialEdicao);
   const [pesos, setPesos] = useState(initialPesos);
   const [pesosOpen, setPesosOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("producao");
+  const [activeTab, setActiveTab] = useState<Tab>("publicacao");
+  const [copied, setCopied] = useState(false);
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "producao", label: "Produção de Conteúdo" },
-    { key: "edicao", label: "Edição" },
+    { key: "publicacao", label: "Publicação & Edição" },
     { key: "carreiras", label: "Carreiras Alura" },
   ];
+
+  async function handleCopy() {
+    const producaoTsv = buildProducaoTsv(producao, pesos);
+    const edicaoTsv = buildEdicaoTsv(edicao);
+    const tsv = [producaoTsv, "", edicaoTsv].filter(Boolean).join("\n");
+    await navigator.clipboard.writeText(tsv);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -50,13 +59,19 @@ export function KpisOverview({ initialProducao, initialEdicao, initialPesos, ini
           <TrendingUp size={28} className="text-primary" />
           <div>
             <h1 className="text-2xl font-bold">KPIs de Conteúdo</h1>
-            <p className="text-muted-foreground text-sm">Indicadores mensais de produção e edição</p>
+            <p className="text-muted-foreground text-sm">Indicadores mensais de publicação e edição</p>
           </div>
         </div>
-        {activeTab !== "carreiras" && (
-          <Button variant="outline" size="sm" onClick={() => setPesosOpen(true)}>
-            <Settings2 size={14} className="mr-2" /> Configurar Pesos
-          </Button>
+        {activeTab === "publicacao" && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleCopy}>
+              {copied ? <Check size={14} className="mr-2 text-green-500" /> : <ClipboardCopy size={14} className="mr-2" />}
+              {copied ? "Copiado!" : "Copiar dados"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setPesosOpen(true)}>
+              <Settings2 size={14} className="mr-2" /> Configurar Pesos
+            </Button>
+          </div>
         )}
       </div>
 
@@ -78,17 +93,16 @@ export function KpisOverview({ initialProducao, initialEdicao, initialPesos, ini
         ))}
       </div>
 
-      {activeTab === "producao" && (
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Pesos: Curso={pesos.curso} · Artigo={pesos.artigo} · Carreira={pesos.carreira} · Nível={pesos.nivel} · Trilha={pesos.trilha}
-          </p>
-          <ProducaoTable data={producao} pesos={pesos} onChange={setProducao} />
+      {activeTab === "publicacao" && (
+        <div className="space-y-8">
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">
+              Pesos: Curso={pesos.curso} · Artigo={pesos.artigo} · Carreira={pesos.carreira} · Nível={pesos.nivel} · Trilha={pesos.trilha}
+            </p>
+            <ProducaoTable data={producao} pesos={pesos} onChange={setProducao} />
+          </div>
+          <EdicaoTable data={edicao} onChange={setEdicao} />
         </div>
-      )}
-
-      {activeTab === "edicao" && (
-        <EdicaoTable data={edicao} onChange={setEdicao} />
       )}
 
       {activeTab === "carreiras" && (
