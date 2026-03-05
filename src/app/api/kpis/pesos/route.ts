@@ -28,7 +28,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { curso, artigo, carreira, trilha } = body;
+  const { curso, artigo, carreira, nivel, trilha } = body;
 
   const pesos = await getPesos();
   const updated = await prisma.kpiPesos.update({
@@ -37,6 +37,7 @@ export async function PATCH(request: NextRequest) {
       ...(curso !== undefined ? { curso: parseFloat(curso) } : {}),
       ...(artigo !== undefined ? { artigo: parseFloat(artigo) } : {}),
       ...(carreira !== undefined ? { carreira: parseFloat(carreira) } : {}),
+      ...(nivel !== undefined ? { nivel: parseFloat(nivel) } : {}),
       ...(trilha !== undefined ? { trilha: parseFloat(trilha) } : {}),
     },
   });
