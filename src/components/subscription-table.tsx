@@ -279,14 +279,14 @@ export function SubscriptionTable({
                   </button>
                 </TableHead>
               ))}
-              {isAdmin && <TableHead className="w-[90px]">Ações</TableHead>}
+              <TableHead className="w-[90px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={isAdmin ? 8 : 7}
+                  colSpan={8}
                   className="text-center text-muted-foreground py-10"
                 >
                   Nenhuma assinatura encontrada
@@ -333,25 +333,23 @@ export function SubscriptionTable({
                     {s.isActive ? "Ativa" : "Inativa"}
                   </Badge>
                 </TableCell>
-                {isAdmin && (
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Link href={`/assinaturas/${s.id}/editar`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Edit size={14} />
-                        </Button>
-                      </Link>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => setDeleteId(s.id)}
-                      >
-                        <Trash2 size={14} />
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Link href={`/assinaturas/${s.id}/editar`}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Edit size={14} />
                       </Button>
-                    </div>
-                  </TableCell>
-                )}
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => setDeleteId(s.id)}
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

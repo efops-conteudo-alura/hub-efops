@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { SubscriptionTable } from "@/components/subscription-table";
 import { SubscriptionUploadButton } from "./_components/upload-button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AuditTab } from "./_components/audit-tab";
 
 export default async function AssinaturasPage() {
   const session = await getServerSession(authOptions);
@@ -42,20 +44,33 @@ export default async function AssinaturasPage() {
             {subscriptions.length === 1 ? "item" : "itens"} cadastrados
           </p>
         </div>
-        {isAdmin && (
-          <div className="flex gap-2">
-            <SubscriptionUploadButton />
-            <Link href="/assinaturas/nova">
-              <Button>
-                <Plus size={16} className="mr-2" />
-                Nova Assinatura
-              </Button>
-            </Link>
-          </div>
-        )}
+        <div className="flex gap-2">
+          {isAdmin && <SubscriptionUploadButton />}
+          <Link href="/assinaturas/nova">
+            <Button>
+              <Plus size={16} className="mr-2" />
+              Nova Assinatura
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      <SubscriptionTable subscriptions={subscriptions} isAdmin={isAdmin} />
+      {isAdmin ? (
+        <Tabs defaultValue="lista">
+          <TabsList className="mb-4">
+            <TabsTrigger value="lista">Lista</TabsTrigger>
+            <TabsTrigger value="historico">Histórico</TabsTrigger>
+          </TabsList>
+          <TabsContent value="lista">
+            <SubscriptionTable subscriptions={subscriptions} isAdmin={isAdmin} />
+          </TabsContent>
+          <TabsContent value="historico">
+            <AuditTab />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <SubscriptionTable subscriptions={subscriptions} isAdmin={isAdmin} />
+      )}
     </div>
   );
 }

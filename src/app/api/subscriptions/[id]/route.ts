@@ -21,16 +21,24 @@ export async function GET(
   });
 }
 
+const AUDITED_FIELDS = [
+  "name", "planName", "cost", "currency", "billingCycle",
+  "costCenter", "team", "responsible", "isActive", "renewalDate",
+  "url", "loginUser", "notes",
+] as const;
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
   const body = await request.json();
+
+  const before = await prisma.subscription.findUnique({ where: { id } });
+  if (!before) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const subscription = await prisma.subscription.update({
     where: { id },
@@ -54,6 +62,25 @@ export async function PUT(
     },
   });
 
+  const changes: Record<string, { from: unknown; to: unknown }> = {};
+  for (const key of AUDITED_FIELDS) {
+    const fromVal = String(before[key] ?? "");
+    const toVal = String(subscription[key] ?? "");
+    if (fromVal !== toVal) changes[key] = { from: before[key], to: subscription[key] };
+  }
+  if (Object.keys(changes).length > 0) {
+    await prisma.subscriptionAudit.create({
+      data: {
+        subscriptionId: id,
+        subscriptionName: subscription.name,
+        userId: session.user.id,
+        userName: session.user.name ?? session.user.email ?? "Desconhecido",
+        action: "UPDATE",
+        changes,
+      },
+    });
+  }
+
   return NextResponse.json(subscription);
 }
 
@@ -63,9 +90,22 @@ export async function DELETE(
 ) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
+  const subscription = await prisma.subscription.findUnique({ where: { id } });
+  if (!subscription) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  await prisma.subscriptionAudit.create({
+    data: {
+      subscriptionId: id,
+      subscriptionName: subscription.name,
+      userId: session.user.id,
+      userName: session.user.name ?? session.user.email ?? "Desconhecido",
+      action: "DELETE",
+      changes: null,
+    },
+  });
+
   await prisma.subscription.delete({ where: { id } });
 
   return NextResponse.json({ success: true });

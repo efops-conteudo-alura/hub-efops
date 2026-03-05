@@ -38,7 +38,6 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
 
@@ -60,6 +59,17 @@ export async function POST(request: NextRequest) {
       isActive: body.isActive ?? true,
       renewalDate: body.renewalDate ? new Date(body.renewalDate) : null,
       notes: body.notes || null,
+    },
+  });
+
+  await prisma.subscriptionAudit.create({
+    data: {
+      subscriptionId: subscription.id,
+      subscriptionName: subscription.name,
+      userId: session.user.id,
+      userName: session.user.name ?? session.user.email ?? "Desconhecido",
+      action: "CREATE",
+      changes: null,
     },
   });
 

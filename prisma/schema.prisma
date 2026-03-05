@@ -222,6 +222,17 @@ model AllowedEmail {
   createdAt DateTime @default(now())
 }
 
+model SubscriptionAudit {
+  id               String   @id @default(cuid())
+  subscriptionId   String
+  subscriptionName String
+  userId           String
+  userName         String
+  action           String   // "CREATE" | "UPDATE" | "DELETE"
+  changes          Json?    // { field: { from, to } } — null para CREATE/DELETE
+  createdAt        DateTime @default(now())
+}
+
 model KpiEdicao {
   id                String   @id @default(cuid())
   month             String   // YYYY-MM
