@@ -1,219 +1,224 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Package, CheckCircle, XCircle, DollarSign,
-  Bot, Clock, TrendingUp, BarChart2, Key,
+  DollarSign, Key, Bot, Clock, TrendingUp, Users,
+  FileText, BookOpen, BarChart2, MessageSquare, AlertCircle,
 } from "lucide-react";
+import { GastosChart, type GastosChartRow } from "./_components/gastos-chart";
+
+function formatBRL(v: number) {
+  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function getLast6Months(): string[] {
+  const now = new Date();
+  const months: string[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  }
+  return months;
+}
 
 export default async function DashboardPage() {
-  await getServerSession(authOptions);
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "ADMIN") redirect("/home");
+
+  const today = new Date();
+  const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  const last6Months = getLast6Months();
+  const sixMonthsAgo = last6Months[0];
+  const in60days = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000);
 
   const [
-    totalSubs,
-    activeSubs,
-    inactiveSubs,
-    activeSubsForCost,
-    teamData,
-    recentSubscriptions,
-    totalAutomations,
+    gastosMes,
+    gastosUltimos6,
+    licencasAtivas,
+    renovacoes,
+    roiTotals,
     activeAutomations,
-    automationAgg,
-    recentAutomations,
+    kpiMes,
+    totalUsers,
+    totalWhitelist,
+    teamData,
+    processosPublicados,
+    docsPublicadas,
+    totalRelatorios,
+    totalRespostas,
   ] = await Promise.all([
-    prisma.subscription.count(),
-    prisma.subscription.count({ where: { isActive: true } }),
-    prisma.subscription.count({ where: { isActive: false } }),
+    prisma.expense.aggregate({ where: { month: currentMonth }, _sum: { value: true } }),
+    prisma.expense.groupBy({
+      by: ["month", "category"],
+      where: { month: { gte: sixMonthsAgo } },
+      _sum: { value: true },
+      orderBy: { month: "asc" },
+    }),
     prisma.subscription.findMany({
       where: { isActive: true },
-      select: { cost: true, billingCycle: true, currency: true },
+      select: { cost: true, billingCycle: true, team: true },
     }),
+    prisma.subscription.findMany({
+      where: { isActive: true, renewalDate: { gte: today, lte: in60days } },
+      select: { name: true, team: true, cost: true, currency: true, renewalDate: true },
+      orderBy: { renewalDate: "asc" },
+    }),
+    prisma.automation.aggregate({ where: { status: "ACTIVE" }, _sum: { roiHoursSaved: true, roiMonthlySavings: true } }),
+    prisma.automation.count({ where: { status: "ACTIVE" } }),
+    prisma.kpiProducao.findUnique({ where: { month: currentMonth } }),
+    prisma.user.count(),
+    prisma.allowedEmail.count(),
     prisma.subscription.groupBy({
       by: ["team"],
       _count: { id: true },
-      where: { isActive: true },
+      where: { isActive: true, team: { not: null } },
       orderBy: { _count: { id: "desc" } },
     }),
-    prisma.subscription.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      select: { id: true, name: true, team: true, cost: true, currency: true, billingCycle: true, isActive: true },
-    }),
-    prisma.automation.count(),
-    prisma.automation.count({ where: { status: "ACTIVE" } }),
-    prisma.automation.aggregate({
-      _sum: { roiHoursSaved: true, roiMonthlySavings: true },
-    }),
-    prisma.automation.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      select: { id: true, name: true, type: true, status: true, roiHoursSaved: true, roiMonthlySavings: true },
-    }),
+    prisma.process.count({ where: { status: "PUBLISHED" } }),
+    prisma.documentation.count({ where: { status: "PUBLISHED" } }),
+    prisma.report.count(),
+    prisma.reportResponse.count(),
   ]);
 
-  const totalMonthly = activeSubsForCost.reduce((acc, s) => {
+  // Custo mensal de licenças
+  const custoMensalLicencas = licencasAtivas.reduce((acc, s) => {
     if (!s.cost) return acc;
     if (s.billingCycle === "MONTHLY") return acc + s.cost;
     if (s.billingCycle === "ANNUALLY") return acc + s.cost / 12;
     return acc;
   }, 0);
 
-  const totalHours = automationAgg._sum.roiHoursSaved ?? 0;
-  const totalSavings = automationAgg._sum.roiMonthlySavings ?? 0;
+  // Gráfico de gastos — transformar groupBy em rows por mês
+  const gastosMap: Record<string, Record<string, number>> = {};
+  for (const g of gastosUltimos6) {
+    if (!gastosMap[g.month]) gastosMap[g.month] = {};
+    gastosMap[g.month][g.category] = (g._sum.value ?? 0);
+  }
+  const gastosChartData: GastosChartRow[] = last6Months.map((month) => ({
+    month,
+    ...(gastosMap[month] ?? {}),
+  }));
 
-  const BILLING_LABELS: Record<string, string> = { MONTHLY: "Mensal", ANNUALLY: "Anual", ONE_TIME: "Único" };
-  const STATUS_LABELS: Record<string, string> = { ACTIVE: "Ativa", INACTIVE: "Inativa", TESTING: "Em teste" };
+  const totalHoras = roiTotals._sum.roiHoursSaved ?? 0;
+  const totalEconomia = roiTotals._sum.roiMonthlySavings ?? 0;
+  const gastoMesAtual = gastosMes._sum.value ?? 0;
 
-  // For CSS bar chart: find max team count
-  const teamDataFiltered = teamData.filter((t) => t.team);
-  const maxTeamCount = teamDataFiltered[0]?._count.id ?? 1;
-
-  // Automation type breakdown
-  const agentCount = recentAutomations.filter((a) => a.type === "AGENT").length;
-  const automationTypeCount = recentAutomations.filter((a) => a.type === "AUTOMATION").length;
+  const maxTeamCount = teamData[0]?._count.id ?? 1;
 
   return (
-    <div className="p-8 max-w-6xl">
-      <div className="mb-8 flex items-center gap-3">
-        <BarChart2 size={26} className="text-primary" />
+    <div className="p-8 max-w-6xl space-y-8">
+      <div className="flex items-center gap-3">
+        <BarChart2 size={24} className="text-primary" />
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Visão geral de métricas e indicadores.</p>
+          <p className="text-muted-foreground text-sm">Visão geral do Hub — {currentMonth}</p>
         </div>
       </div>
 
-      {/* Licenças - stat cards */}
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
-        <Key size={13} /> Licenças
-      </h2>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {/* Linha 1 — Cards de resumo */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-md bg-muted"><Package size={16} className="text-muted-foreground" /></div>
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-md bg-orange-100 dark:bg-orange-950 shrink-0">
+                <DollarSign size={16} className="text-orange-600" />
+              </div>
               <div>
-                <p className="text-2xl font-bold">{totalSubs}</p>
-                <p className="text-xs text-muted-foreground">total</p>
+                <p className="text-xl font-bold leading-tight">{formatBRL(gastoMesAtual)}</p>
+                <p className="text-xs text-muted-foreground">gastos externos {currentMonth}</p>
               </div>
             </div>
           </CardContent>
         </Card>
+
         <Card>
           <CardContent className="pt-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-md bg-green-100 dark:bg-green-950"><CheckCircle size={16} className="text-green-600" /></div>
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-md bg-blue-100 dark:bg-blue-950 shrink-0">
+                <Key size={16} className="text-blue-600" />
+              </div>
               <div>
-                <p className="text-2xl font-bold text-green-600">{activeSubs}</p>
-                <p className="text-xs text-muted-foreground">ativas</p>
+                <p className="text-xl font-bold leading-tight">{formatBRL(custoMensalLicencas)}</p>
+                <p className="text-xs text-muted-foreground">custo licenças/mês est.</p>
               </div>
             </div>
           </CardContent>
         </Card>
+
         <Card>
           <CardContent className="pt-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-md bg-red-100 dark:bg-red-950"><XCircle size={16} className="text-red-500" /></div>
-              <div>
-                <p className="text-2xl font-bold text-red-500">{inactiveSubs}</p>
-                <p className="text-xs text-muted-foreground">inativas</p>
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-md bg-purple-100 dark:bg-purple-950 shrink-0">
+                <Bot size={16} className="text-purple-600" />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-md bg-blue-100 dark:bg-blue-950"><DollarSign size={16} className="text-blue-600" /></div>
               <div>
-                <p className="text-xl font-bold">
-                  R$ {totalMonthly.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-xl font-bold leading-tight">
+                    {totalHoras > 0 ? `${totalHoras}h/sem` : "—"}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {activeAutomations} automações ativas
+                  {totalEconomia > 0 && ` · ${formatBRL(totalEconomia)}/mês`}
                 </p>
-                <p className="text-xs text-muted-foreground">custo mensal est.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-5">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-md bg-green-100 dark:bg-green-950 shrink-0">
+                <Users size={16} className="text-green-600" />
+              </div>
+              <div>
+                <p className="text-xl font-bold leading-tight">{totalUsers} / {totalWhitelist}</p>
+                <p className="text-xs text-muted-foreground">contas criadas / lista branca</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Automações - stat cards */}
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
-        <Bot size={13} /> Automações & Agentes
-      </h2>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {/* Linha 2 — Gráficos financeiros */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
-          <CardContent className="pt-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-md bg-purple-100 dark:bg-purple-950"><Bot size={16} className="text-purple-600" /></div>
-              <div>
-                <p className="text-2xl font-bold">{totalAutomations}</p>
-                <p className="text-xs text-muted-foreground">total</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-md bg-green-100 dark:bg-green-950"><CheckCircle size={16} className="text-green-600" /></div>
-              <div>
-                <p className="text-2xl font-bold text-green-600">{activeAutomations}</p>
-                <p className="text-xs text-muted-foreground">ativas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-md bg-blue-100 dark:bg-blue-950"><Clock size={16} className="text-blue-600" /></div>
-              <div>
-                <p className="text-2xl font-bold">{totalHours > 0 ? `${totalHours}h` : "—"}</p>
-                <p className="text-xs text-muted-foreground">economizadas/semana</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-md bg-emerald-100 dark:bg-emerald-950"><TrendingUp size={16} className="text-emerald-600" /></div>
-              <div>
-                <p className="text-xl font-bold">
-                  {totalSavings > 0
-                    ? `R$ ${totalSavings.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-                    : "—"}
-                </p>
-                <p className="text-xs text-muted-foreground">economia mensal est.</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts + lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-
-        {/* Licenças por time - CSS bar chart */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Licenças ativas por time</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <DollarSign size={14} className="text-muted-foreground" />
+              Gastos externos — últimos 6 meses
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {teamDataFiltered.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum dado disponível.</p>
+            <GastosChart data={gastosChartData} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Key size={14} className="text-muted-foreground" />
+              Licenças ativas por time
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {teamData.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8 italic">Nenhum dado disponível.</p>
             ) : (
               <div className="space-y-3">
-                {teamDataFiltered.map((t) => (
+                {teamData.map((t) => (
                   <div key={t.team} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="truncate max-w-[180px]">{t.team}</span>
+                      <span className="truncate max-w-[200px]">{t.team}</span>
                       <span className="font-medium ml-2 shrink-0">{t._count.id}</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">
                       <div
-                        className="bg-blue-500 h-2 rounded-full transition-all"
+                        className="bg-blue-500 h-2 rounded-full"
                         style={{ width: `${(t._count.id / maxTeamCount) * 100}%` }}
                       />
                     </div>
@@ -223,82 +228,140 @@ export default async function DashboardPage() {
             )}
           </CardContent>
         </Card>
+      </div>
 
-        {/* Automações - últimas com ROI */}
+      {/* Linha 3 — KPIs produção + Renovações */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Automações — ROI por item</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <TrendingUp size={14} className="text-muted-foreground" />
+              Produção — {currentMonth}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {recentAutomations.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma automação cadastrada.</p>
+            {!kpiMes ? (
+              <p className="text-sm text-muted-foreground italic">Sem dados de produção para este mês.</p>
             ) : (
-              <div className="space-y-3">
-                {recentAutomations.map((a) => (
-                  <div key={a.id} className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{a.name}</p>
-                      <p className="text-xs text-muted-foreground">{STATUS_LABELS[a.status]}</p>
-                    </div>
-                    <div className="flex items-center gap-3 ml-2 shrink-0 text-right">
-                      {a.roiHoursSaved ? (
-                        <div>
-                          <p className="text-sm font-semibold">{a.roiHoursSaved}h</p>
-                          <p className="text-xs text-muted-foreground">/sem</p>
-                        </div>
-                      ) : null}
-                      {a.roiMonthlySavings ? (
-                        <div>
-                          <p className="text-sm font-semibold text-emerald-600">
-                            R$ {a.roiMonthlySavings.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
-                          </p>
-                          <p className="text-xs text-muted-foreground">/mês</p>
-                        </div>
-                      ) : null}
-                      {!a.roiHoursSaved && !a.roiMonthlySavings && (
-                        <span className="text-xs text-muted-foreground">Sem ROI</span>
-                      )}
-                    </div>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: "Cursos", value: kpiMes.cursos },
+                  { label: "Artigos", value: kpiMes.artigos },
+                  { label: "Carreiras", value: kpiMes.carreiras },
+                  { label: "Níveis", value: kpiMes.niveis },
+                  { label: "Trilhas", value: kpiMes.trilhas },
+                ].map(({ label, value }) => (
+                  <div key={label} className="rounded-md border p-3 text-center">
+                    <p className="text-2xl font-bold">{value}</p>
+                    <p className="text-xs text-muted-foreground">{label}</p>
                   </div>
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <AlertCircle size={14} className="text-muted-foreground" />
+              Próximas renovações (60 dias)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {renovacoes.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">Nenhuma renovação nos próximos 60 dias.</p>
+            ) : (
+              <div className="divide-y text-sm">
+                {renovacoes.map((r, i) => {
+                  const dias = Math.ceil(
+                    (new Date(r.renewalDate!).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+                  );
+                  return (
+                    <div key={i} className="flex items-center justify-between py-2 first:pt-0 last:pb-0">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{r.name}</p>
+                        <p className="text-xs text-muted-foreground">{r.team || "Sem time"}</p>
+                      </div>
+                      <div className="ml-3 shrink-0 text-right">
+                        {r.cost && (
+                          <p className="text-xs text-muted-foreground">
+                            {r.currency} {r.cost.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </p>
+                        )}
+                        <Badge variant={dias <= 15 ? "destructive" : "secondary"} className="text-xs">
+                          {dias === 0 ? "hoje" : `${dias}d`}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Últimas licenças */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Últimas licenças adicionadas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {recentSubscriptions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma licença cadastrada.</p>
-          ) : (
-            <div className="divide-y">
-              {recentSubscriptions.map((s) => (
-                <div key={s.id} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
-                  <div>
-                    <p className="text-sm font-medium">{s.name}</p>
-                    <p className="text-xs text-muted-foreground">{s.team || "Sem time"} · {BILLING_LABELS[s.billingCycle] || s.billingCycle}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {s.cost && (
-                      <span className="text-sm text-muted-foreground">
-                        {s.currency} {s.cost.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                      </span>
-                    )}
-                    <Badge variant={s.isActive ? "default" : "secondary"} className="text-xs">
-                      {s.isActive ? "Ativa" : "Inativa"}
-                    </Badge>
-                  </div>
+      {/* Linha 4 — Inventário do Hub */}
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+          Inventário do Hub
+        </h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="pt-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-muted">
+                  <Clock size={16} className="text-muted-foreground" />
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <div>
+                  <p className="text-2xl font-bold">{processosPublicados}</p>
+                  <p className="text-xs text-muted-foreground">processos publicados</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-muted">
+                  <BookOpen size={16} className="text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{docsPublicadas}</p>
+                  <p className="text-xs text-muted-foreground">docs publicadas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-muted">
+                  <FileText size={16} className="text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{totalRelatorios}</p>
+                  <p className="text-xs text-muted-foreground">relatórios criados</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-md bg-muted">
+                  <MessageSquare size={16} className="text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{totalRespostas}</p>
+                  <p className="text-xs text-muted-foreground">respostas recebidas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
