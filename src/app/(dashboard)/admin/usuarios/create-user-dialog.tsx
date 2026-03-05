@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 
-export function CreateUserDialog() {
+export function CreateUserDialog({ onCreated }: { onCreated?: () => void } = {}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -58,7 +58,8 @@ export function CreateUserDialog() {
 
       setOpen(false);
       setForm({ name: "", email: "", password: "", role: "USER" });
-      router.refresh();
+      if (onCreated) onCreated();
+      else router.refresh();
     } catch {
       setError("Erro ao criar usuário. Tente novamente.");
     } finally {
@@ -100,20 +101,18 @@ export function CreateUserDialog() {
               required
             />
           </div>
-          {form.role === "ADMIN" && (
-            <div className="space-y-2">
-              <Label htmlFor="u-password">Senha</Label>
-              <Input
-                id="u-password"
-                type="password"
-                value={form.password}
-                onChange={(e) => set("password", e.target.value)}
-                placeholder="Mínimo 8 caracteres"
-                minLength={8}
-                required
-              />
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="u-password">Senha</Label>
+            <Input
+              id="u-password"
+              type="password"
+              value={form.password}
+              onChange={(e) => set("password", e.target.value)}
+              placeholder="Mínimo 8 caracteres"
+              minLength={8}
+              required
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="u-role">Nível de Acesso</Label>
             <Select value={form.role} onValueChange={(v) => set("role", v)}>

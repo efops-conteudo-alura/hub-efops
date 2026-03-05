@@ -209,6 +209,12 @@ model KpiCarreiraLevel {
   @@unique([carreiraSlug, levelName])
 }
 
+model AllowedEmail {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
 model KpiEdicao {
   id                String   @id @default(cuid())
   month             String   // YYYY-MM

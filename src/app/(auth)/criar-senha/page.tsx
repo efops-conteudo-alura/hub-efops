@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function LoginPage() {
+export default function CriarSenhaPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,36 +22,45 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const result = await signIn("credentials", {
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
-      redirect: false,
-    });
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    const confirm = formData.get("confirm") as string;
 
+    if (password !== confirm) {
+      setError("As senhas não coincidem.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("A senha deve ter ao menos 8 caracteres.");
+      return;
+    }
+
+    setLoading(true);
+    const res = await fetch("/api/auth/set-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
     setLoading(false);
 
-    if (result?.error) {
-      if (result.error === "NeedPassword") {
-        setError("Sua conta ainda não tem senha. Crie uma em /criar-senha.");
-      } else {
-        setError("Email ou senha inválidos.");
-      }
-    } else {
-      router.push("/");
-      router.refresh();
+    if (!res.ok) {
+      setError(data.error ?? "Erro ao criar senha.");
+      return;
     }
+
+    router.push("/login?msg=senha-criada");
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/50">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Hub de Eficiência Operacional</CardTitle>
+          <CardTitle className="text-2xl">Criar senha</CardTitle>
           <CardDescription>
-            Entre com suas credenciais para continuar
+            Defina uma senha para a sua conta existente
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -68,32 +76,32 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password">Nova senha</Label>
               <Input
                 id="password"
                 name="password"
+                type="password"
+                placeholder="Mínimo 8 caracteres"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm">Confirmar senha</Label>
+              <Input
+                id="confirm"
+                name="confirm"
                 type="password"
                 placeholder="••••••••"
                 required
               />
             </div>
-            {error && (
-              <p className="text-sm text-destructive">
-                {error}{" "}
-                {error.includes("/criar-senha") && (
-                  <Link href="/criar-senha" className="underline font-medium">
-                    Criar senha
-                  </Link>
-                )}
-              </p>
-            )}
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Entrando..." : "Entrar"}
+              {loading ? "Salvando..." : "Criar senha"}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              Primeiro acesso?{" "}
-              <Link href="/primeiro-acesso" className="underline">
-                Criar conta
+              <Link href="/login" className="underline">
+                Voltar ao login
               </Link>
             </p>
           </form>

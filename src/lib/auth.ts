@@ -12,7 +12,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Senha", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email) return null;
+        if (!credentials?.email || !credentials?.password) return null;
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
@@ -20,16 +20,11 @@ export const authOptions: NextAuthOptions = {
 
         if (!user) return null;
 
-        // Users without password (read-only): email is enough
+        // Conta existente sem senha (migração pré-senha-obrigatória)
         if (!user.password) {
-          if (user.role === "USER") {
-            return { id: user.id, email: user.email, name: user.name, role: user.role };
-          }
-          return null;
+          throw new Error("NeedPassword");
         }
 
-        // Users with password: must verify it
-        if (!credentials.password) return null;
         const passwordMatch = await bcrypt.compare(credentials.password, user.password);
         if (!passwordMatch) return null;
 

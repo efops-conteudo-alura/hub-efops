@@ -31,8 +31,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Preencha nome e email" }, { status: 400 });
   }
 
-  if (targetRole === "ADMIN" && !password) {
-    return NextResponse.json({ error: "Admins precisam de senha" }, { status: 400 });
+  if (!password) {
+    return NextResponse.json({ error: "Senha obrigatória para todos os usuários" }, { status: 400 });
+  }
+  if (password.length < 8) {
+    return NextResponse.json({ error: "Senha deve ter ao menos 8 caracteres" }, { status: 400 });
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -40,9 +43,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Email já cadastrado" }, { status: 400 });
   }
 
-  const hashedPassword = password ? await bcrypt.hash(password, 12) : null;
+  const hashedPassword = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
-    data: { name, email, password: hashedPassword ?? undefined, role: targetRole },
+    data: { name, email, password: hashedPassword, role: targetRole },
     select: { id: true, name: true, email: true, role: true },
   });
 
