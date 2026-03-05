@@ -210,6 +210,31 @@ export function ExpensesByCategory() {
                   );
                 })}
               </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-border">
+                  <td className="py-2 font-semibold pr-4">Total</td>
+                  {selectedCategories.map((cat) => {
+                    const catTotal = tableData.reduce(
+                      (s, row) => s + ((row[cat.value] as number) || 0),
+                      0
+                    );
+                    return (
+                      <td key={cat.value} className="py-2 text-right font-semibold px-3">
+                        {catTotal > 0 ? formatBRL(catTotal) : "—"}
+                      </td>
+                    );
+                  })}
+                  <td className="py-2 text-right font-bold pl-3">
+                    {formatBRL(
+                      tableData.reduce(
+                        (s, row) =>
+                          s + selectedCategories.reduce((rs, cat) => rs + ((row[cat.value] as number) || 0), 0),
+                        0
+                      )
+                    )}
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </CardContent>
         </Card>
