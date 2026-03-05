@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Trash2, TrendingUp } from "lucide-react";
+import { Trash2, TrendingUp, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { ExpenseFormDialog } from "./expense-form-dialog";
 import { SyncClickUpButton } from "./sync-button";
 import { UploadDialog } from "./upload-dialog";
@@ -18,6 +18,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   EDITOR_FREELANCER: "Editor Freelancer",
   EDITOR_EXTERNO: "Editor Externo",
   SUPORTE_EDUCACIONAL: "Suporte Educacional",
+  OUTROS: "Outros",
 };
 
 interface Expense {
@@ -74,6 +75,35 @@ export function ExpensesOverview({ isAdmin }: Props) {
   const [loading, setLoading] = useState(true);
   const [monthFrom, setMonthFrom] = useState("");
   const [monthTo, setMonthTo] = useState("");
+  const [sortField, setSortField] = useState<"date" | "category" | "description" | "value">("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  function handleSort(field: typeof sortField) {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir(field === "value" ? "desc" : "asc");
+    }
+  }
+
+  function sortedExpenses(): Expense[] {
+    return [...expenses].sort((a, b) => {
+      let cmp = 0;
+      if (sortField === "date") {
+        const da = a.date ?? a.month;
+        const db = b.date ?? b.month;
+        cmp = da.localeCompare(db);
+      } else if (sortField === "category") {
+        cmp = (CATEGORY_LABELS[a.category] ?? a.category).localeCompare(CATEGORY_LABELS[b.category] ?? b.category);
+      } else if (sortField === "description") {
+        cmp = (a.description ?? "").localeCompare(b.description ?? "");
+      } else if (sortField === "value") {
+        cmp = a.value - b.value;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -173,36 +203,72 @@ export function ExpensesOverview({ isAdmin }: Props) {
           ) : expenses.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center italic">Nenhuma entrada encontrada.</p>
           ) : (
-            <div className="divide-y">
-              {expenses.map((e) => (
-                <div key={e.id} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0 gap-4">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <span className="text-sm font-mono text-muted-foreground shrink-0" title={e.date ?? undefined}>
-                      {e.date
-                        ? new Date(e.date + "T00:00:00").toLocaleDateString("pt-BR")
-                        : e.month}
-                    </span>
-                    <Badge variant="secondary" className="text-xs shrink-0">
-                      {CATEGORY_LABELS[e.category] ?? e.category}
-                    </Badge>
-                    {e.description && (
-                      <span className="text-sm text-muted-foreground truncate">{e.description}</span>
+            <div>
+              {/* Cabeçalho ordenável */}
+              <div className="flex items-center gap-4 pb-2 border-b mb-1">
+                {(
+                  [
+                    { field: "date", label: "Data" },
+                    { field: "category", label: "Categoria" },
+                    { field: "description", label: "Nome" },
+                  ] as const
+                ).map(({ field, label }) => (
+                  <button
+                    key={field}
+                    onClick={() => handleSort(field)}
+                    className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {label}
+                    {sortField === field ? (
+                      sortDir === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                    ) : (
+                      <ArrowUpDown size={12} className="opacity-40" />
                     )}
+                  </button>
+                ))}
+                <button
+                  onClick={() => handleSort("value")}
+                  className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors ml-auto"
+                >
+                  Valor
+                  {sortField === "value" ? (
+                    sortDir === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                  ) : (
+                    <ArrowUpDown size={12} className="opacity-40" />
+                  )}
+                </button>
+              </div>
+              <div className="divide-y">
+                {sortedExpenses().map((e) => (
+                  <div key={e.id} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0 gap-4">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <span className="text-sm font-mono text-muted-foreground shrink-0" title={e.date ?? undefined}>
+                        {e.date
+                          ? new Date(e.date + "T00:00:00").toLocaleDateString("pt-BR")
+                          : e.month}
+                      </span>
+                      <Badge variant="secondary" className="text-xs shrink-0">
+                        {CATEGORY_LABELS[e.category] ?? e.category}
+                      </Badge>
+                      {e.description && (
+                        <span className="text-sm text-muted-foreground truncate">{e.description}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-sm font-semibold">{formatBRL(e.value)}</span>
+                      <ExpenseFormDialog expense={e} onSaved={load} />
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleDelete(e.id)}
+                          className="p-1 rounded hover:bg-muted transition-colors"
+                        >
+                          <Trash2 size={14} className="text-muted-foreground hover:text-destructive" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-sm font-semibold">{formatBRL(e.value)}</span>
-                    <ExpenseFormDialog expense={e} onSaved={load} />
-                    {isAdmin && (
-                      <button
-                        onClick={() => handleDelete(e.id)}
-                        className="p-1 rounded hover:bg-muted transition-colors"
-                      >
-                        <Trash2 size={14} className="text-muted-foreground hover:text-destructive" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </CardContent>

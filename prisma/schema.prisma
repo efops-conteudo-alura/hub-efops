@@ -105,6 +105,7 @@ enum ExpenseCategory {
   EDITOR_FREELANCER
   EDITOR_EXTERNO
   SUPORTE_EDUCACIONAL
+  OUTROS
 }
 
 enum ExpenseSource {

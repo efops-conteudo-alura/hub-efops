@@ -20,6 +20,7 @@ const CATEGORIES = [
   { value: "EDITOR_FREELANCER", label: "Editor Freelancer" },
   { value: "EDITOR_EXTERNO", label: "Editor Externo" },
   { value: "SUPORTE_EDUCACIONAL", label: "Suporte Educacional" },
+  { value: "OUTROS", label: "Outros" },
 ];
 
 const schema = z.object({

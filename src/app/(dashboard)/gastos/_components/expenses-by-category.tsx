@@ -14,6 +14,7 @@ const ALL_CATEGORIES = [
   { value: "EDITOR_FREELANCER", label: "Editor Freelancer", color: "#f59e0b" },
   { value: "EDITOR_EXTERNO", label: "Editor Externo", color: "#10b981" },
   { value: "SUPORTE_EDUCACIONAL", label: "Suporte Educacional", color: "#f43f5e" },
+  { value: "OUTROS", label: "Outros", color: "#64748b" },
 ];
 
 interface Expense {
