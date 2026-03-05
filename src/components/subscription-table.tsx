@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Edit, Trash2, Search, Download, ExternalLink } from "lucide-react";
+import { Edit, Trash2, Search, Download, ExternalLink, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 export type Subscription = {
   id: string;
@@ -111,6 +111,22 @@ export function SubscriptionTable({
   const [filterCostCenter, setFilterCostCenter] = useState("all");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [sortField, setSortField] = useState<"name" | "team" | "costCenter" | "responsible" | "cost" | "billingCycle" | "isActive">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  function handleSort(field: typeof sortField) {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir(field === "cost" ? "desc" : "asc");
+    }
+  }
+
+  function SortIcon({ field }: { field: typeof sortField }) {
+    if (sortField !== field) return <ArrowUpDown size={13} className="opacity-40 shrink-0" />;
+    return sortDir === "asc" ? <ArrowUp size={13} className="shrink-0" /> : <ArrowDown size={13} className="shrink-0" />;
+  }
 
   const teams = useMemo(() => {
     const t = [
@@ -144,6 +160,20 @@ export function SubscriptionTable({
       return matchSearch && matchTeam && matchStatus && matchCostCenter;
     });
   }, [subscriptions, search, filterTeam, filterStatus, filterCostCenter]);
+
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      let cmp = 0;
+      if (sortField === "name") cmp = a.name.localeCompare(b.name);
+      else if (sortField === "team") cmp = (a.team ?? "").localeCompare(b.team ?? "");
+      else if (sortField === "costCenter") cmp = (a.costCenter ?? "").localeCompare(b.costCenter ?? "");
+      else if (sortField === "responsible") cmp = (a.responsible ?? "").localeCompare(b.responsible ?? "");
+      else if (sortField === "cost") cmp = (a.cost ?? 0) - (b.cost ?? 0);
+      else if (sortField === "billingCycle") cmp = (BILLING_LABELS[a.billingCycle] ?? "").localeCompare(BILLING_LABELS[b.billingCycle] ?? "");
+      else if (sortField === "isActive") cmp = Number(b.isActive) - Number(a.isActive);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [filtered, sortField, sortDir]);
 
   async function handleDelete() {
     if (!deleteId) return;
@@ -228,13 +258,27 @@ export function SubscriptionTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Time</TableHead>
-              <TableHead>Centro de Custo</TableHead>
-              <TableHead>Responsável</TableHead>
-              <TableHead>Valor</TableHead>
-              <TableHead>Ciclo</TableHead>
-              <TableHead>Status</TableHead>
+              {(
+                [
+                  { field: "name", label: "Nome" },
+                  { field: "team", label: "Time" },
+                  { field: "costCenter", label: "Centro de Custo" },
+                  { field: "responsible", label: "Responsável" },
+                  { field: "cost", label: "Valor" },
+                  { field: "billingCycle", label: "Ciclo" },
+                  { field: "isActive", label: "Status" },
+                ] as const
+              ).map(({ field, label }) => (
+                <TableHead key={field}>
+                  <button
+                    onClick={() => handleSort(field)}
+                    className="flex items-center gap-1 font-semibold hover:text-foreground transition-colors"
+                  >
+                    {label}
+                    <SortIcon field={field} />
+                  </button>
+                </TableHead>
+              ))}
               {isAdmin && <TableHead className="w-[90px]">Ações</TableHead>}
             </TableRow>
           </TableHeader>
@@ -249,7 +293,7 @@ export function SubscriptionTable({
                 </TableCell>
               </TableRow>
             )}
-            {filtered.map((s) => (
+            {sorted.map((s) => (
               <TableRow key={s.id}>
                 <TableCell>
                   <div>
