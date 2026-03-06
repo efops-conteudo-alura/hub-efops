@@ -12,11 +12,9 @@ import { cn } from "@/lib/utils";
 import { ProducaoTable, buildProducaoTsv } from "./producao-table";
 import { EdicaoTable, buildEdicaoTsv } from "./edicao-table";
 import { PesosDialog } from "./pesos-dialog";
-import { CarreirasPanel } from "./carreiras-panel";
 import { KpisCharts } from "./kpis-charts";
 import type { KpiProducao } from "./producao-form-dialog";
 import type { KpiEdicao } from "./edicao-form-dialog";
-import type { CarreiraLevel } from "./carreiras-sync-button";
 
 interface Pesos {
   id: string;
@@ -36,15 +34,14 @@ interface KpisOverviewProps {
   initialProducao: KpiProducao[];
   initialEdicao: KpiEdicao[];
   initialPesos: Pesos;
-  initialLevels: CarreiraLevel[];
   initialAnos: KpiAno[];
   currentYear: number;
 }
 
-type Tab = "publicacao" | "graficos" | "carreiras";
+type Tab = "publicacao" | "graficos";
 
 export function KpisOverview({
-  initialProducao, initialEdicao, initialPesos, initialLevels, initialAnos, currentYear,
+  initialProducao, initialEdicao, initialPesos, initialAnos, currentYear,
 }: KpisOverviewProps) {
   const [producao, setProducao] = useState(initialProducao);
   const [edicao, setEdicao] = useState(initialEdicao);
@@ -64,7 +61,6 @@ export function KpisOverview({
   const tabs: { key: Tab; label: string }[] = [
     { key: "publicacao", label: "Publicação & Edição" },
     { key: "graficos", label: "Gráficos" },
-    { key: "carreiras", label: "Carreiras Alura" },
   ];
 
   async function handleCopy() {
@@ -209,10 +205,6 @@ export function KpisOverview({
 
       {activeTab === "graficos" && (
         <KpisCharts producao={producao} edicao={edicao} pesos={pesos} />
-      )}
-
-      {activeTab === "carreiras" && (
-        <CarreirasPanel initialLevels={initialLevels} />
       )}
 
       <PesosDialog

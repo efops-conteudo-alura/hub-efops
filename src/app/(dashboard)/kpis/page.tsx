@@ -29,27 +29,18 @@ export default async function KpisPage() {
 
   const currentYear = new Date().getFullYear();
 
-  const [producao, edicao, pesos, levels, anos] = await Promise.all([
+  const [producao, edicao, pesos, anos] = await Promise.all([
     prisma.kpiProducao.findMany({ orderBy: { month: "asc" } }),
     prisma.kpiEdicao.findMany({ orderBy: { month: "asc" } }),
     getPesos(),
-    prisma.kpiCarreiraLevel.findMany({ orderBy: [{ carreiraName: "asc" }, { order: "asc" }] }),
     getAnos(),
   ]);
-
-  const serializedLevels = levels.map((l) => ({
-    ...l,
-    firstPublishedAt: l.firstPublishedAt?.toISOString() ?? null,
-    createdAt: l.createdAt.toISOString(),
-    updatedAt: l.updatedAt.toISOString(),
-  }));
 
   return (
     <KpisOverview
       initialProducao={producao}
       initialEdicao={edicao}
       initialPesos={pesos}
-      initialLevels={serializedLevels}
       initialAnos={anos}
       currentYear={currentYear}
     />

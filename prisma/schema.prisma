@@ -216,6 +216,21 @@ model KpiCarreiraLevel {
   @@unique([carreiraSlug, levelName])
 }
 
+model AluraCourse {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  nome            String
+  metadescription String?
+  categoria       String?
+  subcategoria    String?
+  instrutores     String[]
+  cargaHoraria    Int?
+  dataCriacao     DateTime?
+  dataAtualizacao DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
 model AllowedEmail {
   id        String   @id @default(cuid())
   email     String   @unique
