@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         gte: gteDate,
         ...(lteDate ? { lte: lteDate } : {}),
       },
-      ...(categoria ? { categoria: { contains: categoria, mode: "insensitive" } } : {}),
+      ...(categoria ? { categoria } : {}),
     },
     orderBy: { dataCriacao: "desc" },
     select: {
@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
       slug: true,
       nome: true,
       categoria: true,
-      subcategoria: true,
       instrutores: true,
       cargaHoraria: true,
       dataCriacao: true,

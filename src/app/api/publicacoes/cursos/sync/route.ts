@@ -8,15 +8,21 @@ const USER_AGENT =
 
 const BATCH_SIZE = 15;
 
+// Uma URL de listagem por categoria — assim o label fica correto desde o início
+const CATEGORY_SOURCES = [
+  { label: "Programação", url: "https://www.alura.com.br/cursos-online-programacao" },
+  { label: "Front-end", url: "https://www.alura.com.br/cursos-online-front-end" },
+  { label: "Data Science", url: "https://www.alura.com.br/cursos-online-data-science" },
+  { label: "Inteligência Artificial", url: "https://www.alura.com.br/cursos-online-inteligencia-artificial" },
+  { label: "DevOps", url: "https://www.alura.com.br/cursos-online-devops" },
+  { label: "UX & Design", url: "https://www.alura.com.br/cursos-online-ux-design" },
+  { label: "Mobile", url: "https://www.alura.com.br/cursos-online-mobile" },
+  { label: "Inovação & Gestão", url: "https://www.alura.com.br/cursos-online-inovacao-gestao" },
+];
+
 interface InstructorRaw {
   nome?: string;
   name?: string;
-  [key: string]: unknown;
-}
-
-interface CategoriaRaw {
-  nome?: string;
-  slug?: string;
   [key: string]: unknown;
 }
 
@@ -24,8 +30,6 @@ interface CourseApiResponse {
   slug?: string;
   nome?: string;
   metadescription?: string;
-  categoria?: CategoriaRaw;
-  subcategoria?: CategoriaRaw;
   instrutores?: InstructorRaw[];
   carga_horaria?: number | string;
   data_criacao?: string | number;
@@ -35,13 +39,36 @@ interface CourseApiResponse {
 
 function parseDate(val: unknown): Date | null {
   if (!val) return null;
-  // Alura timestamps can be Unix seconds (number) or ISO string
   if (typeof val === "number") return new Date(val * 1000);
   if (typeof val === "string") {
     const d = new Date(val);
     return isNaN(d.getTime()) ? null : d;
   }
   return null;
+}
+
+async function fetchSlugsForCategory(url: string): Promise<string[]> {
+  try {
+    const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+    if (!res.ok) return [];
+    const html = await res.text();
+    const matches = [...html.matchAll(/href="\/curso-online-([\w-]+)"/g)];
+    return [...new Set(matches.map((m) => m[1]))];
+  } catch {
+    return [];
+  }
+}
+
+async function fetchCourseApi(slug: string): Promise<CourseApiResponse | null> {
+  try {
+    const res = await fetch(`https://cursos.alura.com.br/api/curso-${slug}`, {
+      headers: { "User-Agent": USER_AGENT },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 export async function POST() {
@@ -51,99 +78,109 @@ export async function POST() {
   }
 
   try {
-    // 1. Fetch listing page
-    const listRes = await fetch("https://www.alura.com.br/cursos-online-tecnologia", {
-      headers: { "User-Agent": USER_AGENT },
-    });
-    if (!listRes.ok) {
-      return NextResponse.json({ error: "Falha ao buscar página de cursos Alura" }, { status: 502 });
-    }
-    const html = await listRes.text();
+    // 1. Fetch all 8 category listing pages in parallel → slug → label
+    const categoryResults = await Promise.allSettled(
+      CATEGORY_SOURCES.map(async (src) => ({
+        label: src.label,
+        slugs: await fetchSlugsForCategory(src.url),
+      }))
+    );
 
-    // 2. Extract slugs from hrefs like /curso-online-{slug}
-    const slugMatches = [...html.matchAll(/href="\/curso-online-([\w-]+)"/g)];
-    const slugs = [...new Set(slugMatches.map((m) => m[1]))];
-
-    if (slugs.length === 0) {
-      return NextResponse.json({ error: "Nenhum curso encontrado na página. A estrutura HTML pode ter mudado." }, { status: 500 });
-    }
-
-    // 3. Batch fetch course APIs
-    const courses: CourseApiResponse[] = [];
-
-    for (let i = 0; i < slugs.length; i += BATCH_SIZE) {
-      const batch = slugs.slice(i, i + BATCH_SIZE);
-      const batchResults = await Promise.allSettled(
-        batch.map((slug) =>
-          fetch(`https://cursos.alura.com.br/api/curso-${slug}`, {
-            headers: { "User-Agent": USER_AGENT },
-          }).then((r) => {
-            if (!r.ok) return null;
-            return r.json() as Promise<CourseApiResponse>;
-          })
-        )
-      );
-      for (const result of batchResults) {
-        if (result.status === "fulfilled" && result.value) {
-          courses.push(result.value);
+    const slugCategoryMap = new Map<string, string>(); // slug → label
+    for (const result of categoryResults) {
+      if (result.status === "fulfilled") {
+        const { label, slugs } = result.value;
+        for (const slug of slugs) {
+          if (!slugCategoryMap.has(slug)) slugCategoryMap.set(slug, label);
         }
       }
     }
 
-    // 4. Upsert each course
+    const allSlugs = [...slugCategoryMap.keys()];
+    if (allSlugs.length === 0) {
+      return NextResponse.json({ error: "Nenhum curso encontrado nas páginas de categoria. A estrutura HTML pode ter mudado." }, { status: 500 });
+    }
+
+    // 2. Find which slugs already have full data in DB (dataCriacao preenchida)
+    const existing = await prisma.aluraCourse.findMany({
+      where: { slug: { in: allSlugs } },
+      select: { slug: true, dataCriacao: true },
+    });
+    const existingComplete = new Set(
+      existing.filter((c) => c.dataCriacao !== null).map((c) => c.slug)
+    );
+
+    // 3. Fetch individual course APIs only for new/incomplete courses
+    const newSlugs = allSlugs.filter((s) => !existingComplete.has(s));
+    const courseApiData = new Map<string, CourseApiResponse>();
+
+    for (let i = 0; i < newSlugs.length; i += BATCH_SIZE) {
+      const batch = newSlugs.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(async (slug) => ({ slug, data: await fetchCourseApi(slug) }))
+      );
+      for (const r of results) {
+        if (r.status === "fulfilled" && r.value.data) {
+          courseApiData.set(r.value.slug, r.value.data);
+        }
+      }
+    }
+
+    // 4. Upsert all courses
     let upserted = 0;
-    let skipped = 0;
+    let categoryUpdated = 0;
 
-    for (const course of courses) {
-      const slug = course.slug;
-      if (!slug || !course.nome) { skipped++; continue; }
+    for (const [slug, categoria] of slugCategoryMap) {
+      const apiData = courseApiData.get(slug);
 
-      const instrutores = (course.instrutores ?? [])
-        .map((i) => i.nome ?? i.name ?? "")
-        .filter(Boolean);
+      if (apiData) {
+        // New/incomplete course — full upsert with API data
+        const instrutores = (apiData.instrutores ?? [])
+          .map((i) => i.nome ?? i.name ?? "")
+          .filter(Boolean);
+        const cargaHoraria =
+          apiData.carga_horaria != null ? Math.round(Number(apiData.carga_horaria)) || null : null;
 
-      const categoria = course.subcategoria?.nome ?? course.categoria?.nome ?? null;
-      const subcategoria = course.subcategoria?.nome ?? null;
-
-      const cargaHorariaRaw = course.carga_horaria;
-      const cargaHoraria =
-        cargaHorariaRaw != null ? Math.round(Number(cargaHorariaRaw)) || null : null;
-
-      const dataCriacao = parseDate(course.data_criacao);
-      const dataAtualizacao = parseDate(course.data_atualizacao);
-
-      await prisma.aluraCourse.upsert({
-        where: { slug },
-        create: {
-          slug,
-          nome: course.nome,
-          metadescription: course.metadescription ?? null,
-          categoria,
-          subcategoria,
-          instrutores,
-          cargaHoraria,
-          dataCriacao,
-          dataAtualizacao,
-        },
-        update: {
-          nome: course.nome,
-          metadescription: course.metadescription ?? null,
-          categoria,
-          subcategoria,
-          instrutores,
-          cargaHoraria,
-          dataCriacao,
-          dataAtualizacao,
-        },
-      });
-      upserted++;
+        await prisma.aluraCourse.upsert({
+          where: { slug },
+          create: {
+            slug,
+            nome: apiData.nome ?? slug,
+            metadescription: apiData.metadescription ?? null,
+            categoria,
+            subcategoria: null,
+            instrutores,
+            cargaHoraria,
+            dataCriacao: parseDate(apiData.data_criacao),
+            dataAtualizacao: parseDate(apiData.data_atualizacao),
+          },
+          update: {
+            nome: apiData.nome ?? slug,
+            metadescription: apiData.metadescription ?? null,
+            categoria,
+            instrutores,
+            cargaHoraria,
+            dataCriacao: parseDate(apiData.data_criacao),
+            dataAtualizacao: parseDate(apiData.data_atualizacao),
+          },
+        });
+        upserted++;
+      } else if (existingComplete.has(slug)) {
+        // Already complete — just update category label if needed
+        await prisma.aluraCourse.update({
+          where: { slug },
+          data: { categoria },
+        });
+        categoryUpdated++;
+      }
+      // If apiData is null AND not in existingComplete → API failed, skip for now
     }
 
     return NextResponse.json({
       success: true,
-      slugsFound: slugs.length,
-      coursesProcessed: upserted,
-      skipped,
+      slugsFound: allSlugs.length,
+      newCoursesProcessed: upserted,
+      existingUpdated: categoryUpdated,
     });
   } catch (err) {
     console.error("[publicacoes/cursos/sync] Erro:", err);

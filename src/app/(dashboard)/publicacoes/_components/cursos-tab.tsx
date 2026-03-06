@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MonthPicker } from "@/app/(dashboard)/gastos/_components/month-picker";
 
 const CATEGORIES = [
   "Programação",
@@ -21,7 +22,6 @@ interface Course {
   slug: string;
   nome: string;
   categoria: string | null;
-  subcategoria: string | null;
   instrutores: string[];
   cargaHoraria: number | null;
   dataCriacao: string | null;
@@ -50,7 +50,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     if (selectedCat) params.set("categoria", selectedCat);
     const res = await fetch(`/api/publicacoes/cursos?${params}`);
     const data = await res.json();
-    setCourses(data);
+    setCourses(Array.isArray(data) ? data : []);
     setLoading(false);
   }, [monthFrom, monthTo, selectedCat]);
 
@@ -66,7 +66,9 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
         setSyncResult(data.error || "Erro ao sincronizar");
         return;
       }
-      setSyncResult(`${data.slugsFound} slugs encontrados · ${data.coursesProcessed} cursos atualizados`);
+      setSyncResult(
+        `${data.slugsFound} cursos encontrados · ${data.newCoursesProcessed} novos · ${data.existingUpdated} atualizados`
+      );
       load();
     } catch {
       setSyncResult("Erro de conexão");
@@ -77,29 +79,19 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
 
   return (
     <div className="space-y-5">
-      {/* Filtros */}
+      {/* Filtros de data + botão sync */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">De</span>
-          <input
-            type="month"
-            value={monthFrom}
-            onChange={(e) => setMonthFrom(e.target.value)}
-            className="px-2 py-1.5 rounded-md border bg-background text-sm"
-          />
+          <MonthPicker value={monthFrom} onChange={setMonthFrom} placeholder="Início" />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Até</span>
-          <input
-            type="month"
-            value={monthTo}
-            onChange={(e) => setMonthTo(e.target.value)}
-            className="px-2 py-1.5 rounded-md border bg-background text-sm"
-          />
+          <MonthPicker value={monthTo} onChange={setMonthTo} placeholder="Fim" />
         </div>
-        {monthTo && (
-          <Button variant="ghost" size="sm" onClick={() => setMonthTo("")}>
-            Limpar data
+        {(monthFrom || monthTo) && (
+          <Button variant="ghost" size="sm" onClick={() => { setMonthFrom(""); setMonthTo(""); }}>
+            Limpar tudo
           </Button>
         )}
 
@@ -158,7 +150,6 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
             <thead>
               <tr className="border-b">
                 <th className="text-left pb-2 font-medium text-muted-foreground pr-4">Nome</th>
-                <th className="text-left pb-2 font-medium text-muted-foreground px-3">Categoria</th>
                 <th className="text-left pb-2 font-medium text-muted-foreground px-3">Instrutor(es)</th>
                 <th className="text-right pb-2 font-medium text-muted-foreground px-3">Publicação</th>
                 <th className="text-right pb-2 font-medium text-muted-foreground pl-3">Atualização</th>
@@ -177,12 +168,9 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
                       {course.nome}
                       <ExternalLink size={11} className="shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </a>
-                    {course.cargaHoraria && (
-                      <span className="text-xs text-muted-foreground">{course.cargaHoraria}h</span>
+                    {course.categoria && (
+                      <span className="text-xs text-muted-foreground">{course.categoria}</span>
                     )}
-                  </td>
-                  <td className="py-2.5 px-3 text-muted-foreground">
-                    {course.categoria ?? "—"}
                   </td>
                   <td className="py-2.5 px-3 text-muted-foreground">
                     {course.instrutores.length > 0 ? course.instrutores.join(", ") : "—"}
@@ -197,7 +185,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
               ))}
             </tbody>
           </table>
-          <p className="text-xs text-muted-foreground mt-3">{courses.length} cursos encontrados</p>
+          <p className="text-xs text-muted-foreground mt-3">{courses.length} cursos</p>
         </div>
       )}
     </div>
