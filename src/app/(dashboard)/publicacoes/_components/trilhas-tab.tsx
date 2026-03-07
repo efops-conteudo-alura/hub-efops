@@ -3,8 +3,11 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RefreshCw, ExternalLink, ArrowUp, ArrowDown, ArrowUpDown, Search } from "lucide-react";
+import { RefreshCw, ExternalLink, ArrowUp, ArrowDown, ArrowUpDown, Search, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+
+const STORAGE_KEY = "trilhas_last_sync";
 
 interface Trilha {
   id: string;
@@ -13,6 +16,7 @@ interface Trilha {
   categoria: string | null;
   numCursos: number | null;
   cargaHoraria: number | null;
+  createdAt: string;
 }
 
 type SortField = "nome" | "categoria" | "numCursos" | "cargaHoraria";
@@ -25,6 +29,7 @@ export function TrilhasTab({ isAdmin }: { isAdmin: boolean }) {
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("nome");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [previousSyncAt, setPreviousSyncAt] = useState<string | null>(null);
 
   function handleSort(field: SortField) {
     if (sortField === field) {
@@ -68,15 +73,28 @@ export function TrilhasTab({ isAdmin }: { isAdmin: boolean }) {
         setSyncResult(data.error || "Erro ao sincronizar");
         return;
       }
+      // Guardar previousSyncAt antes de actualizar
+      const prev = localStorage.getItem(STORAGE_KEY);
+      setPreviousSyncAt(prev);
+      if (data.syncedAt) localStorage.setItem(STORAGE_KEY, data.syncedAt);
+      if (Array.isArray(data.trilhas)) {
+        setTrilhas(data.trilhas);
+      } else {
+        load();
+      }
       setSyncResult(
-        `${data.slugsFound} trilhas encontradas · ${data.newTrilhasProcessed} processadas`
+        `${data.slugsFound} trilhas encontradas · ${data.newTrilhasProcessed} novas`
       );
-      load();
     } catch {
       setSyncResult("Erro de conexão");
     } finally {
       setSyncing(false);
     }
+  }
+
+  function isNew(trilha: Trilha): boolean {
+    if (!previousSyncAt) return false;
+    return new Date(trilha.createdAt) > new Date(previousSyncAt);
   }
 
   function SortIcon({ field }: { field: SortField }) {
@@ -97,15 +115,22 @@ export function TrilhasTab({ isAdmin }: { isAdmin: boolean }) {
             className="pl-9"
           />
         </div>
-        {isAdmin && (
-          <div className="ml-auto flex items-center gap-3">
-            <Button size="sm" variant="outline" onClick={handleSync} disabled={syncing}>
-              <RefreshCw size={14} className={cn("mr-2", syncing && "animate-spin")} />
-              {syncing ? "Sincronizando..." : "Sincronizar"}
-            </Button>
-            {syncResult && <p className="text-xs text-muted-foreground">{syncResult}</p>}
-          </div>
-        )}
+        <div className="ml-auto flex items-center gap-3">
+          {previousSyncAt && sorted.filter(isNew).length > 0 && (
+            <span className="text-primary font-semibold text-sm flex items-center gap-1">
+              <Sparkles size={13} /> {sorted.filter(isNew).length} novas
+            </span>
+          )}
+          {isAdmin && (
+            <>
+              <Button size="sm" variant="outline" onClick={handleSync} disabled={syncing}>
+                <RefreshCw size={14} className={cn("mr-2", syncing && "animate-spin")} />
+                {syncing ? "Sincronizando..." : "Sincronizar"}
+              </Button>
+              {syncResult && <p className="text-xs text-muted-foreground">{syncResult}</p>}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Tabela */}
@@ -148,15 +173,22 @@ export function TrilhasTab({ isAdmin }: { isAdmin: boolean }) {
               {sorted.map((trilha) => (
                 <tr key={trilha.id}>
                   <td className="py-2.5 pr-4">
-                    <a
-                      href={`https://www.alura.com.br/formacao-${trilha.slug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium hover:text-primary transition-colors flex items-start gap-1.5 group"
-                    >
-                      {trilha.nome}
-                      <ExternalLink size={11} className="shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </a>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`https://www.alura.com.br/formacao-${trilha.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium hover:text-primary transition-colors flex items-start gap-1.5 group"
+                      >
+                        {trilha.nome}
+                        <ExternalLink size={11} className="shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </a>
+                      {isNew(trilha) && (
+                        <Badge variant="default" className="gap-1 text-xs py-0 shrink-0">
+                          <Sparkles size={10} /> NOVO
+                        </Badge>
+                      )}
+                    </div>
                   </td>
                   <td className="py-2.5 px-3 text-muted-foreground text-sm">
                     {trilha.categoria || "—"}

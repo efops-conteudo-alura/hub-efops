@@ -104,10 +104,25 @@ export async function POST() {
       upserted++;
     }
 
+    const trilhas = await prisma.aluraTrilha.findMany({
+      orderBy: { nome: "asc" },
+      select: {
+        id: true,
+        slug: true,
+        nome: true,
+        categoria: true,
+        numCursos: true,
+        cargaHoraria: true,
+        createdAt: true,
+      },
+    });
+
     return NextResponse.json({
       success: true,
       slugsFound: slugs.length,
       newTrilhasProcessed: upserted,
+      syncedAt: new Date().toISOString(),
+      trilhas,
     });
   } catch (err) {
     console.error("[publicacoes/trilhas/sync] Erro:", err);

@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
       categoria: true,
       numCursos: true,
       cargaHoraria: true,
+      createdAt: true,
     },
   });
 
