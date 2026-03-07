@@ -49,6 +49,23 @@ function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 });
 }
 
+function ExpensesByCategoryTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ dataKey: string; value: number; color: string }>; label?: string }) {
+  if (!active || !payload?.length) return null;
+  const items = payload.filter((e) => e.value > 0);
+  if (!items.length) return null;
+  return (
+    <div className="rounded-md border bg-popover shadow-md px-3 py-2 text-xs space-y-0.5">
+      <p className="font-semibold text-foreground mb-1">{formatMonth(String(label))}</p>
+      {items.map((entry) => (
+        <p key={entry.dataKey} style={{ color: entry.color }}>
+          {ALL_CATEGORIES.find((c) => c.value === entry.dataKey)?.label ?? entry.dataKey}:{" "}
+          <span className="font-medium">{formatBRL(entry.value)}</span>
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export function ExpensesByCategory() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,15 +167,7 @@ export function ExpensesByCategory() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="month" tickFormatter={formatMonth} tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} width={56} />
-                <Tooltip
-                  contentStyle={{ fontSize: 12, borderRadius: 6, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                  labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
-                  formatter={(v: number | undefined, name: string | undefined) => [
-                    v != null ? formatBRL(v) : "",
-                    ALL_CATEGORIES.find((c) => c.value === name)?.label ?? name ?? "",
-                  ]}
-                  labelFormatter={(m) => formatMonth(String(m))}
-                />
+                <Tooltip content={ExpensesByCategoryTooltip} />
                 <Legend formatter={(v) => ALL_CATEGORIES.find((c) => c.value === v)?.label ?? v} wrapperStyle={{ fontSize: 12, background: "hsl(var(--card) / 0.85)", borderRadius: 6, padding: "2px 8px", border: "1px solid hsl(var(--border))" }} />
                 {selectedCategories.map((cat) => (
                   <Line

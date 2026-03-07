@@ -70,6 +70,21 @@ interface Props {
   isAdmin: boolean;
 }
 
+function ExpensesOverviewTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ dataKey: string; value: number; color: string }>; label?: string }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-md border bg-popover shadow-md px-3 py-2 text-xs space-y-0.5">
+      <p className="font-semibold text-foreground mb-1">{formatMonth(String(label))}</p>
+      {payload.map((entry) => (
+        <p key={entry.dataKey} style={{ color: entry.color }}>
+          {entry.dataKey === "total" ? "Total" : "Média 3 meses"}:{" "}
+          <span className="font-medium">{formatBRL(entry.value)}</span>
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export function ExpensesOverview({ isAdmin }: Props) {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,15 +187,7 @@ export function ExpensesOverview({ isAdmin }: Props) {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="month" tickFormatter={formatMonth} tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} width={56} />
-                <Tooltip
-                  contentStyle={{ fontSize: 12, borderRadius: 6, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                  labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
-                  formatter={(v: number | undefined, name: string | undefined) => [
-                    v != null ? formatBRL(v) : "",
-                    name === "total" ? "Total" : "Média 3 meses",
-                  ]}
-                  labelFormatter={(m) => formatMonth(String(m))}
-                />
+                <Tooltip content={ExpensesOverviewTooltip} />
                 <Legend formatter={(v) => v === "total" ? "Total" : "Média 3 meses"} wrapperStyle={{ fontSize: 12, background: "hsl(var(--card) / 0.85)", borderRadius: 6, padding: "2px 8px", border: "1px solid hsl(var(--border))" }} />
                 <Line type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="media3" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 3" dot={false} />

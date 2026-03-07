@@ -26,6 +26,23 @@ function formatMonth(m: string) {
   return `${month}/${year.slice(2)}`;
 }
 
+function GastosTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ dataKey: string; value: number; color: string }>; label?: string }) {
+  if (!active || !payload?.length) return null;
+  const items = payload.filter((e) => e.value > 0);
+  if (!items.length) return null;
+  return (
+    <div className="rounded-md border bg-popover shadow-md px-3 py-2 text-xs space-y-0.5">
+      <p className="font-semibold text-foreground mb-1">{formatMonth(String(label))}</p>
+      {items.map((entry) => (
+        <p key={entry.dataKey} style={{ color: entry.color }}>
+          {CATEGORIES.find((c) => c.key === entry.dataKey)?.label ?? entry.dataKey}:{" "}
+          <span className="font-medium">{entry.value.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 })}</span>
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export function GastosChart({ data }: { data: GastosChartRow[] }) {
   if (data.length === 0) {
     return (
@@ -45,15 +62,7 @@ export function GastosChart({ data }: { data: GastosChartRow[] }) {
           tick={{ fontSize: 11 }}
           width={52}
         />
-        <Tooltip
-          contentStyle={{ fontSize: 12, borderRadius: 6, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-          labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
-          formatter={(v: number | undefined, name: string | undefined) => [
-            v != null ? v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 }) : "",
-            CATEGORIES.find((c) => c.key === name)?.label ?? name ?? "",
-          ]}
-          labelFormatter={(m) => formatMonth(String(m))}
-        />
+        <Tooltip content={GastosTooltip} />
         <Legend formatter={(v) => CATEGORIES.find((c) => c.key === v)?.label ?? v} wrapperStyle={{ fontSize: 11, background: "hsl(var(--card) / 0.85)", borderRadius: 6, padding: "2px 8px", border: "1px solid hsl(var(--border))" }} />
         {CATEGORIES.map((cat) => (
           <Bar key={cat.key} dataKey={cat.key} stackId="a" fill={cat.color} />
