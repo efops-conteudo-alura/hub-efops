@@ -4,13 +4,17 @@ import { useState } from "react";
 import { BookMarked } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CursosTab } from "./cursos-tab";
+import { ArtigosTab } from "./artigos-tab";
+import { TrilhasTab } from "./trilhas-tab";
 import { CarreirasTab } from "./carreiras-tab";
 import type { CarreiraLevel, SyncResult } from "@/app/(dashboard)/kpis/_components/carreiras-sync-button";
 
-type Tab = "cursos" | "carreiras";
+type Tab = "cursos" | "artigos" | "trilhas" | "carreiras";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "cursos", label: "Cursos" },
+  { key: "artigos", label: "Artigos" },
+  { key: "trilhas", label: "Trilhas" },
   { key: "carreiras", label: "Carreiras Alura" },
 ];
 
@@ -57,6 +61,8 @@ export function PublicacoesClient({ isAdmin, initialLevels }: Props) {
       </div>
 
       {activeTab === "cursos" && <CursosTab isAdmin={isAdmin} />}
+      {activeTab === "artigos" && <ArtigosTab isAdmin={isAdmin} />}
+      {activeTab === "trilhas" && <TrilhasTab isAdmin={isAdmin} />}
       {activeTab === "carreiras" && (
         <CarreirasTab initialLevels={levels} onSynced={handleCarreirasSynced} />
       )}

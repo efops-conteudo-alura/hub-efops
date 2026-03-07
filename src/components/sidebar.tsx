@@ -27,7 +27,7 @@ interface SidebarProps {
 // Itens principais — Dashboard e Usuários ficam sempre no final via bottomItems
 const mainNavItems = [
   { href: "/home", label: "Home", icon: House },
-  { href: "/assinaturas", label: "Licenças", icon: Key },
+  { href: "/licencas", label: "Licenças", icon: Key },
   { href: "/automacoes", label: "Automações & Agentes", icon: Bot },
   { href: "/processos", label: "Processos & Fluxos", icon: GitBranch },
   { href: "/publicacoes", label: "Publicações", icon: BookMarked },

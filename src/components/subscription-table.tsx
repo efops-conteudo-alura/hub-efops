@@ -111,6 +111,7 @@ export function SubscriptionTable({
   const [filterCostCenter, setFilterCostCenter] = useState("all");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [detailSub, setDetailSub] = useState<Subscription | null>(null);
   const [sortField, setSortField] = useState<"name" | "team" | "costCenter" | "responsible" | "cost" | "billingCycle" | "isActive">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
@@ -297,7 +298,12 @@ export function SubscriptionTable({
               <TableRow key={s.id}>
                 <TableCell>
                   <div>
-                    <p className="font-medium">{s.name}</p>
+                    <button
+                      onClick={() => setDetailSub(s)}
+                      className="font-medium text-left hover:text-primary transition-colors"
+                    >
+                      {s.name}
+                    </button>
                     {s.url && (
                       <a
                         href={s.url}
@@ -335,7 +341,7 @@ export function SubscriptionTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
-                    <Link href={`/assinaturas/${s.id}/editar`}>
+                    <Link href={`/licencas/${s.id}/editar`}>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
                         <Edit size={14} />
                       </Button>
@@ -355,6 +361,62 @@ export function SubscriptionTable({
           </TableBody>
         </Table>
       </div>
+
+      {/* Modal de detalhes */}
+      <Dialog open={!!detailSub} onOpenChange={() => setDetailSub(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{detailSub?.name}</DialogTitle>
+            {detailSub?.description && (
+              <DialogDescription>{detailSub.description}</DialogDescription>
+            )}
+          </DialogHeader>
+          {detailSub && (
+            <div className="grid gap-3 py-2 text-sm">
+              {[
+                { label: "Status", value: <Badge variant={detailSub.isActive ? "default" : "secondary"}>{detailSub.isActive ? "Ativa" : "Inativa"}</Badge> },
+                { label: "Valor", value: detailSub.cost ? `${detailSub.currency} ${detailSub.cost.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—" },
+                { label: "Ciclo", value: BILLING_LABELS[detailSub.billingCycle] || detailSub.billingCycle },
+                { label: "Centro de Custo", value: detailSub.costCenter || "—" },
+                { label: "Time", value: detailSub.team || "—" },
+                { label: "Responsável", value: detailSub.responsible || "—" },
+                { label: "Login", value: detailSub.loginUser || "—" },
+                { label: "Renovação", value: detailSub.renewalDate ? new Date(detailSub.renewalDate).toLocaleDateString("pt-BR") : "—" },
+                { label: "Criado em", value: new Date(detailSub.createdAt).toLocaleDateString("pt-BR") },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex gap-2">
+                  <span className="text-muted-foreground w-36 shrink-0">{label}</span>
+                  <span className="font-medium">{value}</span>
+                </div>
+              ))}
+              {detailSub.url && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-36 shrink-0">URL</span>
+                  <a href={detailSub.url} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline flex items-center gap-1 break-all">
+                    {detailSub.url} <ExternalLink size={12} className="shrink-0" />
+                  </a>
+                </div>
+              )}
+              {detailSub.notes && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-36 shrink-0">Notas</span>
+                  <span className="font-medium whitespace-pre-wrap">{detailSub.notes}</span>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailSub(null)}>Fechar</Button>
+            {isAdmin && detailSub && (
+              <Link href={`/licencas/${detailSub.id}/editar`}>
+                <Button onClick={() => setDetailSub(null)}>
+                  <Edit size={14} className="mr-2" /> Editar
+                </Button>
+              </Link>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {isAdmin && (
         <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>

@@ -9,7 +9,7 @@ import { SubscriptionUploadButton } from "./_components/upload-button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuditTab } from "./_components/audit-tab";
 
-export default async function AssinaturasPage() {
+export default async function LicencasPage() {
   const session = await getServerSession(authOptions);
   const isAdmin = session?.user?.role === "ADMIN";
 
@@ -38,7 +38,7 @@ export default async function AssinaturasPage() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Assinaturas e Licenças</h1>
+          <h1 className="text-2xl font-bold">Licenças</h1>
           <p className="text-muted-foreground">
             {subscriptions.length}{" "}
             {subscriptions.length === 1 ? "item" : "itens"} cadastrados
@@ -46,7 +46,7 @@ export default async function AssinaturasPage() {
         </div>
         <div className="flex gap-2">
           {isAdmin && <SubscriptionUploadButton />}
-          <Link href="/assinaturas/nova">
+          <Link href="/licencas/nova">
             <Button>
               <Plus size={16} className="mr-2" />
               Nova Assinatura

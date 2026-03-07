@@ -17,15 +17,14 @@ const CATEGORIES = [
   "Inovação & Gestão",
 ];
 
-interface Course {
+interface Artigo {
   id: string;
   slug: string;
   nome: string;
+  autor: string | null;
   categoria: string | null;
-  instrutores: string[];
-  cargaHoraria: number | null;
-  dataCriacao: string | null;
-  dataAtualizacao: string | null;
+  dataPublicacao: string | null;
+  dataModificacao: string | null;
 }
 
 function formatDate(iso: string | null) {
@@ -33,52 +32,38 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
-  const [courses, setCourses] = useState<Course[]>([]);
+type SortField = "nome" | "autor" | "dataPublicacao" | "dataModificacao";
+
+export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
+  const [artigos, setArtigos] = useState<Artigo[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string>("");
   const [monthFrom, setMonthFrom] = useState("2025-01");
   const [monthTo, setMonthTo] = useState("");
   const [selectedCat, setSelectedCat] = useState<string>("");
-  const [specialFilter, setSpecialFilter] = useState<"all" | "hide" | "only">("all");
-  const [sortField, setSortField] = useState<"nome" | "instrutores" | "dataCriacao" | "dataAtualizacao">("dataCriacao");
+  const [sortField, setSortField] = useState<SortField>("dataPublicacao");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  function handleSort(field: typeof sortField) {
+  function handleSort(field: SortField) {
     if (sortField === field) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortField(field);
-      setSortDir(field === "dataCriacao" || field === "dataAtualizacao" ? "desc" : "asc");
+      setSortDir(field === "dataPublicacao" || field === "dataModificacao" ? "desc" : "asc");
     }
   }
 
-  function isSpecial(nome: string) {
-    return nome.includes("[EM BREVE]") || nome.toLowerCase().includes("checkpoint");
-  }
-
-  const sortedCourses = useMemo(() => {
-    const filtered = specialFilter === "all"
-      ? courses
-      : specialFilter === "hide"
-      ? courses.filter((c) => !isSpecial(c.nome))
-      : courses.filter((c) => isSpecial(c.nome));
-
-    return [...filtered].sort((a, b) => {
+  const sorted = useMemo(() => {
+    return [...artigos].sort((a, b) => {
       let cmp = 0;
-      if (sortField === "nome") {
-        cmp = a.nome.localeCompare(b.nome, "pt-BR");
-      } else if (sortField === "instrutores") {
-        cmp = (a.instrutores[0] ?? "").localeCompare(b.instrutores[0] ?? "", "pt-BR");
-      } else if (sortField === "dataCriacao") {
-        cmp = (a.dataCriacao ?? "").localeCompare(b.dataCriacao ?? "");
-      } else if (sortField === "dataAtualizacao") {
-        cmp = (a.dataAtualizacao ?? "").localeCompare(b.dataAtualizacao ?? "");
-      }
+      if (sortField === "nome") cmp = a.nome.localeCompare(b.nome, "pt-BR");
+      else if (sortField === "autor") cmp = (a.autor ?? "").localeCompare(b.autor ?? "", "pt-BR");
+      else if (sortField === "dataPublicacao") cmp = (a.dataPublicacao ?? "").localeCompare(b.dataPublicacao ?? "");
+      else if (sortField === "dataModificacao") cmp = (a.dataModificacao ?? "").localeCompare(b.dataModificacao ?? "");
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [courses, sortField, sortDir, specialFilter]);
+  }, [artigos, sortField, sortDir]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,9 +71,9 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     if (monthFrom) params.set("month_from", monthFrom);
     if (monthTo) params.set("month_to", monthTo);
     if (selectedCat) params.set("categoria", selectedCat);
-    const res = await fetch(`/api/publicacoes/cursos?${params}`);
+    const res = await fetch(`/api/publicacoes/artigos?${params}`);
     const data = await res.json();
-    setCourses(Array.isArray(data) ? data : []);
+    setArtigos(Array.isArray(data) ? data : []);
     setLoading(false);
   }, [monthFrom, monthTo, selectedCat]);
 
@@ -98,14 +83,14 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     setSyncing(true);
     setSyncResult("");
     try {
-      const res = await fetch("/api/publicacoes/cursos/sync", { method: "POST" });
+      const res = await fetch("/api/publicacoes/artigos/sync", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
         setSyncResult(data.error || "Erro ao sincronizar");
         return;
       }
       setSyncResult(
-        `${data.slugsFound} cursos encontrados · ${data.newCoursesProcessed} novos · ${data.existingUpdated} atualizados`
+        `${data.slugsFound} artigos encontrados · ${data.newArtigosProcessed} novos · ${data.existingUpdated} atualizados`
       );
       load();
     } catch {
@@ -113,6 +98,11 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     } finally {
       setSyncing(false);
     }
+  }
+
+  function SortIcon({ field }: { field: SortField }) {
+    if (sortField !== field) return <ArrowUpDown size={12} className="opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />;
   }
 
   return (
@@ -132,7 +122,6 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
             Limpar tudo
           </Button>
         )}
-
         {isAdmin && (
           <div className="ml-auto flex items-center gap-3">
             <Button size="sm" variant="outline" onClick={handleSync} disabled={syncing}>
@@ -142,31 +131,6 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
             {syncResult && <p className="text-xs text-muted-foreground">{syncResult}</p>}
           </div>
         )}
-      </div>
-
-      {/* Filtro de especiais */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-muted-foreground">Tipo:</span>
-        {(
-          [
-            { key: "all", label: "Todos" },
-            { key: "hide", label: "Excluir especiais" },
-            { key: "only", label: "Apenas especiais" },
-          ] as const
-        ).map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setSpecialFilter(key)}
-            className={cn(
-              "px-3 py-1 rounded-full text-xs font-medium border transition-colors",
-              specialFilter === key
-                ? "bg-secondary text-secondary-foreground border-transparent"
-                : "bg-transparent text-muted-foreground border-border hover:border-foreground"
-            )}
-          >
-            {label}
-          </button>
-        ))}
       </div>
 
       {/* Filtros de categoria */}
@@ -201,90 +165,70 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
       {/* Tabela */}
       {loading ? (
         <p className="text-sm text-muted-foreground text-center py-12">Carregando...</p>
-      ) : courses.length === 0 ? (
+      ) : artigos.length === 0 ? (
         <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground text-sm">
           {isAdmin
-            ? 'Nenhum curso encontrado. Clique em "Sincronizar" para buscar os cursos da Alura.'
-            : "Nenhum curso encontrado para os filtros selecionados."}
+            ? 'Nenhum artigo encontrado. Clique em "Sincronizar" para buscar os artigos da Alura.'
+            : "Nenhum artigo encontrado para os filtros selecionados."}
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b">
-                {(
-                  [
-                    { field: "nome", label: "Nome", align: "left", cls: "pr-4" },
-                    { field: "instrutores", label: "Instrutor(es)", align: "left", cls: "px-3" },
-                  ] as const
-                ).map(({ field, label, cls }) => (
-                  <th key={field} className={`text-left pb-2 ${cls}`}>
-                    <button
-                      onClick={() => handleSort(field)}
-                      className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {label}
-                      {sortField === field ? (
-                        sortDir === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
-                      ) : (
-                        <ArrowUpDown size={12} className="opacity-40" />
-                      )}
-                    </button>
-                  </th>
-                ))}
-                {(
-                  [
-                    { field: "dataCriacao", label: "Publicação", cls: "px-3" },
-                    { field: "dataAtualizacao", label: "Atualização", cls: "pl-3" },
-                  ] as const
-                ).map(({ field, label, cls }) => (
-                  <th key={field} className={`text-right pb-2 ${cls}`}>
-                    <button
-                      onClick={() => handleSort(field)}
-                      className="flex items-center justify-end gap-1 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {label}
-                      {sortField === field ? (
-                        sortDir === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
-                      ) : (
-                        <ArrowUpDown size={12} className="opacity-40" />
-                      )}
-                    </button>
-                  </th>
-                ))}
+                <th className="text-left pb-2 pr-4">
+                  <button onClick={() => handleSort("nome")} className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    Nome <SortIcon field="nome" />
+                  </button>
+                </th>
+                <th className="text-left pb-2 px-3">
+                  <button onClick={() => handleSort("autor")} className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    Autor <SortIcon field="autor" />
+                  </button>
+                </th>
+                <th className="text-right pb-2 px-3">
+                  <button onClick={() => handleSort("dataPublicacao")} className="flex items-center justify-end gap-1 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    Publicação <SortIcon field="dataPublicacao" />
+                  </button>
+                </th>
+                <th className="text-right pb-2 pl-3">
+                  <button onClick={() => handleSort("dataModificacao")} className="flex items-center justify-end gap-1 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    Atualização <SortIcon field="dataModificacao" />
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y">
-              {sortedCourses.map((course) => (
-                <tr key={course.id}>
+              {sorted.map((artigo) => (
+                <tr key={artigo.id}>
                   <td className="py-2.5 pr-4">
                     <a
-                      href={`https://www.alura.com.br/curso-online-${course.slug}`}
+                      href={`https://www.alura.com.br/artigos/${artigo.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-medium hover:text-primary transition-colors flex items-start gap-1.5 group"
                     >
-                      {course.nome}
+                      {artigo.nome}
                       <ExternalLink size={11} className="shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </a>
-                    {course.categoria && (
-                      <span className="text-xs text-muted-foreground">{course.categoria}</span>
+                    {artigo.categoria && (
+                      <span className="text-xs text-muted-foreground">{artigo.categoria}</span>
                     )}
                   </td>
-                  <td className="py-2.5 px-3 text-muted-foreground">
-                    {course.instrutores.length > 0 ? course.instrutores.join(", ") : "—"}
+                  <td className="py-2.5 px-3 text-muted-foreground text-sm">
+                    {artigo.autor || "—"}
                   </td>
                   <td className="py-2.5 px-3 text-right text-muted-foreground font-mono text-xs">
-                    {formatDate(course.dataCriacao)}
+                    {formatDate(artigo.dataPublicacao)}
                   </td>
                   <td className="py-2.5 pl-3 text-right text-muted-foreground font-mono text-xs">
-                    {formatDate(course.dataAtualizacao)}
+                    {formatDate(artigo.dataModificacao)}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <p className="text-xs text-muted-foreground mt-3">{sortedCourses.length} cursos</p>
+          <p className="text-xs text-muted-foreground mt-3">{sorted.length} artigos</p>
         </div>
       )}
     </div>
