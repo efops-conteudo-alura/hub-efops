@@ -49,7 +49,7 @@ function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 });
 }
 
-function ExpensesByCategoryTooltip({ active, payload, label }: { active?: boolean; payload?: readonly { dataKey: string; value: number; color: string }[]; label?: string }) {
+function ExpensesByCategoryTooltip({ active, payload, label }: { active?: boolean; payload?: readonly { dataKey: string; value: number; color: string }[]; label?: string | number }) {
   if (!active || !payload?.length) return null;
   const items = payload.filter((e) => e.value > 0);
   if (!items.length) return null;

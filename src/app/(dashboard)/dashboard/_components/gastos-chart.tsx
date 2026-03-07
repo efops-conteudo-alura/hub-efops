@@ -26,7 +26,7 @@ function formatMonth(m: string) {
   return `${month}/${year.slice(2)}`;
 }
 
-function GastosTooltip({ active, payload, label }: { active?: boolean; payload?: readonly { dataKey: string; value: number; color: string }[]; label?: string }) {
+function GastosTooltip({ active, payload, label }: { active?: boolean; payload?: readonly { dataKey: string; value: number; color: string }[]; label?: string | number }) {
   if (!active || !payload?.length) return null;
   const items = payload.filter((e) => e.value > 0);
   if (!items.length) return null;
