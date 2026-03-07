@@ -10,6 +10,7 @@ export type { CarreiraLevel };
 
 interface CarreirasPanelProps {
   initialLevels: CarreiraLevel[];
+  onSynced?: (result: SyncResult) => void;
 }
 
 function formatDate(iso: string | null) {
@@ -26,7 +27,7 @@ function isNew(level: CarreiraLevel, previousSyncAt: string | null): boolean {
   return false;
 }
 
-export function CarreirasPanel({ initialLevels }: CarreirasPanelProps) {
+export function CarreirasPanel({ initialLevels, onSynced }: CarreirasPanelProps) {
   const [levels, setLevels] = useState<CarreiraLevel[]>(initialLevels);
   const [filter, setFilter] = useState("");
   const [lastSync, setLastSync] = useState<string | null>(null);
@@ -36,6 +37,7 @@ export function CarreirasPanel({ initialLevels }: CarreirasPanelProps) {
     setLevels(result.levels);
     setLastSync(result.syncedAt);
     setPreviousSyncAt(result.previousSyncAt);
+    onSynced?.(result);
   }
 
   const filtered = useMemo(() => {
