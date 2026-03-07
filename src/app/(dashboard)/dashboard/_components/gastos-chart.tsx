@@ -46,6 +46,8 @@ export function GastosChart({ data }: { data: GastosChartRow[] }) {
           width={52}
         />
         <Tooltip
+          contentStyle={{ fontSize: 12, borderRadius: 6, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+          labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
           formatter={(v: number | undefined, name: string | undefined) => [
             v != null ? v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 }) : "",
             CATEGORIES.find((c) => c.key === name)?.label ?? name ?? "",

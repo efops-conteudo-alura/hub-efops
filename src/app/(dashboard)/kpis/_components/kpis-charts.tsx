@@ -36,7 +36,8 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-const TOOLTIP_STYLE = { fontSize: 12, borderRadius: 6 };
+const TOOLTIP_STYLE = { fontSize: 12, borderRadius: 6, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" };
+const TOOLTIP_LABEL_STYLE = { color: "hsl(var(--foreground))", fontWeight: 600 as const };
 
 export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
   const [monthFrom, setMonthFrom] = useState("");
@@ -118,7 +119,7 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={TOOLTIP_LABEL_STYLE} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Bar dataKey="Cursos" stackId="a" fill="#6366f1" />
                   <Bar dataKey="Artigos" stackId="a" fill="#f59e0b" />
@@ -137,7 +138,7 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={TOOLTIP_LABEL_STYLE} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Line type="monotone" dataKey="Score" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} connectNulls />
                   <Line type="monotone" dataKey="MM 3 meses" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 3" dot={false} connectNulls />
@@ -159,7 +160,7 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={TOOLTIP_LABEL_STYLE} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Bar dataKey="Conteúdo" stackId="b" fill="#6366f1" />
                   <Bar dataKey="Start" stackId="b" fill="#f59e0b" />
@@ -178,7 +179,7 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={TOOLTIP_LABEL_STYLE} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Line type="monotone" dataKey="Score Edição" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} />
                   <Line type="monotone" dataKey="Total Entregas" stroke="#10b981" strokeWidth={2} strokeDasharray="4 2" dot={{ r: 2 }} />

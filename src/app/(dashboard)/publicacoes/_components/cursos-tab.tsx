@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, ExternalLink } from "lucide-react";
+import { RefreshCw, ExternalLink, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MonthPicker } from "@/app/(dashboard)/gastos/_components/month-picker";
 
@@ -41,6 +41,33 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   const [monthFrom, setMonthFrom] = useState("2025-01");
   const [monthTo, setMonthTo] = useState("");
   const [selectedCat, setSelectedCat] = useState<string>("");
+  const [sortField, setSortField] = useState<"nome" | "instrutores" | "dataCriacao" | "dataAtualizacao">("dataCriacao");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  function handleSort(field: typeof sortField) {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDir(field === "dataCriacao" || field === "dataAtualizacao" ? "desc" : "asc");
+    }
+  }
+
+  const sortedCourses = useMemo(() => {
+    return [...courses].sort((a, b) => {
+      let cmp = 0;
+      if (sortField === "nome") {
+        cmp = a.nome.localeCompare(b.nome, "pt-BR");
+      } else if (sortField === "instrutores") {
+        cmp = (a.instrutores[0] ?? "").localeCompare(b.instrutores[0] ?? "", "pt-BR");
+      } else if (sortField === "dataCriacao") {
+        cmp = (a.dataCriacao ?? "").localeCompare(b.dataCriacao ?? "");
+      } else if (sortField === "dataAtualizacao") {
+        cmp = (a.dataAtualizacao ?? "").localeCompare(b.dataAtualizacao ?? "");
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [courses, sortField, sortDir]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -149,14 +176,50 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b">
-                <th className="text-left pb-2 font-medium text-muted-foreground pr-4">Nome</th>
-                <th className="text-left pb-2 font-medium text-muted-foreground px-3">Instrutor(es)</th>
-                <th className="text-right pb-2 font-medium text-muted-foreground px-3">Publicação</th>
-                <th className="text-right pb-2 font-medium text-muted-foreground pl-3">Atualização</th>
+                {(
+                  [
+                    { field: "nome", label: "Nome", align: "left", cls: "pr-4" },
+                    { field: "instrutores", label: "Instrutor(es)", align: "left", cls: "px-3" },
+                  ] as const
+                ).map(({ field, label, cls }) => (
+                  <th key={field} className={`text-left pb-2 ${cls}`}>
+                    <button
+                      onClick={() => handleSort(field)}
+                      className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {label}
+                      {sortField === field ? (
+                        sortDir === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                      ) : (
+                        <ArrowUpDown size={12} className="opacity-40" />
+                      )}
+                    </button>
+                  </th>
+                ))}
+                {(
+                  [
+                    { field: "dataCriacao", label: "Publicação", cls: "px-3" },
+                    { field: "dataAtualizacao", label: "Atualização", cls: "pl-3" },
+                  ] as const
+                ).map(({ field, label, cls }) => (
+                  <th key={field} className={`text-right pb-2 ${cls}`}>
+                    <button
+                      onClick={() => handleSort(field)}
+                      className="flex items-center justify-end gap-1 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {label}
+                      {sortField === field ? (
+                        sortDir === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                      ) : (
+                        <ArrowUpDown size={12} className="opacity-40" />
+                      )}
+                    </button>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y">
-              {courses.map((course) => (
+              {sortedCourses.map((course) => (
                 <tr key={course.id}>
                   <td className="py-2.5 pr-4">
                     <a
