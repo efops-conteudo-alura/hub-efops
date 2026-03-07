@@ -15,7 +15,7 @@ const CATEGORY_SOURCES = [
   { label: "Data Science", url: "https://www.alura.com.br/cursos-online-data-science" },
   { label: "Inteligência Artificial", url: "https://www.alura.com.br/cursos-online-inteligencia-artificial" },
   { label: "DevOps", url: "https://www.alura.com.br/cursos-online-devops" },
-  { label: "UX & Design", url: "https://www.alura.com.br/cursos-online-ux-design" },
+  { label: "UX & Design", url: "https://www.alura.com.br/cursos-online-design-ux" },
   { label: "Mobile", url: "https://www.alura.com.br/cursos-online-mobile" },
   { label: "Inovação & Gestão", url: "https://www.alura.com.br/cursos-online-inovacao-gestao" },
 ];
