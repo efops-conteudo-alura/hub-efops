@@ -181,7 +181,7 @@ export function ExpensesOverview({ isAdmin }: Props) {
                   ]}
                   labelFormatter={(m) => formatMonth(String(m))}
                 />
-                <Legend formatter={(v) => v === "total" ? "Total" : "Média 3 meses"} />
+                <Legend formatter={(v) => v === "total" ? "Total" : "Média 3 meses"} wrapperStyle={{ fontSize: 12, background: "hsl(var(--card) / 0.85)", borderRadius: 6, padding: "2px 8px", border: "1px solid hsl(var(--border))" }} />
                 <Line type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="media3" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 3" dot={false} />
               </LineChart>

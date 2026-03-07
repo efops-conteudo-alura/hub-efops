@@ -38,6 +38,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 const TOOLTIP_STYLE = { fontSize: 12, borderRadius: 6, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" };
 const TOOLTIP_LABEL_STYLE = { color: "hsl(var(--foreground))", fontWeight: 600 as const };
+const LEGEND_STYLE = { fontSize: 11, background: "hsl(var(--card) / 0.85)", borderRadius: 6, padding: "2px 8px", border: "1px solid hsl(var(--border))" };
 
 export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
   const [monthFrom, setMonthFrom] = useState("");
@@ -120,7 +121,7 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={TOOLTIP_LABEL_STYLE} />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Legend wrapperStyle={LEGEND_STYLE} />
                   <Bar dataKey="Cursos" stackId="a" fill="#6366f1" />
                   <Bar dataKey="Artigos" stackId="a" fill="#f59e0b" />
                   <Bar dataKey="Carreiras" stackId="a" fill="#10b981" />
@@ -139,7 +140,7 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={TOOLTIP_LABEL_STYLE} />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Legend wrapperStyle={LEGEND_STYLE} />
                   <Line type="monotone" dataKey="Score" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} connectNulls />
                   <Line type="monotone" dataKey="MM 3 meses" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 3" dot={false} connectNulls />
                 </LineChart>
@@ -161,7 +162,7 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={TOOLTIP_LABEL_STYLE} />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Legend wrapperStyle={LEGEND_STYLE} />
                   <Bar dataKey="Conteúdo" stackId="b" fill="#6366f1" />
                   <Bar dataKey="Start" stackId="b" fill="#f59e0b" />
                   <Bar dataKey="Latam" stackId="b" fill="#10b981" />
@@ -180,7 +181,7 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
                   <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={TOOLTIP_LABEL_STYLE} />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Legend wrapperStyle={LEGEND_STYLE} />
                   <Line type="monotone" dataKey="Score Edição" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} />
                   <Line type="monotone" dataKey="Total Entregas" stroke="#10b981" strokeWidth={2} strokeDasharray="4 2" dot={{ r: 2 }} />
                   <Line type="monotone" dataKey="Correções" stroke="#f43f5e" strokeWidth={2} strokeDasharray="4 2" dot={{ r: 2 }} />

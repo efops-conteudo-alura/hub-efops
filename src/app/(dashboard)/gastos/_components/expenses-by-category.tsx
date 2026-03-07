@@ -159,7 +159,7 @@ export function ExpensesByCategory() {
                   ]}
                   labelFormatter={(m) => formatMonth(String(m))}
                 />
-                <Legend formatter={(v) => ALL_CATEGORIES.find((c) => c.value === v)?.label ?? v} />
+                <Legend formatter={(v) => ALL_CATEGORIES.find((c) => c.value === v)?.label ?? v} wrapperStyle={{ fontSize: 12, background: "hsl(var(--card) / 0.85)", borderRadius: 6, padding: "2px 8px", border: "1px solid hsl(var(--border))" }} />
                 {selectedCategories.map((cat) => (
                   <Line
                     key={cat.value}

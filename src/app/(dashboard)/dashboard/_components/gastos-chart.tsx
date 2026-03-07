@@ -54,7 +54,7 @@ export function GastosChart({ data }: { data: GastosChartRow[] }) {
           ]}
           labelFormatter={(m) => formatMonth(String(m))}
         />
-        <Legend formatter={(v) => CATEGORIES.find((c) => c.key === v)?.label ?? v} wrapperStyle={{ fontSize: 11 }} />
+        <Legend formatter={(v) => CATEGORIES.find((c) => c.key === v)?.label ?? v} wrapperStyle={{ fontSize: 11, background: "hsl(var(--card) / 0.85)", borderRadius: 6, padding: "2px 8px", border: "1px solid hsl(var(--border))" }} />
         {CATEGORIES.map((cat) => (
           <Bar key={cat.key} dataKey={cat.key} stackId="a" fill={cat.color} />
         ))}
