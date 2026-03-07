@@ -111,7 +111,7 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
       <div>
         <p className="text-base font-semibold mb-3">Publicação de Conteúdo</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card title="Quantidade publicada por categoria">
+          <Card title="Publicações por tipo de conteúdo">
             {sortedProd.length === 0 ? noDataMsg : (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={prodQtyData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
@@ -152,7 +152,7 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
       <div>
         <p className="text-base font-semibold mb-3">Pós-produção</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card title="Entregas por tipo">
+          <Card title="Entregas por demandante">
             {sortedEd.length === 0 ? noDataMsg : (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={edEntregasData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>

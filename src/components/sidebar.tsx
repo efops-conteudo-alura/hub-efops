@@ -178,7 +178,8 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="p-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             >
-              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+              <Sun size={16} className="dark:hidden" />
+              <Moon size={16} className="hidden dark:block" />
             </button>
             <button
               title="Sair"
