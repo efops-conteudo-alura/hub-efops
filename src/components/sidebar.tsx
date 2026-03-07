@@ -6,13 +6,14 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   House, BarChart2, Key, LogOut, Gauge, Users, Bot,
-  GitBranch, BookOpen, ChevronLeft, ChevronRight, Menu, X, Receipt, FileBarChart, TrendingUp, BookMarked,
+  GitBranch, BookOpen, ChevronLeft, ChevronRight, Menu, X, Receipt, FileBarChart, TrendingUp, BookMarked, Sun, Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ProfileDialog } from "@/components/profile-dialog";
+import { useTheme } from "next-themes";
 
 interface SidebarProps {
   user: {
@@ -39,6 +40,7 @@ const bottomNavItems = [
 
 export function Sidebar({ user, isAdmin }: SidebarProps) {
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -171,7 +173,13 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
                 </AvatarFallback>
               </Avatar>
             </button>
-            <ThemeToggle />
+            <button
+              title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="p-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
             <button
               title="Sair"
               onClick={() => signOut({ callbackUrl: "/login" })}
