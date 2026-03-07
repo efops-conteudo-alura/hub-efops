@@ -38,7 +38,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 const LEGEND_STYLE = { fontSize: 11, background: "hsl(var(--card) / 0.85)", borderRadius: 6, padding: "2px 8px", border: "1px solid hsl(var(--border))" };
 
-function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number | null; color: string }>; label?: string }) {
+function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: readonly { name: string; value: number | null; color: string }[]; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-md border bg-popover shadow-md px-3 py-2 text-xs space-y-0.5">

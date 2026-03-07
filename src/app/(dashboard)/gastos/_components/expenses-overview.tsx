@@ -70,7 +70,7 @@ interface Props {
   isAdmin: boolean;
 }
 
-function ExpensesOverviewTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ dataKey: string; value: number; color: string }>; label?: string }) {
+function ExpensesOverviewTooltip({ active, payload, label }: { active?: boolean; payload?: readonly { dataKey: string; value: number; color: string }[]; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-md border bg-popover shadow-md px-3 py-2 text-xs space-y-0.5">
