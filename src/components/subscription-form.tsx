@@ -136,7 +136,7 @@ export function SubscriptionForm({
 
       if (!response.ok) throw new Error("Erro ao salvar");
 
-      router.push("/assinaturas");
+      router.push("/licencas");
       router.refresh();
     } catch {
       setError("Erro ao salvar. Tente novamente.");
@@ -459,7 +459,7 @@ export function SubscriptionForm({
         <Button
           type="button"
           variant="outline"
-          onClick={() => router.push("/assinaturas")}
+          onClick={() => router.push("/licencas")}
         >
           Cancelar
         </Button>

@@ -62,7 +62,7 @@ export default async function HomePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
 
         {/* Licenças */}
-        <Link href="/assinaturas">
+        <Link href="/licencas">
           <Card className="hover:border-blue-400 transition-colors cursor-pointer h-full overflow-hidden">
             <div className="h-1.5 bg-blue-500" />
             <CardContent className="pt-5 pb-5">
@@ -254,7 +254,7 @@ export default async function HomePage() {
                 ))}
               </div>
             )}
-            <Link href="/assinaturas" className="flex items-center gap-1 mt-4 text-xs text-primary hover:underline">
+            <Link href="/licencas" className="flex items-center gap-1 mt-4 text-xs text-primary hover:underline">
               Ver todas <ArrowRight size={11} />
             </Link>
           </CardContent>
