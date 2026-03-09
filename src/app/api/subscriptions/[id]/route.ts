@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { encrypt, decrypt } from "@/lib/crypto";
+import { encrypt } from "@/lib/crypto";
 
 export async function GET(
   _request: NextRequest,
@@ -15,10 +15,9 @@ export async function GET(
   const subscription = await prisma.subscription.findUnique({ where: { id } });
   if (!subscription) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  return NextResponse.json({
-    ...subscription,
-    loginPass: subscription.loginPass ? decrypt(subscription.loginPass) : null,
-  });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { loginPass: _, ...safeSubscription } = subscription;
+  return NextResponse.json(safeSubscription);
 }
 
 const AUDITED_FIELDS = [
@@ -81,7 +80,9 @@ export async function PUT(
     });
   }
 
-  return NextResponse.json(subscription);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { loginPass: __, ...safeUpdated } = subscription;
+  return NextResponse.json(safeUpdated);
 }
 
 export async function DELETE(
