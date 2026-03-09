@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   House, BarChart2, Key, LogOut, Gauge, Users, Bot,
-  GitBranch, BookOpen, ChevronLeft, ChevronRight, Menu, X, Receipt, FileBarChart, TrendingUp, BookMarked, Sun, Moon,
+  GitBranch, BookOpen, ChevronLeft, ChevronRight, Menu, X, Receipt, FileBarChart, TrendingUp, BookMarked, Sun, Moon, ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
           { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
           { href: "/gastos", label: "Gastos Externos", icon: Receipt },
           { href: "/kpis", label: "KPIs", icon: TrendingUp },
+          { href: "/imobilizacao", label: "Imobilização", icon: ClipboardList },
           { href: "/admin/usuarios", label: "Usuários", icon: Users },
         ]
       : []),

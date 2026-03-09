@@ -286,3 +286,36 @@ model KpiEdicao {
 
   @@unique([month])
 }
+
+model ImobilizacaoPeriodo {
+  id         String              @id @default(cuid())
+  ano        Int
+  mes        Int                 // 1–12
+  dataInicio DateTime?
+  dataFim    DateTime?
+  feriados   Int                 @default(0)
+  diasUteis  Int                 @default(0)
+  entries    ImobilizacaoEntry[]
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@unique([ano, mes])
+}
+
+model ImobilizacaoEntry {
+  id                   String              @id @default(cuid())
+  periodoId            String
+  periodo              ImobilizacaoPeriodo @relation(fields: [periodoId], references: [id], onDelete: Cascade)
+  colaboradorNome      String
+  colaboradorMatricula String?
+  cargaHorariaTotal    Int?
+  cargaHorariaDiaria   Int?
+  produtoTipo          String?             // "curso", "trilha", etc.
+  produtoId            String?             // ID externo do produto/curso
+  produtoNome          String
+  horas                Int                 @default(0)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@unique([periodoId, colaboradorNome, produtoNome])
+}
