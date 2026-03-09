@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx prisma db push)"
+      "Bash(npx prisma db push)",
+      "mcp__vercel__list_teams",
+      "mcp__vercel__list_projects",
+      "mcp__vercel__list_deployments"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "vercel"
+  ]
 }
