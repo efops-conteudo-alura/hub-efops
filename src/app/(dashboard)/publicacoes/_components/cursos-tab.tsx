@@ -96,17 +96,29 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   useEffect(() => { load(); }, [load]);
 
   async function handleCopy() {
-    const header = ["Nome", "Categoria", "Instrutor(es)", "Publicação", "Atualização"].join("\t");
-    const rows = sortedCourses.map((c) =>
-      [
-        c.nome,
-        c.categoria ?? "",
-        c.instrutores.join(", "),
-        formatDate(c.dataCriacao),
-        formatDate(c.dataAtualizacao),
-      ].join("\t")
-    );
-    await navigator.clipboard.writeText([header, ...rows].join("\n"));
+    function esc(s: string) {
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    const html = [
+      "<table>",
+      "<tr><th>Nome</th><th>Categoria</th><th>Instrutor(es)</th><th>Publicação</th><th>Atualização</th></tr>",
+      ...sortedCourses.map((c) =>
+        `<tr><td><a href="https://www.alura.com.br/curso-online-${c.slug}">${esc(c.nome)}</a></td><td>${esc(c.categoria ?? "")}</td><td>${esc(c.instrutores.join(", "))}</td><td>${formatDate(c.dataCriacao)}</td><td>${formatDate(c.dataAtualizacao)}</td></tr>`
+      ),
+      "</table>",
+    ].join("\n");
+    const plain = [
+      ["Nome", "Categoria", "Instrutor(es)", "Publicação", "Atualização", "Link"].join("\t"),
+      ...sortedCourses.map((c) =>
+        [c.nome, c.categoria ?? "", c.instrutores.join(", "), formatDate(c.dataCriacao), formatDate(c.dataAtualizacao), `https://www.alura.com.br/curso-online-${c.slug}`].join("\t")
+      ),
+    ].join("\n");
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([plain], { type: "text/plain" }),
+      }),
+    ]);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }

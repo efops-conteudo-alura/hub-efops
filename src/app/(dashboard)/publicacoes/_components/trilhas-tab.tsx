@@ -94,16 +94,29 @@ export function TrilhasTab({ isAdmin }: { isAdmin: boolean }) {
   }
 
   async function handleCopy() {
-    const header = ["Nome", "Categoria", "Cursos", "Carga Horária"].join("\t");
-    const rows = sorted.map((t) =>
-      [
-        t.nome,
-        t.categoria ?? "",
-        t.numCursos ?? "",
-        t.cargaHoraria != null ? `${t.cargaHoraria}h` : "",
-      ].join("\t")
-    );
-    await navigator.clipboard.writeText([header, ...rows].join("\n"));
+    function esc(s: string) {
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    const html = [
+      "<table>",
+      "<tr><th>Nome</th><th>Categoria</th><th>Cursos</th><th>Carga Horária</th></tr>",
+      ...sorted.map((t) =>
+        `<tr><td><a href="https://www.alura.com.br/formacao-${t.slug}">${esc(t.nome)}</a></td><td>${esc(t.categoria ?? "")}</td><td>${t.numCursos ?? ""}</td><td>${t.cargaHoraria != null ? `${t.cargaHoraria}h` : ""}</td></tr>`
+      ),
+      "</table>",
+    ].join("\n");
+    const plain = [
+      ["Nome", "Categoria", "Cursos", "Carga Horária", "Link"].join("\t"),
+      ...sorted.map((t) =>
+        [t.nome, t.categoria ?? "", t.numCursos ?? "", t.cargaHoraria != null ? `${t.cargaHoraria}h` : "", `https://www.alura.com.br/formacao-${t.slug}`].join("\t")
+      ),
+    ].join("\n");
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([plain], { type: "text/plain" }),
+      }),
+    ]);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }

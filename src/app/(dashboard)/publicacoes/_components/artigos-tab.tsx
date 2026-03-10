@@ -81,17 +81,29 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
   useEffect(() => { load(); }, [load]);
 
   async function handleCopy() {
-    const header = ["Nome", "Categoria", "Autor", "Publicação", "Atualização"].join("\t");
-    const rows = sorted.map((a) =>
-      [
-        a.nome,
-        a.categoria ?? "",
-        a.autor ?? "",
-        formatDate(a.dataPublicacao),
-        formatDate(a.dataModificacao),
-      ].join("\t")
-    );
-    await navigator.clipboard.writeText([header, ...rows].join("\n"));
+    function esc(s: string) {
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    const html = [
+      "<table>",
+      "<tr><th>Nome</th><th>Categoria</th><th>Autor</th><th>Publicação</th><th>Atualização</th></tr>",
+      ...sorted.map((a) =>
+        `<tr><td><a href="https://www.alura.com.br/artigos/${a.slug}">${esc(a.nome)}</a></td><td>${esc(a.categoria ?? "")}</td><td>${esc(a.autor ?? "")}</td><td>${formatDate(a.dataPublicacao)}</td><td>${formatDate(a.dataModificacao)}</td></tr>`
+      ),
+      "</table>",
+    ].join("\n");
+    const plain = [
+      ["Nome", "Categoria", "Autor", "Publicação", "Atualização", "Link"].join("\t"),
+      ...sorted.map((a) =>
+        [a.nome, a.categoria ?? "", a.autor ?? "", formatDate(a.dataPublicacao), formatDate(a.dataModificacao), `https://www.alura.com.br/artigos/${a.slug}`].join("\t")
+      ),
+    ].join("\n");
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([plain], { type: "text/plain" }),
+      }),
+    ]);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
