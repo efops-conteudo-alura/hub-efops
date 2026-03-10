@@ -18,14 +18,14 @@ git diff --stat
 Mostre ao usuário um resumo das alterações antes de continuar.
 
 ### 2. Sugerir mensagem de commit
-Com base nas alterações encontradas, sugira uma mensagem de commit no formato:
+Com base nas alterações encontradas, crie uma mensagem de commit no formato:
 ```
 tipo: descrição curta em pt-BR
 ```
 Tipos: `feat`, `fix`, `refactor`, `chore`, `docs`, `style`
 
-Pergunte ao usuário: **"Pode commitar com essa mensagem ou quer alterar?"**
-Aguarde confirmação antes de continuar.
+Gere a mensagem de commit diretamente e execute sem pedir confirmação ou aprovação.
+Não pergunte se o usuário gostou ou quer alterar a mensagem.
 
 ### 3. Executar commit e push
 ```bash

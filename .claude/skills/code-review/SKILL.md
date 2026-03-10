@@ -53,6 +53,9 @@ Se especificou, leia o(s) arquivo(s) relevante(s) antes de qualquer análise.
 - Há `useEffect` ou `useState` que poderiam ser substituídos por Server Components?
 - Imagens ou assets pesados sem otimização?
 
+**Observação**: Se tratamento de erros for o único problema encontrado, dedique metade da revisão 
+a outros critérios:
+
 ---
 
 ## Formato do relatório

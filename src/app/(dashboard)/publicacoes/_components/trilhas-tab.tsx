@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RefreshCw, ExternalLink, ArrowUp, ArrowDown, ArrowUpDown, Search, Sparkles } from "lucide-react";
+import { RefreshCw, ExternalLink, ArrowUp, ArrowDown, ArrowUpDown, Search, Sparkles, ClipboardCopy, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +26,7 @@ export function TrilhasTab({ isAdmin }: { isAdmin: boolean }) {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string>("");
+  const [copied, setCopied] = useState(false);
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("nome");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -92,6 +93,21 @@ export function TrilhasTab({ isAdmin }: { isAdmin: boolean }) {
     }
   }
 
+  async function handleCopy() {
+    const header = ["Nome", "Categoria", "Cursos", "Carga Horária"].join("\t");
+    const rows = sorted.map((t) =>
+      [
+        t.nome,
+        t.categoria ?? "",
+        t.numCursos ?? "",
+        t.cargaHoraria != null ? `${t.cargaHoraria}h` : "",
+      ].join("\t")
+    );
+    await navigator.clipboard.writeText([header, ...rows].join("\n"));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   function isNew(trilha: Trilha): boolean {
     if (!previousSyncAt) return false;
     return new Date(trilha.createdAt) > new Date(previousSyncAt);
@@ -120,6 +136,12 @@ export function TrilhasTab({ isAdmin }: { isAdmin: boolean }) {
             <span className="text-primary font-semibold text-sm flex items-center gap-1">
               <Sparkles size={13} /> {sorted.filter(isNew).length} novas
             </span>
+          )}
+          {sorted.length > 0 && !loading && (
+            <Button size="sm" variant="outline" onClick={handleCopy}>
+              {copied ? <Check size={14} className="mr-2 text-green-500" /> : <ClipboardCopy size={14} className="mr-2" />}
+              {copied ? "Copiado!" : "Copiar dados"}
+            </Button>
           )}
           {isAdmin && (
             <>

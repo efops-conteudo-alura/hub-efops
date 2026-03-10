@@ -4,7 +4,9 @@
       "Bash(npx prisma db push)",
       "mcp__vercel__list_teams",
       "mcp__vercel__list_projects",
-      "mcp__vercel__list_deployments"
+      "mcp__vercel__list_deployments",
+      "Bash(npx prisma:*)",
+      "Bash(npx tsc:*)"
     ]
   },
   "enabledMcpjsonServers": [

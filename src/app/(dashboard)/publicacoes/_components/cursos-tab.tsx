@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, ExternalLink, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { RefreshCw, ExternalLink, ArrowUp, ArrowDown, ArrowUpDown, ClipboardCopy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MonthPicker } from "@/app/(dashboard)/gastos/_components/month-picker";
 
@@ -38,6 +38,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string>("");
+  const [copied, setCopied] = useState(false);
   const [monthFrom, setMonthFrom] = useState("2025-01");
   const [monthTo, setMonthTo] = useState("");
   const [selectedCat, setSelectedCat] = useState<string>("");
@@ -94,6 +95,22 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
 
   useEffect(() => { load(); }, [load]);
 
+  async function handleCopy() {
+    const header = ["Nome", "Categoria", "Instrutor(es)", "Publicação", "Atualização"].join("\t");
+    const rows = sortedCourses.map((c) =>
+      [
+        c.nome,
+        c.categoria ?? "",
+        c.instrutores.join(", "),
+        formatDate(c.dataCriacao),
+        formatDate(c.dataAtualizacao),
+      ].join("\t")
+    );
+    await navigator.clipboard.writeText([header, ...rows].join("\n"));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   async function handleSync() {
     setSyncing(true);
     setSyncResult("");
@@ -133,15 +150,23 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
           </Button>
         )}
 
-        {isAdmin && (
-          <div className="ml-auto flex items-center gap-3">
-            <Button size="sm" variant="outline" onClick={handleSync} disabled={syncing}>
-              <RefreshCw size={14} className={cn("mr-2", syncing && "animate-spin")} />
-              {syncing ? "Sincronizando..." : "Sincronizar"}
+        <div className="ml-auto flex items-center gap-3">
+          {sortedCourses.length > 0 && !loading && (
+            <Button size="sm" variant="outline" onClick={handleCopy}>
+              {copied ? <Check size={14} className="mr-2 text-green-500" /> : <ClipboardCopy size={14} className="mr-2" />}
+              {copied ? "Copiado!" : "Copiar dados"}
             </Button>
-            {syncResult && <p className="text-xs text-muted-foreground">{syncResult}</p>}
-          </div>
-        )}
+          )}
+          {isAdmin && (
+            <>
+              <Button size="sm" variant="outline" onClick={handleSync} disabled={syncing}>
+                <RefreshCw size={14} className={cn("mr-2", syncing && "animate-spin")} />
+                {syncing ? "Sincronizando..." : "Sincronizar"}
+              </Button>
+              {syncResult && <p className="text-xs text-muted-foreground">{syncResult}</p>}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Filtro de especiais */}
