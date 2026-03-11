@@ -160,6 +160,8 @@ export async function POST() {
   if (aluraUserId) cookieParts.push(`alura.userId=${aluraUserId}`);
   const cookieHeader = cookieParts.join("; ");
 
+  const CUTOFF_DATE = new Date("2025-01-01");
+
   let created = 0;
   let updated = 0;
   let page = 1;
@@ -179,8 +181,21 @@ export async function POST() {
 
       if (rows.length === 0) break;
 
+      let reachedCutoff = false;
+
       for (const row of rows) {
         if (!row.slug) continue;
+
+        // Para paginação quando encontrar curso anterior a jan/2025
+        if (row.dataCriacao && row.dataCriacao < CUTOFF_DATE) {
+          reachedCutoff = true;
+          break;
+        }
+
+        // Remove catálogos de teste/trial do array (curso ainda é salvo se tiver outros catálogos)
+        const catalogosFiltrados = row.catalogos.filter(
+          (c) => !c.toLowerCase().includes("teste") && !c.toLowerCase().includes("trial")
+        );
 
         const existing = await prisma.aluraCourse.findUnique({
           where: { slug: row.slug },
@@ -196,7 +211,7 @@ export async function POST() {
           statusCriacao: row.statusCriacao || null,
           tipoContrato: row.tipoContrato || null,
           tipo: row.tipo || null,
-          catalogos: row.catalogos,
+          catalogos: catalogosFiltrados,
           isExclusive: row.isExclusive,
           dataCriacao: row.dataCriacao,
           dataAtualizacao: row.dataAtualizacao,
@@ -210,6 +225,8 @@ export async function POST() {
           created++;
         }
       }
+
+      if (reachedCutoff) break;
 
       page++;
     }
