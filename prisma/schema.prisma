@@ -233,8 +233,7 @@ model AluraCourse {
   subcategoria    String?
   instrutores     String[]
   cargaHoraria    Int?
-  dataCriacao     DateTime?
-  dataAtualizacao DateTime?
+  dataPublicacao  DateTime?
   // Campos do admin
   aluraId         Int?
   instrutor       String?

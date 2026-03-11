@@ -104,10 +104,10 @@ export async function POST() {
     // 2. Find which slugs already have full data in DB (dataCriacao preenchida)
     const existing = await prisma.aluraCourse.findMany({
       where: { slug: { in: allSlugs } },
-      select: { slug: true, dataCriacao: true },
+      select: { slug: true, dataPublicacao: true },
     });
     const existingComplete = new Set(
-      existing.filter((c) => c.dataCriacao !== null).map((c) => c.slug)
+      existing.filter((c) => c.dataPublicacao !== null).map((c) => c.slug)
     );
 
     // 3. Fetch individual course APIs only for new/incomplete courses
@@ -151,8 +151,7 @@ export async function POST() {
             subcategoria: null,
             instrutores,
             cargaHoraria,
-            dataCriacao: parseDate(apiData.data_criacao),
-            dataAtualizacao: parseDate(apiData.data_atualizacao),
+            dataPublicacao: parseDate(apiData.data_criacao),
           },
           update: {
             nome: apiData.nome ?? slug,
@@ -160,8 +159,7 @@ export async function POST() {
             categoria,
             instrutores,
             cargaHoraria,
-            dataCriacao: parseDate(apiData.data_criacao),
-            dataAtualizacao: parseDate(apiData.data_atualizacao),
+            dataPublicacao: parseDate(apiData.data_criacao),
           },
         });
         upserted++;

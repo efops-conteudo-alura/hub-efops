@@ -56,7 +56,7 @@ function parseDate(raw: string): string | null {
   // Formato esperado: DD/MM/YYYY
   const m = raw.match(/(\d{2})\/(\d{2})\/(\d{4})/);
   if (!m) return null;
-  return `${m[3]}-${m[2]}-${m[1]}`; // ISO
+  return `${m[3]}-${m[2]}-${m[1]}T12:00:00.000Z`; // meio-dia UTC evita bug de timezone
 }
 
 function extractSelectedOption(html: string, selectClass: string): string {
@@ -95,8 +95,7 @@ interface CourseRow {
   catalogos: string[];
   nivel: string;
   statusPub: string;
-  dataCriacao: string | null;
-  dataAtualizacao: string | null;
+  dataPublicacao: string | null;
   statusCriacao: string;
   tipoContrato: string;
   tipo: string;
@@ -129,8 +128,7 @@ function parseTr(tr: string): CourseRow {
     catalogos: extractCatalogs(tr),
     nivel: cleanTd(5),
     statusPub: cleanTd(6),
-    dataCriacao: parseDate(cleanTd(7)),
-    dataAtualizacao: parseDate(cleanTd(8)),
+    dataPublicacao: parseDate(cleanTd(8)), // coluna "Publicação" do admin
     statusCriacao: extractSelectedOption(tr, "change-creation_status"),
     tipoContrato: extractSelectedOption(tr, "change-contract_type"),
     tipo,
@@ -242,8 +240,7 @@ async function main() {
       console.log(`       statusCriacao: ${r.statusCriacao}`);
       console.log(`       tipoContrato: ${r.tipoContrato}`);
       console.log(`       catalogos: [${r.catalogos.join(", ")}]`);
-      console.log(`       dataCriacao: ${r.dataCriacao}`);
-      console.log(`       dataAtualizacao: ${r.dataAtualizacao}`);
+      console.log(`       dataPublicacao: ${r.dataPublicacao}`);
       console.log(`       isExclusive: ${r.isExclusive}`);
     });
 

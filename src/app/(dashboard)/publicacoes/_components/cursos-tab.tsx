@@ -15,8 +15,7 @@ interface Course {
   instrutores: string[];
   instrutor: string | null;
   cargaHoraria: number | null;
-  dataCriacao: string | null;
-  dataAtualizacao: string | null;
+  dataPublicacao: string | null;
   catalogos: string[];
   isExclusive: boolean;
   tipo: string | null;
@@ -37,7 +36,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   const [monthTo, setMonthTo] = useState("");
   const [specialFilter, setSpecialFilter] = useState<"all" | "hide" | "only">("all");
   const [selectedCatalogs, setSelectedCatalogs] = useState<string[]>([]);
-  const [sortField, setSortField] = useState<"nome" | "instrutores" | "dataCriacao" | "dataAtualizacao">("dataCriacao");
+  const [sortField, setSortField] = useState<"nome" | "instrutores" | "dataPublicacao">("dataPublicacao");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   function handleSort(field: typeof sortField) {
@@ -45,7 +44,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortField(field);
-      setSortDir(field === "dataCriacao" || field === "dataAtualizacao" ? "desc" : "asc");
+      setSortDir(field === "dataPublicacao" ? "desc" : "asc");
     }
   }
 
@@ -84,10 +83,8 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
         cmp = a.nome.localeCompare(b.nome, "pt-BR");
       } else if (sortField === "instrutores") {
         cmp = getInstrutor(a).localeCompare(getInstrutor(b), "pt-BR");
-      } else if (sortField === "dataCriacao") {
-        cmp = (a.dataCriacao ?? "").localeCompare(b.dataCriacao ?? "");
-      } else if (sortField === "dataAtualizacao") {
-        cmp = (a.dataAtualizacao ?? "").localeCompare(b.dataAtualizacao ?? "");
+      } else if (sortField === "dataPublicacao") {
+        cmp = (a.dataPublicacao ?? "").localeCompare(b.dataPublicacao ?? "");
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
@@ -112,16 +109,16 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     }
     const html = [
       "<table>",
-      "<tr><th>Nome</th><th>Categoria</th><th>Instrutor</th><th>Catálogo(s)</th><th>Publicação</th><th>Atualização</th></tr>",
+      "<tr><th>Nome</th><th>Categoria</th><th>Instrutor</th><th>Catálogo(s)</th><th>Publicação</th></tr>",
       ...sortedCourses.map((c) =>
-        `<tr><td><a href="https://www.alura.com.br/curso-online-${c.slug}">${esc(c.nome)}</a></td><td>${esc(c.categoria ?? "")}</td><td>${esc(getInstrutor(c))}</td><td>${esc(c.catalogos.join(", "))}</td><td>${formatDate(c.dataCriacao)}</td><td>${formatDate(c.dataAtualizacao)}</td></tr>`
+        `<tr><td><a href="https://www.alura.com.br/curso-online-${c.slug}">${esc(c.nome)}</a></td><td>${esc(c.categoria ?? "")}</td><td>${esc(getInstrutor(c))}</td><td>${esc(c.catalogos.join(", "))}</td><td>${formatDate(c.dataPublicacao)}</td></tr>`
       ),
       "</table>",
     ].join("\n");
     const plain = [
-      ["Nome", "Categoria", "Instrutor", "Catálogo(s)", "Publicação", "Atualização", "Link"].join("\t"),
+      ["Nome", "Categoria", "Instrutor", "Catálogo(s)", "Publicação", "Link"].join("\t"),
       ...sortedCourses.map((c) =>
-        [c.nome, c.categoria ?? "", getInstrutor(c), c.catalogos.join(", "), formatDate(c.dataCriacao), formatDate(c.dataAtualizacao), `https://www.alura.com.br/curso-online-${c.slug}`].join("\t")
+        [c.nome, c.categoria ?? "", getInstrutor(c), c.catalogos.join(", "), formatDate(c.dataPublicacao), `https://www.alura.com.br/curso-online-${c.slug}`].join("\t")
       ),
     ].join("\n");
     await navigator.clipboard.write([
@@ -309,26 +306,19 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
                     </button>
                   </th>
                 ))}
-                {(
-                  [
-                    { field: "dataCriacao", label: "Publicação", cls: "px-3" },
-                    { field: "dataAtualizacao", label: "Atualização", cls: "pl-3" },
-                  ] as const
-                ).map(({ field, label, cls }) => (
-                  <th key={field} className={`text-right pb-2 ${cls}`}>
-                    <button
-                      onClick={() => handleSort(field)}
-                      className="flex items-center justify-end gap-1 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {label}
-                      {sortField === field ? (
-                        sortDir === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
-                      ) : (
-                        <ArrowUpDown size={12} className="opacity-40" />
-                      )}
-                    </button>
-                  </th>
-                ))}
+                <th className="text-right pb-2 px-3">
+                  <button
+                    onClick={() => handleSort("dataPublicacao")}
+                    className="flex items-center justify-end gap-1 w-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Publicação
+                    {sortField === "dataPublicacao" ? (
+                      sortDir === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                    ) : (
+                      <ArrowUpDown size={12} className="opacity-40" />
+                    )}
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -352,10 +342,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
                     {getInstrutor(course) || "—"}
                   </td>
                   <td className="py-2.5 px-3 text-right text-muted-foreground font-mono text-xs">
-                    {formatDate(course.dataCriacao)}
-                  </td>
-                  <td className="py-2.5 pl-3 text-right text-muted-foreground font-mono text-xs">
-                    {formatDate(course.dataAtualizacao)}
+                    {formatDate(course.dataPublicacao)}
                   </td>
                 </tr>
               ))}

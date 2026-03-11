@@ -21,14 +21,14 @@ export async function GET(request: NextRequest) {
     where: {
       // Cursos publicados (statusPub = "pub") ou sem statusPub (legado do sync público)
       OR: [{ statusPub: "pub" }, { statusPub: null }],
-      dataCriacao: {
+      dataPublicacao: {
         gte: gteDate,
         ...(lteDate ? { lte: lteDate } : {}),
       },
       ...(categoria ? { categoria } : {}),
       ...(catalogo ? { catalogos: { has: catalogo } } : {}),
     },
-    orderBy: { dataCriacao: "desc" },
+    orderBy: { dataPublicacao: "desc" },
     select: {
       id: true,
       slug: true,
@@ -37,8 +37,7 @@ export async function GET(request: NextRequest) {
       instrutores: true,
       instrutor: true,
       cargaHoraria: true,
-      dataCriacao: true,
-      dataAtualizacao: true,
+      dataPublicacao: true,
       catalogos: true,
       isExclusive: true,
       tipo: true,

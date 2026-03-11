@@ -37,7 +37,8 @@ function extractCatalogs(html: string): string[] {
 function parseDate(raw: string): Date | null {
   const m = raw.match(/(\d{2})\/(\d{2})\/(\d{4})/);
   if (!m) return null;
-  return new Date(`${m[3]}-${m[2]}-${m[1]}`);
+  // Usar meio-dia UTC evita o bug de timezone (meia-noite UTC → dia anterior no fuso brasileiro)
+  return new Date(`${m[3]}-${m[2]}-${m[1]}T12:00:00.000Z`);
 }
 
 interface CourseRow {
@@ -49,8 +50,7 @@ interface CourseRow {
   catalogos: string[];
   nivel: string;
   statusPub: string;
-  dataCriacao: Date | null;
-  dataAtualizacao: Date | null;
+  dataPublicacao: Date | null;
   statusCriacao: string;
   tipoContrato: string;
   tipo: string;
@@ -84,8 +84,7 @@ function parseTr(tr: string): CourseRow {
     catalogos: extractCatalogs(tr),
     nivel: cleanTd(5),
     statusPub: cleanTd(6),
-    dataCriacao: parseDate(cleanTd(7)),
-    dataAtualizacao: parseDate(cleanTd(8)),
+    dataPublicacao: parseDate(cleanTd(8)), // coluna "Publicação" do admin
     statusCriacao: extractSelectedOption(tr, "change-creation_status"),
     tipoContrato: extractSelectedOption(tr, "change-contract_type"),
     tipo,
@@ -187,7 +186,7 @@ export async function POST() {
         if (!row.slug) continue;
 
         // Para paginação quando encontrar curso anterior a jan/2025
-        if (row.dataCriacao && row.dataCriacao < CUTOFF_DATE) {
+        if (row.dataPublicacao && row.dataPublicacao < CUTOFF_DATE) {
           reachedCutoff = true;
           break;
         }
@@ -213,8 +212,7 @@ export async function POST() {
           tipo: row.tipo || null,
           catalogos: catalogosFiltrados,
           isExclusive: row.isExclusive,
-          dataCriacao: row.dataCriacao,
-          dataAtualizacao: row.dataAtualizacao,
+          dataPublicacao: row.dataPublicacao,
         };
 
         if (existing) {
