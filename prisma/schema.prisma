@@ -216,6 +216,14 @@ model KpiCarreiraLevel {
   @@unique([carreiraSlug, levelName])
 }
 
+model SystemConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   // criptografado com AES-256-GCM
+  updatedAt DateTime @updatedAt
+  updatedBy String?  // email do admin que atualizou
+}
+
 model AluraCourse {
   id              String    @id @default(cuid())
   slug            String    @unique
@@ -227,6 +235,16 @@ model AluraCourse {
   cargaHoraria    Int?
   dataCriacao     DateTime?
   dataAtualizacao DateTime?
+  // Campos do admin
+  aluraId         Int?
+  instrutor       String?
+  nivel           String?
+  statusPub       String?
+  statusCriacao   String?
+  tipoContrato    String?
+  tipo            String?
+  catalogos       String[]
+  isExclusive     Boolean   @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }

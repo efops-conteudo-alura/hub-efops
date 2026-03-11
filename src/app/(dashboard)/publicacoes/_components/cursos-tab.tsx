@@ -2,20 +2,16 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RefreshCw, ExternalLink, ArrowUp, ArrowDown, ArrowUpDown, ClipboardCopy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MonthPicker } from "@/app/(dashboard)/gastos/_components/month-picker";
-
-const CATEGORIES = [
-  "Programação",
-  "Front-end",
-  "Data Science",
-  "Inteligência Artificial",
-  "DevOps",
-  "UX & Design",
-  "Mobile",
-  "Inovação & Gestão",
-];
 
 interface Course {
   id: string;
@@ -23,9 +19,13 @@ interface Course {
   nome: string;
   categoria: string | null;
   instrutores: string[];
+  instrutor: string | null;
   cargaHoraria: number | null;
   dataCriacao: string | null;
   dataAtualizacao: string | null;
+  catalogos: string[];
+  isExclusive: boolean;
+  tipo: string | null;
 }
 
 function formatDate(iso: string | null) {
@@ -41,8 +41,8 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   const [copied, setCopied] = useState(false);
   const [monthFrom, setMonthFrom] = useState("2025-01");
   const [monthTo, setMonthTo] = useState("");
-  const [selectedCat, setSelectedCat] = useState<string>("");
   const [specialFilter, setSpecialFilter] = useState<"all" | "hide" | "only">("all");
+  const [selectedCatalog, setSelectedCatalog] = useState<string>("");
   const [sortField, setSortField] = useState<"nome" | "instrutores" | "dataCriacao" | "dataAtualizacao">("dataCriacao");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -59,19 +59,35 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     return nome.includes("[EM BREVE]") || nome.toLowerCase().includes("checkpoint");
   }
 
+  function getInstrutor(course: Course): string {
+    if (course.instrutor) return course.instrutor;
+    return course.instrutores.join(", ");
+  }
+
+  const availableCatalogs = useMemo(
+    () => [...new Set(courses.flatMap((c) => c.catalogos))].sort(),
+    [courses]
+  );
+
   const sortedCourses = useMemo(() => {
-    const filtered = specialFilter === "all"
-      ? courses
-      : specialFilter === "hide"
-      ? courses.filter((c) => !isSpecial(c.nome))
-      : courses.filter((c) => isSpecial(c.nome));
+    let filtered = courses;
+
+    if (specialFilter === "hide") {
+      filtered = filtered.filter((c) => !isSpecial(c.nome));
+    } else if (specialFilter === "only") {
+      filtered = filtered.filter((c) => isSpecial(c.nome));
+    }
+
+    if (selectedCatalog) {
+      filtered = filtered.filter((c) => c.catalogos.includes(selectedCatalog));
+    }
 
     return [...filtered].sort((a, b) => {
       let cmp = 0;
       if (sortField === "nome") {
         cmp = a.nome.localeCompare(b.nome, "pt-BR");
       } else if (sortField === "instrutores") {
-        cmp = (a.instrutores[0] ?? "").localeCompare(b.instrutores[0] ?? "", "pt-BR");
+        cmp = getInstrutor(a).localeCompare(getInstrutor(b), "pt-BR");
       } else if (sortField === "dataCriacao") {
         cmp = (a.dataCriacao ?? "").localeCompare(b.dataCriacao ?? "");
       } else if (sortField === "dataAtualizacao") {
@@ -79,19 +95,18 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [courses, sortField, sortDir, specialFilter]);
+  }, [courses, sortField, sortDir, specialFilter, selectedCatalog]);
 
   const load = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
     if (monthFrom) params.set("month_from", monthFrom);
     if (monthTo) params.set("month_to", monthTo);
-    if (selectedCat) params.set("categoria", selectedCat);
     const res = await fetch(`/api/publicacoes/cursos?${params}`);
     const data = await res.json();
     setCourses(Array.isArray(data) ? data : []);
     setLoading(false);
-  }, [monthFrom, monthTo, selectedCat]);
+  }, [monthFrom, monthTo]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -101,16 +116,16 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     }
     const html = [
       "<table>",
-      "<tr><th>Nome</th><th>Categoria</th><th>Instrutor(es)</th><th>Publicação</th><th>Atualização</th></tr>",
+      "<tr><th>Nome</th><th>Categoria</th><th>Instrutor</th><th>Catálogo(s)</th><th>Publicação</th><th>Atualização</th></tr>",
       ...sortedCourses.map((c) =>
-        `<tr><td><a href="https://www.alura.com.br/curso-online-${c.slug}">${esc(c.nome)}</a></td><td>${esc(c.categoria ?? "")}</td><td>${esc(c.instrutores.join(", "))}</td><td>${formatDate(c.dataCriacao)}</td><td>${formatDate(c.dataAtualizacao)}</td></tr>`
+        `<tr><td><a href="https://www.alura.com.br/curso-online-${c.slug}">${esc(c.nome)}</a></td><td>${esc(c.categoria ?? "")}</td><td>${esc(getInstrutor(c))}</td><td>${esc(c.catalogos.join(", "))}</td><td>${formatDate(c.dataCriacao)}</td><td>${formatDate(c.dataAtualizacao)}</td></tr>`
       ),
       "</table>",
     ].join("\n");
     const plain = [
-      ["Nome", "Categoria", "Instrutor(es)", "Publicação", "Atualização", "Link"].join("\t"),
+      ["Nome", "Categoria", "Instrutor", "Catálogo(s)", "Publicação", "Atualização", "Link"].join("\t"),
       ...sortedCourses.map((c) =>
-        [c.nome, c.categoria ?? "", c.instrutores.join(", "), formatDate(c.dataCriacao), formatDate(c.dataAtualizacao), `https://www.alura.com.br/curso-online-${c.slug}`].join("\t")
+        [c.nome, c.categoria ?? "", getInstrutor(c), c.catalogos.join(", "), formatDate(c.dataCriacao), formatDate(c.dataAtualizacao), `https://www.alura.com.br/curso-online-${c.slug}`].join("\t")
       ),
     ].join("\n");
     await navigator.clipboard.write([
@@ -127,14 +142,14 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     setSyncing(true);
     setSyncResult("");
     try {
-      const res = await fetch("/api/publicacoes/cursos/sync", { method: "POST" });
+      const res = await fetch("/api/publicacoes/sync-admin", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
         setSyncResult(data.error || "Erro ao sincronizar");
         return;
       }
       setSyncResult(
-        `${data.slugsFound} cursos encontrados · ${data.newCoursesProcessed} novos · ${data.existingUpdated} atualizados`
+        `${data.created} novos · ${data.updated} atualizados · ${data.total} total`
       );
       load();
     } catch {
@@ -146,7 +161,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
 
   return (
     <div className="space-y-5">
-      {/* Filtros de data + botão sync */}
+      {/* Filtros de data + catálogo + botões */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">De</span>
@@ -162,6 +177,22 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
           </Button>
         )}
 
+        {availableCatalogs.length > 0 && (
+          <Select value={selectedCatalog || "__all__"} onValueChange={(v) => setSelectedCatalog(v === "__all__" ? "" : v)}>
+            <SelectTrigger className="h-8 w-48 text-xs">
+              <SelectValue placeholder="Todos os catálogos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todos os catálogos</SelectItem>
+              {availableCatalogs.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
         <div className="ml-auto flex items-center gap-3">
           {sortedCourses.length > 0 && !loading && (
             <Button size="sm" variant="outline" onClick={handleCopy}>
@@ -173,7 +204,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
             <>
               <Button size="sm" variant="outline" onClick={handleSync} disabled={syncing}>
                 <RefreshCw size={14} className={cn("mr-2", syncing && "animate-spin")} />
-                {syncing ? "Sincronizando..." : "Sincronizar"}
+                {syncing ? "Sincronizando..." : "Sync Admin"}
               </Button>
               {syncResult && <p className="text-xs text-muted-foreground">{syncResult}</p>}
             </>
@@ -206,42 +237,13 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
         ))}
       </div>
 
-      {/* Filtros de categoria */}
-      <div className="flex flex-wrap gap-2">
-        <button
-          onClick={() => setSelectedCat("")}
-          className={cn(
-            "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
-            selectedCat === ""
-              ? "bg-primary text-primary-foreground border-transparent"
-              : "bg-transparent text-muted-foreground border-border hover:border-foreground"
-          )}
-        >
-          Todas
-        </button>
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCat(selectedCat === cat ? "" : cat)}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
-              selectedCat === cat
-                ? "bg-primary text-primary-foreground border-transparent"
-                : "bg-transparent text-muted-foreground border-border hover:border-foreground"
-            )}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
       {/* Tabela */}
       {loading ? (
         <p className="text-sm text-muted-foreground text-center py-12">Carregando...</p>
       ) : courses.length === 0 ? (
         <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground text-sm">
           {isAdmin
-            ? 'Nenhum curso encontrado. Clique em "Sincronizar" para buscar os cursos da Alura.'
+            ? 'Nenhum curso encontrado. Clique em "Sync Admin" para buscar os cursos da Alura.'
             : "Nenhum curso encontrado para os filtros selecionados."}
         </div>
       ) : (
@@ -252,7 +254,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
                 {(
                   [
                     { field: "nome", label: "Nome", align: "left", cls: "pr-4" },
-                    { field: "instrutores", label: "Instrutor(es)", align: "left", cls: "px-3" },
+                    { field: "instrutores", label: "Instrutor", align: "left", cls: "px-3" },
                   ] as const
                 ).map(({ field, label, cls }) => (
                   <th key={field} className={`text-left pb-2 ${cls}`}>
@@ -309,7 +311,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
                     )}
                   </td>
                   <td className="py-2.5 px-3 text-muted-foreground">
-                    {course.instrutores.length > 0 ? course.instrutores.join(", ") : "—"}
+                    {getInstrutor(course) || "—"}
                   </td>
                   <td className="py-2.5 px-3 text-right text-muted-foreground font-mono text-xs">
                     {formatDate(course.dataCriacao)}

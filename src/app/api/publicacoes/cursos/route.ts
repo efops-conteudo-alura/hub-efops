@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   const monthFrom = searchParams.get("month_from");
   const monthTo = searchParams.get("month_to");
   const categoria = searchParams.get("categoria");
+  const catalogo = searchParams.get("catalogo");
 
   // Base: só cursos de 2025 em diante
   const gteDate = monthFrom ? new Date(`${monthFrom}-01`) : new Date("2025-01-01");
@@ -18,11 +19,14 @@ export async function GET(request: NextRequest) {
 
   const courses = await prisma.aluraCourse.findMany({
     where: {
+      // Cursos publicados (statusPub = "pub") ou sem statusPub (legado do sync público)
+      OR: [{ statusPub: "pub" }, { statusPub: null }],
       dataCriacao: {
         gte: gteDate,
         ...(lteDate ? { lte: lteDate } : {}),
       },
       ...(categoria ? { categoria } : {}),
+      ...(catalogo ? { catalogos: { has: catalogo } } : {}),
     },
     orderBy: { dataCriacao: "desc" },
     select: {
@@ -31,9 +35,13 @@ export async function GET(request: NextRequest) {
       nome: true,
       categoria: true,
       instrutores: true,
+      instrutor: true,
       cargaHoraria: true,
       dataCriacao: true,
       dataAtualizacao: true,
+      catalogos: true,
+      isExclusive: true,
+      tipo: true,
     },
   });
 
