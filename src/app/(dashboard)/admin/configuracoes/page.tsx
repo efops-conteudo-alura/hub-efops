@@ -8,7 +8,7 @@ export default async function ConfiguracoesPage() {
   if (!session || session.user.role !== "ADMIN") redirect("/home");
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="p-8 max-w-2xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Configurações do sistema</h1>
         <p className="text-muted-foreground text-sm mt-1">

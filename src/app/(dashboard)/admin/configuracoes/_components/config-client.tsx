@@ -94,32 +94,56 @@ export function ConfigClient() {
     <div className="space-y-10">
       {/* Instruções */}
       <div className="rounded-lg border bg-muted/40 p-6 space-y-4">
-        <h2 className="font-semibold text-base">Como obter os cookies no Firefox</h2>
+        <h2 className="font-semibold text-base">Cookies de acesso ao admin da Alura</h2>
         <p className="text-sm text-muted-foreground">
-          Os cookies abaixo identificam sua sessão logada no admin da Alura. Eles precisam ser atualizados sempre que expirar (normalmente após algumas horas ou ao fechar o navegador).
+          Para sincronizar cursos pelo botão <strong>Sync Admin</strong> em Publicações, o hub precisa se autenticar no painel admin da Alura em seu nome. Isso é feito através dos cookies da sua sessão de login.
         </p>
-        <ol className="space-y-3 text-sm">
-          <li className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
-            <span>Abra o Firefox e acesse <strong>cursos.alura.com.br/admin/courses</strong> logado com sua conta admin da Alura.</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">2</span>
-            <span>Pressione <strong>F12</strong> para abrir o DevTools.</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">3</span>
-            <span>Vá na aba <strong>Armazenamento</strong> → expanda <strong>Cookies</strong> → clique em <strong>https://cursos.alura.com.br</strong>.</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">4</span>
-            <span>Na lista, localize cada cookie pelo nome, clique nele e copie o <strong>Valor</strong> da coluna da direita.</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">5</span>
-            <span>Cole o valor no campo correspondente abaixo e clique em <strong>Salvar</strong>. Os valores ficam criptografados no banco.</span>
-          </li>
-        </ol>
+        <p className="text-sm text-muted-foreground">
+          Os cookies expiram após algumas horas ou ao fechar o navegador. Quando o sync retornar erro de cookie expirado, basta seguir os passos abaixo para renová-los.
+        </p>
+
+        <div className="space-y-4">
+          {/* Firefox */}
+          <div>
+            <p className="text-sm font-medium mb-2">Firefox</p>
+            <ol className="space-y-2 text-sm">
+              <li className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
+                <span>Acesse <strong>cursos.alura.com.br/admin/courses</strong> logado com sua conta admin da Alura.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">2</span>
+                <span>Pressione <strong>F12</strong> → aba <strong>Armazenamento</strong> → <strong>Cookies</strong> → <strong>https://cursos.alura.com.br</strong>.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">3</span>
+                <span>Localize cada cookie pelo nome na lista, clique nele e copie o <strong>Valor</strong> na coluna da direita.</span>
+              </li>
+            </ol>
+          </div>
+
+          {/* Chrome */}
+          <div>
+            <p className="text-sm font-medium mb-2">Chrome</p>
+            <ol className="space-y-2 text-sm">
+              <li className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
+                <span>Acesse <strong>cursos.alura.com.br/admin/courses</strong> logado com sua conta admin da Alura.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">2</span>
+                <span>Pressione <strong>F12</strong> → aba <strong>Application</strong> → <strong>Cookies</strong> (menu lateral) → <strong>https://cursos.alura.com.br</strong>.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">3</span>
+                <span>Localize cada cookie pelo nome, clique na linha e copie o valor da coluna <strong>Cookie Value</strong> no painel inferior.</span>
+              </li>
+            </ol>
+          </div>
+
+          <p className="text-sm text-muted-foreground">Após copiar, cole cada valor no campo correspondente abaixo e clique em <strong>Salvar</strong>. Os valores ficam criptografados no banco.</p>
+        </div>
+
         <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 flex gap-2 text-sm text-amber-800 dark:text-amber-300">
           <AlertCircle size={16} className="shrink-0 mt-0.5" />
           <span>Nunca compartilhe esses valores. Eles dão acesso à sua conta admin da Alura.</span>

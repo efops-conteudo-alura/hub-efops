@@ -2,14 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { RefreshCw, ExternalLink, ArrowUp, ArrowDown, ArrowUpDown, ClipboardCopy, Check } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RefreshCw, ExternalLink, ArrowUp, ArrowDown, ArrowUpDown, ClipboardCopy, Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MonthPicker } from "@/app/(dashboard)/gastos/_components/month-picker";
 
@@ -42,7 +36,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   const [monthFrom, setMonthFrom] = useState("2025-01");
   const [monthTo, setMonthTo] = useState("");
   const [specialFilter, setSpecialFilter] = useState<"all" | "hide" | "only">("all");
-  const [selectedCatalog, setSelectedCatalog] = useState<string>("");
+  const [selectedCatalogs, setSelectedCatalogs] = useState<string[]>([]);
   const [sortField, setSortField] = useState<"nome" | "instrutores" | "dataCriacao" | "dataAtualizacao">("dataCriacao");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -78,8 +72,10 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
       filtered = filtered.filter((c) => isSpecial(c.nome));
     }
 
-    if (selectedCatalog) {
-      filtered = filtered.filter((c) => c.catalogos.includes(selectedCatalog));
+    if (selectedCatalogs.length > 0) {
+      filtered = filtered.filter((c) =>
+        selectedCatalogs.some((cat) => c.catalogos.includes(cat))
+      );
     }
 
     return [...filtered].sort((a, b) => {
@@ -95,7 +91,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [courses, sortField, sortDir, specialFilter, selectedCatalog]);
+  }, [courses, sortField, sortDir, specialFilter, selectedCatalogs]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -178,19 +174,61 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
         )}
 
         {availableCatalogs.length > 0 && (
-          <Select value={selectedCatalog || "__all__"} onValueChange={(v) => setSelectedCatalog(v === "__all__" ? "" : v)}>
-            <SelectTrigger className="h-8 w-48 text-xs">
-              <SelectValue placeholder="Todos os catálogos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">Todos os catálogos</SelectItem>
-              {availableCatalogs.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className={cn(
+                "flex items-center gap-1.5 h-8 px-3 rounded-md border text-xs transition-colors",
+                selectedCatalogs.length > 0
+                  ? "bg-primary text-primary-foreground border-transparent"
+                  : "bg-transparent text-muted-foreground border-border hover:border-foreground"
+              )}>
+                {selectedCatalogs.length === 0
+                  ? "Catálogos"
+                  : selectedCatalogs.length === 1
+                  ? selectedCatalogs[0]
+                  : `${selectedCatalogs.length} catálogos`}
+                <ChevronDown size={12} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-1" align="start">
+              <button
+                onClick={() => setSelectedCatalogs([])}
+                className={cn(
+                  "w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors",
+                  selectedCatalogs.length === 0
+                    ? "font-medium text-foreground bg-muted"
+                    : "text-muted-foreground hover:bg-muted"
+                )}
+              >
+                <span className={cn("flex h-3.5 w-3.5 shrink-0 items-center justify-center border", selectedCatalogs.length === 0 ? "bg-primary border-primary" : "border-muted-foreground")}>
+                  {selectedCatalogs.length === 0 && <Check size={10} className="text-primary-foreground" />}
+                </span>
+                Todos
+              </button>
+              <div className="my-1 border-t" />
+              <div className="max-h-56 overflow-y-auto">
+                {availableCatalogs.map((cat) => {
+                  const active = selectedCatalogs.includes(cat);
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() =>
+                        setSelectedCatalogs((prev) =>
+                          active ? prev.filter((c) => c !== cat) : [...prev, cat]
+                        )
+                      }
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors"
+                    >
+                      <span className={cn("flex h-3.5 w-3.5 shrink-0 items-center justify-center border", active ? "bg-primary border-primary" : "border-muted-foreground")}>
+                        {active && <Check size={10} className="text-primary-foreground" />}
+                      </span>
+                      <span className="truncate">{cat}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
         )}
 
         <div className="ml-auto flex items-center gap-3">
