@@ -28,6 +28,17 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
+type CatalogFilterValue = "include" | "exclude";
+
+function parseCatalogFilters(searchParams: URLSearchParams): Record<string, CatalogFilterValue> {
+  const result: Record<string, CatalogFilterValue> = {};
+  const inc = searchParams.get("c_inc");
+  const exc = searchParams.get("c_exc");
+  if (inc) inc.split(",").filter(Boolean).forEach((c) => { result[c] = "include"; });
+  if (exc) exc.split(",").filter(Boolean).forEach((c) => { result[c] = "exclude"; });
+  return result;
+}
+
 export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   const searchParams = useSearchParams();
   const searchParamsRef = useRef(searchParams);
@@ -41,17 +52,15 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   const [syncResult, setSyncResult] = useState<string>("");
   const [copied, setCopied] = useState(false);
 
-  // Inicializa filtros a partir da URL (fallback para defaults)
   const [monthFrom, setMonthFrom] = useState(() => searchParams.get("c_mf") ?? "2025-01");
   const [monthTo, setMonthTo] = useState(() => searchParams.get("c_mt") ?? "");
   const [specialFilter, setSpecialFilter] = useState<"all" | "hide" | "only">(() => {
     const sp = searchParams.get("c_sp");
     return sp === "hide" || sp === "only" ? sp : "all";
   });
-  const [selectedCatalogs, setSelectedCatalogs] = useState<string[]>(() => {
-    const cats = searchParams.get("c_cats");
-    return cats ? cats.split(",") : [];
-  });
+  const [catalogFilters, setCatalogFilters] = useState<Record<string, CatalogFilterValue>>(
+    () => parseCatalogFilters(searchParams)
+  );
   const [sortField, setSortField] = useState<"aluraId" | "nome" | "instrutores" | "dataPublicacao">(() => {
     const sf = searchParams.get("c_sf");
     return sf === "nome" || sf === "instrutores" || sf === "aluraId" ? sf : "dataPublicacao";
@@ -60,18 +69,36 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     searchParams.get("c_sd") === "asc" ? "asc" : "desc"
   );
 
-  // Sincroniza estado → URL (merge com params das outras abas)
+  // Sincroniza estado → URL
   useEffect(() => {
     const params = new URLSearchParams(searchParamsRef.current.toString());
     monthFrom && monthFrom !== "2025-01" ? params.set("c_mf", monthFrom) : params.delete("c_mf");
     monthTo ? params.set("c_mt", monthTo) : params.delete("c_mt");
     specialFilter !== "all" ? params.set("c_sp", specialFilter) : params.delete("c_sp");
-    selectedCatalogs.length > 0 ? params.set("c_cats", selectedCatalogs.join(",")) : params.delete("c_cats");
     sortField !== "dataPublicacao" ? params.set("c_sf", sortField) : params.delete("c_sf");
     sortDir !== "desc" ? params.set("c_sd", sortDir) : params.delete("c_sd");
+
+    const includes = Object.entries(catalogFilters).filter(([, v]) => v === "include").map(([k]) => k);
+    const excludes = Object.entries(catalogFilters).filter(([, v]) => v === "exclude").map(([k]) => k);
+    includes.length > 0 ? params.set("c_inc", includes.join(",")) : params.delete("c_inc");
+    excludes.length > 0 ? params.set("c_exc", excludes.join(",")) : params.delete("c_exc");
+    params.delete("c_cats"); // limpa param legado
+
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthFrom, monthTo, specialFilter, selectedCatalogs, sortField, sortDir, router, pathname]);
+  }, [monthFrom, monthTo, specialFilter, catalogFilters, sortField, sortDir, router, pathname]);
+
+  function toggleCatalogFilter(cat: string, value: CatalogFilterValue) {
+    setCatalogFilters((prev) => {
+      const next = { ...prev };
+      if (next[cat] === value) {
+        delete next[cat];
+      } else {
+        next[cat] = value;
+      }
+      return next;
+    });
+  }
 
   function handleSort(field: typeof sortField) {
     if (sortField === field) {
@@ -96,6 +123,23 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     [courses]
   );
 
+  const activeCatalogFilters = useMemo(
+    () => Object.entries(catalogFilters).filter(([cat]) => availableCatalogs.includes(cat)),
+    [catalogFilters, availableCatalogs]
+  );
+
+  const catalogTriggerLabel = useMemo(() => {
+    if (activeCatalogFilters.length === 0) return "Catálogos";
+    if (activeCatalogFilters.length <= 2) {
+      return activeCatalogFilters
+        .map(([k, v]) => `${k}: ${v === "include" ? "é" : "não é"}`)
+        .join(" · ");
+    }
+    return `${activeCatalogFilters.length} filtros`;
+  }, [activeCatalogFilters]);
+
+  const hasFilters = monthFrom || monthTo || specialFilter !== "all" || activeCatalogFilters.length > 0;
+
   const sortedCourses = useMemo(() => {
     let filtered = courses;
 
@@ -105,10 +149,14 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
       filtered = filtered.filter((c) => isSpecial(c.nome));
     }
 
-    if (selectedCatalogs.length > 0) {
-      filtered = filtered.filter((c) =>
-        selectedCatalogs.some((cat) => c.catalogos.includes(cat))
-      );
+    const includes = activeCatalogFilters.filter(([, v]) => v === "include").map(([k]) => k);
+    const excludes = activeCatalogFilters.filter(([, v]) => v === "exclude").map(([k]) => k);
+
+    if (includes.length > 0) {
+      filtered = filtered.filter((c) => includes.some((cat) => c.catalogos.includes(cat)));
+    }
+    if (excludes.length > 0) {
+      filtered = filtered.filter((c) => !excludes.some((cat) => c.catalogos.includes(cat)));
     }
 
     return [...filtered].sort((a, b) => {
@@ -124,7 +172,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [courses, sortField, sortDir, specialFilter, selectedCatalogs]);
+  }, [courses, sortField, sortDir, specialFilter, activeCatalogFilters]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -200,68 +248,91 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
           <span className="text-sm text-muted-foreground">Até</span>
           <MonthPicker value={monthTo} onChange={setMonthTo} placeholder="Fim" />
         </div>
-        {(monthFrom || monthTo || specialFilter !== "all" || selectedCatalogs.length > 0) && (
-          <Button variant="ghost" size="sm" onClick={() => { setMonthFrom(""); setMonthTo(""); setSpecialFilter("all"); setSelectedCatalogs([]); }}>
-            Limpar tudo
-          </Button>
-        )}
 
         {availableCatalogs.length > 0 && (
           <Popover>
             <PopoverTrigger asChild>
               <button className={cn(
                 "flex items-center gap-1.5 h-8 px-3 rounded-md border text-xs transition-colors",
-                selectedCatalogs.length > 0
-                  ? "bg-primary text-primary-foreground border-transparent"
+                activeCatalogFilters.length > 0
+                  ? "bg-primary/10 text-primary border-primary/30 dark:bg-primary/20"
                   : "bg-transparent text-muted-foreground border-border hover:border-foreground"
               )}>
-                {selectedCatalogs.length === 0
-                  ? "Catálogos"
-                  : selectedCatalogs.length === 1
-                  ? selectedCatalogs[0]
-                  : `${selectedCatalogs.length} catálogos`}
-                <ChevronDown size={12} />
+                <span className="max-w-[200px] truncate">{catalogTriggerLabel}</span>
+                <ChevronDown size={12} className="shrink-0" />
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-64 p-1" align="start">
-              <button
-                onClick={() => setSelectedCatalogs([])}
-                className={cn(
-                  "w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors",
-                  selectedCatalogs.length === 0
-                    ? "font-medium text-foreground bg-muted"
-                    : "text-muted-foreground hover:bg-muted"
-                )}
-              >
-                <span className={cn("flex h-3.5 w-3.5 shrink-0 items-center justify-center border", selectedCatalogs.length === 0 ? "bg-primary border-primary" : "border-muted-foreground")}>
-                  {selectedCatalogs.length === 0 && <Check size={10} className="text-primary-foreground" />}
-                </span>
-                Todos
-              </button>
-              <div className="my-1 border-t" />
-              <div className="max-h-56 overflow-y-auto">
-                {availableCatalogs.map((cat) => {
-                  const active = selectedCatalogs.includes(cat);
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() =>
-                        setSelectedCatalogs((prev) =>
-                          active ? prev.filter((c) => c !== cat) : [...prev, cat]
-                        )
-                      }
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors"
-                    >
-                      <span className={cn("flex h-3.5 w-3.5 shrink-0 items-center justify-center border", active ? "bg-primary border-primary" : "border-muted-foreground")}>
-                        {active && <Check size={10} className="text-primary-foreground" />}
-                      </span>
-                      <span className="truncate">{cat}</span>
-                    </button>
-                  );
-                })}
+            <PopoverContent className="w-72 p-0" align="start">
+              <div className="px-3 py-2 border-b">
+                <p className="text-xs font-medium text-muted-foreground">Filtrar por catálogo</p>
               </div>
+              <div className="px-2 py-1.5">
+                {/* Header das colunas */}
+                <div className="flex items-center px-2 pb-1">
+                  <span className="flex-1 text-[10px] text-muted-foreground/60 uppercase tracking-wide">Catálogo</span>
+                  <div className="flex items-center gap-1">
+                    <span className="w-14 text-center text-[10px] text-muted-foreground/60 uppercase tracking-wide">É</span>
+                    <span className="w-14 text-center text-[10px] text-muted-foreground/60 uppercase tracking-wide">Não é</span>
+                  </div>
+                </div>
+                <div className="max-h-64 overflow-y-auto space-y-0.5">
+                  {availableCatalogs.map((cat) => {
+                    const current = catalogFilters[cat];
+                    return (
+                      <div key={cat} className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted/50 transition-colors group">
+                        <span className="flex-1 text-xs truncate text-foreground">{cat}</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => toggleCatalogFilter(cat, "include")}
+                            className={cn(
+                              "w-14 py-0.5 rounded text-[10px] font-medium border transition-all",
+                              current === "include"
+                                ? "bg-emerald-500 text-white border-emerald-500 dark:bg-emerald-600 dark:border-emerald-600"
+                                : "bg-transparent text-muted-foreground border-border hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                            )}
+                          >
+                            É
+                          </button>
+                          <button
+                            onClick={() => toggleCatalogFilter(cat, "exclude")}
+                            className={cn(
+                              "w-14 py-0.5 rounded text-[10px] font-medium border transition-all",
+                              current === "exclude"
+                                ? "bg-rose-500 text-white border-rose-500 dark:bg-rose-600 dark:border-rose-600"
+                                : "bg-transparent text-muted-foreground border-border hover:border-rose-400 hover:text-rose-600 dark:hover:text-rose-400"
+                            )}
+                          >
+                            Não é
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {activeCatalogFilters.length > 0 && (
+                <div className="px-3 py-2 border-t">
+                  <button
+                    onClick={() => setCatalogFilters({})}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Limpar filtros de catálogo
+                  </button>
+                </div>
+              )}
             </PopoverContent>
           </Popover>
+        )}
+
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={() => {
+            setMonthFrom("");
+            setMonthTo("");
+            setSpecialFilter("all");
+            setCatalogFilters({});
+          }}>
+            Limpar tudo
+          </Button>
         )}
 
         <div className="ml-auto flex items-center gap-3">
@@ -315,7 +386,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
       ) : courses.length === 0 ? (
         <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground text-sm">
           {isAdmin
-            ? 'Nenhum curso encontrado. Clique em "Sync Admin" para buscar os cursos da Alura.'
+            ? 'Nenhum curso encontrado. Clique em "Sync BI" para buscar os cursos da Alura.'
             : "Nenhum curso encontrado para os filtros selecionados."}
         </div>
       ) : (
@@ -338,8 +409,8 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
                 </th>
                 {(
                   [
-                    { field: "nome", label: "Nome", align: "left", cls: "pr-4" },
-                    { field: "instrutores", label: "Instrutor", align: "left", cls: "px-3" },
+                    { field: "nome", label: "Nome", cls: "pr-4" },
+                    { field: "instrutores", label: "Instrutor", cls: "px-3" },
                   ] as const
                 ).map(({ field, label, cls }) => (
                   <th key={field} className={`text-left pb-2 ${cls}`}>
