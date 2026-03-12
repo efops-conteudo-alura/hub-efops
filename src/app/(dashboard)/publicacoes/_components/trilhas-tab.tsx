@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RefreshCw, ExternalLink, ArrowUp, ArrowDown, ArrowUpDown, Search, Sparkles, ClipboardCopy, Check } from "lucide-react";
@@ -22,15 +23,36 @@ interface Trilha {
 type SortField = "nome" | "categoria" | "numCursos" | "cargaHoraria";
 
 export function TrilhasTab({ isAdmin }: { isAdmin: boolean }) {
+  const searchParams = useSearchParams();
+  const searchParamsRef = useRef(searchParams);
+  useEffect(() => { searchParamsRef.current = searchParams; }, [searchParams]);
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [trilhas, setTrilhas] = useState<Trilha[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string>("");
   const [copied, setCopied] = useState(false);
-  const [search, setSearch] = useState("");
-  const [sortField, setSortField] = useState<SortField>("nome");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [search, setSearch] = useState(() => searchParams.get("t_q") ?? "");
+  const [sortField, setSortField] = useState<SortField>(() => {
+    const sf = searchParams.get("t_sf");
+    return (sf === "categoria" || sf === "numCursos" || sf === "cargaHoraria") ? sf as SortField : "nome";
+  });
+  const [sortDir, setSortDir] = useState<"asc" | "desc">(() =>
+    searchParams.get("t_sd") === "desc" ? "desc" : "asc"
+  );
   const [previousSyncAt, setPreviousSyncAt] = useState<string | null>(null);
+
+  // Sincroniza estado → URL (merge com params das outras abas)
+  useEffect(() => {
+    const params = new URLSearchParams(searchParamsRef.current.toString());
+    search ? params.set("t_q", search) : params.delete("t_q");
+    sortField !== "nome" ? params.set("t_sf", sortField) : params.delete("t_sf");
+    sortDir !== "asc" ? params.set("t_sd", sortDir) : params.delete("t_sd");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, sortField, sortDir, router, pathname]);
 
   function handleSort(field: SortField) {
     if (sortField === field) {

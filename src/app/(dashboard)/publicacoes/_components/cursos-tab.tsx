@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RefreshCw, ExternalLink, ArrowUp, ArrowDown, ArrowUpDown, ClipboardCopy, Check, ChevronDown } from "lucide-react";
@@ -27,17 +28,49 @@ function formatDate(iso: string | null) {
 }
 
 export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
+  const searchParams = useSearchParams();
+  const searchParamsRef = useRef(searchParams);
+  useEffect(() => { searchParamsRef.current = searchParams; }, [searchParams]);
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string>("");
   const [copied, setCopied] = useState(false);
-  const [monthFrom, setMonthFrom] = useState("2025-01");
-  const [monthTo, setMonthTo] = useState("");
-  const [specialFilter, setSpecialFilter] = useState<"all" | "hide" | "only">("all");
-  const [selectedCatalogs, setSelectedCatalogs] = useState<string[]>([]);
-  const [sortField, setSortField] = useState<"nome" | "instrutores" | "dataPublicacao">("dataPublicacao");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  // Inicializa filtros a partir da URL (fallback para defaults)
+  const [monthFrom, setMonthFrom] = useState(() => searchParams.get("c_mf") ?? "2025-01");
+  const [monthTo, setMonthTo] = useState(() => searchParams.get("c_mt") ?? "");
+  const [specialFilter, setSpecialFilter] = useState<"all" | "hide" | "only">(() => {
+    const sp = searchParams.get("c_sp");
+    return sp === "hide" || sp === "only" ? sp : "all";
+  });
+  const [selectedCatalogs, setSelectedCatalogs] = useState<string[]>(() => {
+    const cats = searchParams.get("c_cats");
+    return cats ? cats.split(",") : [];
+  });
+  const [sortField, setSortField] = useState<"nome" | "instrutores" | "dataPublicacao">(() => {
+    const sf = searchParams.get("c_sf");
+    return sf === "nome" || sf === "instrutores" ? sf : "dataPublicacao";
+  });
+  const [sortDir, setSortDir] = useState<"asc" | "desc">(() =>
+    searchParams.get("c_sd") === "asc" ? "asc" : "desc"
+  );
+
+  // Sincroniza estado → URL (merge com params das outras abas)
+  useEffect(() => {
+    const params = new URLSearchParams(searchParamsRef.current.toString());
+    monthFrom && monthFrom !== "2025-01" ? params.set("c_mf", monthFrom) : params.delete("c_mf");
+    monthTo ? params.set("c_mt", monthTo) : params.delete("c_mt");
+    specialFilter !== "all" ? params.set("c_sp", specialFilter) : params.delete("c_sp");
+    selectedCatalogs.length > 0 ? params.set("c_cats", selectedCatalogs.join(",")) : params.delete("c_cats");
+    sortField !== "dataPublicacao" ? params.set("c_sf", sortField) : params.delete("c_sf");
+    sortDir !== "desc" ? params.set("c_sd", sortDir) : params.delete("c_sd");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monthFrom, monthTo, specialFilter, selectedCatalogs, sortField, sortDir, router, pathname]);
 
   function handleSort(field: typeof sortField) {
     if (sortField === field) {
