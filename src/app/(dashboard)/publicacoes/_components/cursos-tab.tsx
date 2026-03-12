@@ -356,6 +356,16 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
                 <RefreshCw size={14} className={cn("mr-2", syncing && "animate-spin")} />
                 {syncing ? "Sincronizando..." : "Sync BI"}
               </Button>
+              <a
+                href="https://bi.caelumalura.com.br/query?id=2722"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                title="Abrir query no Caelum BI"
+              >
+                <ExternalLink size={13} />
+                Caelum BI
+              </a>
               {syncResult && <p className="text-xs text-muted-foreground">{syncResult}</p>}
             </>
           )}
