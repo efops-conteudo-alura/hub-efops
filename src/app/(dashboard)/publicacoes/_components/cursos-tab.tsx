@@ -49,7 +49,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   }
 
   function isSpecial(nome: string) {
-    return nome.includes("[EM BREVE]") || nome.toLowerCase().includes("checkpoint");
+    return nome.toLowerCase().includes("em breve") || nome.toLowerCase().includes("checkpoint");
   }
 
   function getInstrutor(course: Course): string {
@@ -239,7 +239,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
             <>
               <Button size="sm" variant="outline" onClick={handleSync} disabled={syncing}>
                 <RefreshCw size={14} className={cn("mr-2", syncing && "animate-spin")} />
-                {syncing ? "Sincronizando..." : "Sync Admin"}
+                {syncing ? "Sincronizando..." : "Sync BI"}
               </Button>
               {syncResult && <p className="text-xs text-muted-foreground">{syncResult}</p>}
             </>
@@ -336,6 +336,15 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
                     </a>
                     {course.categoria && (
                       <span className="text-xs text-muted-foreground">{course.categoria}</span>
+                    )}
+                    {course.catalogos.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {course.catalogos.map((cat) => (
+                          <span key={cat} className="inline-block px-1.5 py-0.5 rounded text-[10px] bg-muted text-muted-foreground font-mono leading-none">
+                            {cat}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </td>
                   <td className="py-2.5 px-3 text-muted-foreground">
