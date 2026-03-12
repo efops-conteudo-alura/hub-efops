@@ -10,6 +10,7 @@ import { MonthPicker } from "@/app/(dashboard)/gastos/_components/month-picker";
 
 interface Course {
   id: string;
+  aluraId: number | null;
   slug: string;
   nome: string;
   categoria: string | null;
@@ -51,9 +52,9 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     const cats = searchParams.get("c_cats");
     return cats ? cats.split(",") : [];
   });
-  const [sortField, setSortField] = useState<"nome" | "instrutores" | "dataPublicacao">(() => {
+  const [sortField, setSortField] = useState<"aluraId" | "nome" | "instrutores" | "dataPublicacao">(() => {
     const sf = searchParams.get("c_sf");
-    return sf === "nome" || sf === "instrutores" ? sf : "dataPublicacao";
+    return sf === "nome" || sf === "instrutores" || sf === "aluraId" ? sf : "dataPublicacao";
   });
   const [sortDir, setSortDir] = useState<"asc" | "desc">(() =>
     searchParams.get("c_sd") === "asc" ? "asc" : "desc"
@@ -112,7 +113,9 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
 
     return [...filtered].sort((a, b) => {
       let cmp = 0;
-      if (sortField === "nome") {
+      if (sortField === "aluraId") {
+        cmp = (a.aluraId ?? 0) - (b.aluraId ?? 0);
+      } else if (sortField === "nome") {
         cmp = a.nome.localeCompare(b.nome, "pt-BR");
       } else if (sortField === "instrutores") {
         cmp = getInstrutor(a).localeCompare(getInstrutor(b), "pt-BR");
@@ -142,16 +145,16 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     }
     const html = [
       "<table>",
-      "<tr><th>Nome</th><th>Categoria</th><th>Instrutor</th><th>Catálogo(s)</th><th>Publicação</th></tr>",
+      "<tr><th>ID</th><th>Nome</th><th>Categoria</th><th>Instrutor</th><th>Catálogo(s)</th><th>Publicação</th></tr>",
       ...sortedCourses.map((c) =>
-        `<tr><td><a href="https://www.alura.com.br/curso-online-${c.slug}">${esc(c.nome)}</a></td><td>${esc(c.categoria ?? "")}</td><td>${esc(getInstrutor(c))}</td><td>${esc(c.catalogos.join(", "))}</td><td>${formatDate(c.dataPublicacao)}</td></tr>`
+        `<tr><td>${c.aluraId ?? ""}</td><td><a href="https://www.alura.com.br/curso-online-${c.slug}">${esc(c.nome)}</a></td><td>${esc(c.categoria ?? "")}</td><td>${esc(getInstrutor(c))}</td><td>${esc(c.catalogos.join(", "))}</td><td>${formatDate(c.dataPublicacao)}</td></tr>`
       ),
       "</table>",
     ].join("\n");
     const plain = [
-      ["Nome", "Categoria", "Instrutor", "Catálogo(s)", "Publicação", "Link"].join("\t"),
+      ["ID", "Nome", "Categoria", "Instrutor", "Catálogo(s)", "Publicação", "Link"].join("\t"),
       ...sortedCourses.map((c) =>
-        [c.nome, c.categoria ?? "", getInstrutor(c), c.catalogos.join(", "), formatDate(c.dataPublicacao), `https://www.alura.com.br/curso-online-${c.slug}`].join("\t")
+        [c.aluraId ?? "", c.nome, c.categoria ?? "", getInstrutor(c), c.catalogos.join(", "), formatDate(c.dataPublicacao), `https://www.alura.com.br/curso-online-${c.slug}`].join("\t")
       ),
     ].join("\n");
     await navigator.clipboard.write([
@@ -197,8 +200,8 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
           <span className="text-sm text-muted-foreground">Até</span>
           <MonthPicker value={monthTo} onChange={setMonthTo} placeholder="Fim" />
         </div>
-        {(monthFrom || monthTo) && (
-          <Button variant="ghost" size="sm" onClick={() => { setMonthFrom(""); setMonthTo(""); }}>
+        {(monthFrom || monthTo || specialFilter !== "all" || selectedCatalogs.length > 0) && (
+          <Button variant="ghost" size="sm" onClick={() => { setMonthFrom(""); setMonthTo(""); setSpecialFilter("all"); setSelectedCatalogs([]); }}>
             Limpar tudo
           </Button>
         )}
@@ -303,6 +306,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
             {label}
           </button>
         ))}
+        <span className="text-xs text-muted-foreground italic">especiais = cursos em breve e checkpoints</span>
       </div>
 
       {/* Tabela */}
@@ -319,6 +323,19 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b">
+                <th className="text-left pb-2 pr-4 w-16">
+                  <button
+                    onClick={() => handleSort("aluraId")}
+                    className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    ID
+                    {sortField === "aluraId" ? (
+                      sortDir === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+                    ) : (
+                      <ArrowUpDown size={12} className="opacity-40" />
+                    )}
+                  </button>
+                </th>
                 {(
                   [
                     { field: "nome", label: "Nome", align: "left", cls: "pr-4" },
@@ -357,6 +374,9 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
             <tbody className="divide-y">
               {sortedCourses.map((course) => (
                 <tr key={course.id}>
+                  <td className="py-2.5 pr-4 text-muted-foreground font-mono text-xs tabular-nums">
+                    {course.aluraId ?? "—"}
+                  </td>
                   <td className="py-2.5 pr-4">
                     <a
                       href={`https://www.alura.com.br/curso-online-${course.slug}`}
@@ -370,13 +390,28 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
                     {course.categoria && (
                       <span className="text-xs text-muted-foreground">{course.categoria}</span>
                     )}
-                    {course.catalogos.length > 0 && (
+                    {(course.catalogos.length > 0 || isSpecial(course.nome)) && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {course.catalogos.map((cat) => (
-                          <span key={cat} className="inline-block px-1.5 py-0.5 rounded text-[10px] bg-muted text-muted-foreground font-mono leading-none">
+                          <span key={cat} className={cn(
+                            "inline-block px-1.5 py-0.5 rounded text-[10px] font-mono leading-none",
+                            cat === "alura"
+                              ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                              : "bg-muted text-muted-foreground"
+                          )}>
                             {cat}
                           </span>
                         ))}
+                        {course.nome.toLowerCase().includes("em breve") && (
+                          <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono leading-none bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+                            em breve
+                          </span>
+                        )}
+                        {course.nome.toLowerCase().includes("checkpoint") && (
+                          <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono leading-none bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400">
+                            checkpoint
+                          </span>
+                        )}
                       </div>
                     )}
                   </td>

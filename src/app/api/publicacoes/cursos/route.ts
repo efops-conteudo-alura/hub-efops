@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
     orderBy: { dataPublicacao: "desc" },
     select: {
       id: true,
+      aluraId: true,
       slug: true,
       nome: true,
       categoria: true,

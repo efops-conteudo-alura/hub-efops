@@ -171,8 +171,8 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
           <span className="text-sm text-muted-foreground">Até</span>
           <MonthPicker value={monthTo} onChange={setMonthTo} placeholder="Fim" />
         </div>
-        {(monthFrom || monthTo) && (
-          <Button variant="ghost" size="sm" onClick={() => { setMonthFrom(""); setMonthTo(""); }}>
+        {(monthFrom || monthTo || selectedCat) && (
+          <Button variant="ghost" size="sm" onClick={() => { setMonthFrom(""); setMonthTo(""); setSelectedCat(""); }}>
             Limpar tudo
           </Button>
         )}
