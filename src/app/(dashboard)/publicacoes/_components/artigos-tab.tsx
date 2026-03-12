@@ -93,14 +93,19 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams();
-    if (monthFrom) params.set("month_from", monthFrom);
-    if (monthTo) params.set("month_to", monthTo);
-    if (selectedCat) params.set("categoria", selectedCat);
-    const res = await fetch(`/api/publicacoes/artigos?${params}`);
-    const data = await res.json();
-    setArtigos(Array.isArray(data) ? data : []);
-    setLoading(false);
+    try {
+      const params = new URLSearchParams();
+      if (monthFrom) params.set("month_from", monthFrom);
+      if (monthTo) params.set("month_to", monthTo);
+      if (selectedCat) params.set("categoria", selectedCat);
+      const res = await fetch(`/api/publicacoes/artigos?${params}`);
+      const data = await res.json();
+      setArtigos(Array.isArray(data) ? data : []);
+    } catch {
+      setArtigos([]);
+    } finally {
+      setLoading(false);
+    }
   }, [monthFrom, monthTo, selectedCat]);
 
   useEffect(() => { load(); }, [load]);
@@ -123,12 +128,16 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
         [a.nome, a.categoria ?? "", a.autor ?? "", formatDate(a.dataPublicacao), formatDate(a.dataModificacao), `https://www.alura.com.br/artigos/${a.slug}`].join("\t")
       ),
     ].join("\n");
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        "text/html": new Blob([html], { type: "text/html" }),
-        "text/plain": new Blob([plain], { type: "text/plain" }),
-      }),
-    ]);
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([plain], { type: "text/plain" }),
+        }),
+      ]);
+    } catch {
+      await navigator.clipboard.writeText(plain).catch(() => {});
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }

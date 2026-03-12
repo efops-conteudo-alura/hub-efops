@@ -57,18 +57,10 @@ export async function POST() {
       return NextResponse.json({ error: "Nenhuma trilha encontrada. A estrutura HTML pode ter mudado." }, { status: 500 });
     }
 
-    // 2. Identificar quais já estão completas no DB
-    const existing = await prisma.aluraTrilha.findMany({
-      where: { slug: { in: slugs } },
-      select: { slug: true },
-    });
-    const existingSet = new Set(existing.map((t) => t.slug));
-    const newSlugs = slugs.filter((s) => !existingSet.has(s));
-
-    // 3. Buscar API apenas para novas
+    // 2. Buscar API para todos os slugs
     const formacaoData = new Map<string, FormacaoApiResponse>();
-    for (let i = 0; i < newSlugs.length; i += BATCH_SIZE) {
-      const batch = newSlugs.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < slugs.length; i += BATCH_SIZE) {
+      const batch = slugs.slice(i, i + BATCH_SIZE);
       const results = await Promise.allSettled(
         batch.map(async (slug) => ({ slug, data: await fetchFormacaoApi(slug) }))
       );
@@ -79,7 +71,7 @@ export async function POST() {
       }
     }
 
-    // 4. Upsert
+    // 3. Upsert
     let upserted = 0;
     for (const slug of slugs) {
       const data = formacaoData.get(slug);

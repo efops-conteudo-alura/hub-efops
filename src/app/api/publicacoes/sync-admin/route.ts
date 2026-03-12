@@ -98,18 +98,20 @@ export async function POST() {
 
   for (let i = 0; i < parsed.length; i += BATCH) {
     const batch = parsed.slice(i, i + BATCH);
-    await Promise.allSettled(
+    const results = await Promise.allSettled(
       batch.map(({ slug, data }) =>
         prisma.aluraCourse.upsert({
           where: { slug },
           create: { slug, ...data },
           update: data,
-        })
+        }).then(() => slug)
       )
     );
-    for (const { slug } of batch) {
-      if (existingSlugs.has(slug)) updated++;
-      else created++;
+    for (const r of results) {
+      if (r.status === "fulfilled") {
+        if (existingSlugs.has(r.value)) updated++;
+        else created++;
+      }
     }
   }
 

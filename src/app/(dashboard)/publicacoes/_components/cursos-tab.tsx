@@ -54,10 +54,8 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
 
   const [monthFrom, setMonthFrom] = useState(() => searchParams.get("c_mf") ?? "2025-01");
   const [monthTo, setMonthTo] = useState(() => searchParams.get("c_mt") ?? "");
-  const [specialFilter, setSpecialFilter] = useState<"all" | "hide" | "only">(() => {
-    const sp = searchParams.get("c_sp");
-    return sp === "hide" || sp === "only" ? sp : "all";
-  });
+  const [showEmBreve, setShowEmBreve] = useState(() => searchParams.get("c_eb") !== "0");
+  const [showCheckpoint, setShowCheckpoint] = useState(() => searchParams.get("c_cp") !== "0");
   const [catalogFilters, setCatalogFilters] = useState<Record<string, CatalogFilterValue>>(
     () => parseCatalogFilters(searchParams)
   );
@@ -74,7 +72,9 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     const params = new URLSearchParams(searchParamsRef.current.toString());
     monthFrom && monthFrom !== "2025-01" ? params.set("c_mf", monthFrom) : params.delete("c_mf");
     monthTo ? params.set("c_mt", monthTo) : params.delete("c_mt");
-    specialFilter !== "all" ? params.set("c_sp", specialFilter) : params.delete("c_sp");
+    showEmBreve ? params.delete("c_eb") : params.set("c_eb", "0");
+    showCheckpoint ? params.delete("c_cp") : params.set("c_cp", "0");
+    params.delete("c_sp"); // limpa param legado
     sortField !== "dataPublicacao" ? params.set("c_sf", sortField) : params.delete("c_sf");
     sortDir !== "desc" ? params.set("c_sd", sortDir) : params.delete("c_sd");
 
@@ -86,7 +86,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
 
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthFrom, monthTo, specialFilter, catalogFilters, sortField, sortDir, router, pathname]);
+  }, [monthFrom, monthTo, showEmBreve, showCheckpoint, catalogFilters, sortField, sortDir, router, pathname]);
 
   function toggleCatalogFilter(cat: string, value: CatalogFilterValue) {
     setCatalogFilters((prev) => {
@@ -109,9 +109,6 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     }
   }
 
-  function isSpecial(nome: string) {
-    return nome.toLowerCase().includes("em breve") || nome.toLowerCase().includes("checkpoint");
-  }
 
   function getInstrutor(course: Course): string {
     if (course.instrutor) return course.instrutor;
@@ -138,15 +135,16 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     return `${activeCatalogFilters.length} filtros`;
   }, [activeCatalogFilters]);
 
-  const hasFilters = monthFrom || monthTo || specialFilter !== "all" || activeCatalogFilters.length > 0;
+  const hasFilters = (monthFrom && monthFrom !== "2025-01") || monthTo || !showEmBreve || !showCheckpoint || activeCatalogFilters.length > 0;
 
   const sortedCourses = useMemo(() => {
     let filtered = courses;
 
-    if (specialFilter === "hide") {
-      filtered = filtered.filter((c) => !isSpecial(c.nome));
-    } else if (specialFilter === "only") {
-      filtered = filtered.filter((c) => isSpecial(c.nome));
+    if (!showEmBreve) {
+      filtered = filtered.filter((c) => !c.nome.toLowerCase().includes("em breve"));
+    }
+    if (!showCheckpoint) {
+      filtered = filtered.filter((c) => !c.nome.toLowerCase().includes("checkpoint"));
     }
 
     const includes = activeCatalogFilters.filter(([, v]) => v === "include").map(([k]) => k);
@@ -172,17 +170,22 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [courses, sortField, sortDir, specialFilter, activeCatalogFilters]);
+  }, [courses, sortField, sortDir, showEmBreve, showCheckpoint, activeCatalogFilters]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams();
-    if (monthFrom) params.set("month_from", monthFrom);
-    if (monthTo) params.set("month_to", monthTo);
-    const res = await fetch(`/api/publicacoes/cursos?${params}`);
-    const data = await res.json();
-    setCourses(Array.isArray(data) ? data : []);
-    setLoading(false);
+    try {
+      const params = new URLSearchParams();
+      if (monthFrom) params.set("month_from", monthFrom);
+      if (monthTo) params.set("month_to", monthTo);
+      const res = await fetch(`/api/publicacoes/cursos?${params}`);
+      const data = await res.json();
+      setCourses(Array.isArray(data) ? data : []);
+    } catch {
+      setCourses([]);
+    } finally {
+      setLoading(false);
+    }
   }, [monthFrom, monthTo]);
 
   useEffect(() => { load(); }, [load]);
@@ -205,12 +208,16 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
         [c.aluraId ?? "", c.nome, c.categoria ?? "", getInstrutor(c), c.catalogos.join(", "), formatDate(c.dataPublicacao), `https://www.alura.com.br/curso-online-${c.slug}`].join("\t")
       ),
     ].join("\n");
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        "text/html": new Blob([html], { type: "text/html" }),
-        "text/plain": new Blob([plain], { type: "text/plain" }),
-      }),
-    ]);
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([plain], { type: "text/plain" }),
+        }),
+      ]);
+    } catch {
+      await navigator.clipboard.writeText(plain).catch(() => {});
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -328,7 +335,8 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
           <Button variant="ghost" size="sm" onClick={() => {
             setMonthFrom("");
             setMonthTo("");
-            setSpecialFilter("all");
+            setShowEmBreve(true);
+            setShowCheckpoint(true);
             setCatalogFilters({});
           }}>
             Limpar tudo
@@ -356,28 +364,29 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
 
       {/* Filtro de especiais */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-muted-foreground">Tipo:</span>
-        {(
-          [
-            { key: "all", label: "Todos" },
-            { key: "hide", label: "Excluir especiais" },
-            { key: "only", label: "Apenas especiais" },
-          ] as const
-        ).map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setSpecialFilter(key)}
-            className={cn(
-              "px-3 py-1 rounded-full text-xs font-medium border transition-colors",
-              specialFilter === key
-                ? "bg-secondary text-secondary-foreground border-transparent"
-                : "bg-transparent text-muted-foreground border-border hover:border-foreground"
-            )}
-          >
-            {label}
-          </button>
-        ))}
-        <span className="text-xs text-muted-foreground italic">especiais = cursos em breve e checkpoints</span>
+        <span className="text-xs text-muted-foreground">Ocultar:</span>
+        <button
+          onClick={() => setShowEmBreve((v) => !v)}
+          className={cn(
+            "px-3 py-1 rounded-full text-xs font-medium border transition-colors",
+            !showEmBreve
+              ? "bg-amber-100 text-amber-800 border-transparent dark:bg-amber-900/40 dark:text-amber-300"
+              : "bg-transparent text-muted-foreground border-border hover:border-foreground"
+          )}
+        >
+          {showEmBreve ? "Em breve: visível" : "Em breve: oculto"}
+        </button>
+        <button
+          onClick={() => setShowCheckpoint((v) => !v)}
+          className={cn(
+            "px-3 py-1 rounded-full text-xs font-medium border transition-colors",
+            !showCheckpoint
+              ? "bg-purple-100 text-purple-800 border-transparent dark:bg-purple-900/40 dark:text-purple-300"
+              : "bg-transparent text-muted-foreground border-border hover:border-foreground"
+          )}
+        >
+          {showCheckpoint ? "Checkpoints: visível" : "Checkpoints: oculto"}
+        </button>
       </div>
 
       {/* Tabela */}
@@ -461,7 +470,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
                     {course.categoria && (
                       <span className="text-xs text-muted-foreground">{course.categoria}</span>
                     )}
-                    {(course.catalogos.length > 0 || isSpecial(course.nome)) && (
+                    {(course.catalogos.length > 0 || course.nome.toLowerCase().includes("em breve") || course.nome.toLowerCase().includes("checkpoint")) && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {course.catalogos.map((cat) => (
                           <span key={cat} className={cn(

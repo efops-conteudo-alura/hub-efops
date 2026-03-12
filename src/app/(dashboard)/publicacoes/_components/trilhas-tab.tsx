@@ -76,12 +76,17 @@ export function TrilhasTab({ isAdmin }: { isAdmin: boolean }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    const res = await fetch(`/api/publicacoes/trilhas?${params}`);
-    const data = await res.json();
-    setTrilhas(Array.isArray(data) ? data : []);
-    setLoading(false);
+    try {
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      const res = await fetch(`/api/publicacoes/trilhas?${params}`);
+      const data = await res.json();
+      setTrilhas(Array.isArray(data) ? data : []);
+    } catch {
+      setTrilhas([]);
+    } finally {
+      setLoading(false);
+    }
   }, [search]);
 
   useEffect(() => { load(); }, [load]);
@@ -133,12 +138,16 @@ export function TrilhasTab({ isAdmin }: { isAdmin: boolean }) {
         [t.nome, t.categoria ?? "", t.numCursos ?? "", t.cargaHoraria != null ? `${t.cargaHoraria}h` : "", `https://www.alura.com.br/formacao-${t.slug}`].join("\t")
       ),
     ].join("\n");
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        "text/html": new Blob([html], { type: "text/html" }),
-        "text/plain": new Blob([plain], { type: "text/plain" }),
-      }),
-    ]);
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+          "text/plain": new Blob([plain], { type: "text/plain" }),
+        }),
+      ]);
+    } catch {
+      await navigator.clipboard.writeText(plain).catch(() => {});
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
