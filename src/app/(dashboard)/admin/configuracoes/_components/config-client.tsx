@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Check, Save, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type ConfigKey = "ALURA_SESSION_COOKIE" | "ALURA_CAELUM_TOKEN" | "ALURA_USER_ID";
+type ConfigKey = "ALURA_SESSION_COOKIE" | "ALURA_CAELUM_TOKEN" | "ALURA_USER_ID" | "CAELUM_BI_URL";
 
 interface ConfigStatus {
   configured: boolean;
@@ -47,11 +47,13 @@ export function ConfigClient() {
     ALURA_SESSION_COOKIE: "",
     ALURA_CAELUM_TOKEN: "",
     ALURA_USER_ID: "",
+    CAELUM_BI_URL: "",
   });
   const [visible, setVisible] = useState<Record<ConfigKey, boolean>>({
     ALURA_SESSION_COOKIE: false,
     ALURA_CAELUM_TOKEN: false,
     ALURA_USER_ID: false,
+    CAELUM_BI_URL: false,
   });
   const [saving, setSaving] = useState<ConfigKey | null>(null);
   const [saved, setSaved] = useState<ConfigKey | null>(null);
@@ -150,7 +152,7 @@ export function ConfigClient() {
         </div>
       </div>
 
-      {/* Formulário */}
+      {/* Formulário — Cookies */}
       <div className="space-y-6">
         <h2 className="font-semibold text-base">Cookies de acesso</h2>
         {error && (
@@ -209,6 +211,58 @@ export function ConfigClient() {
             </div>
           );
         })}
+      </div>
+
+      {/* Formulário — Caelum BI */}
+      <div className="space-y-4">
+        <h2 className="font-semibold text-base">Caelum BI</h2>
+        <p className="text-sm text-muted-foreground">
+          Link público da query no Caelum BI que retorna os cursos publicados. Usado pelo botão <strong>Sync Admin</strong> em Publicações.
+        </p>
+        {(() => {
+          const key: ConfigKey = "CAELUM_BI_URL";
+          const s = status?.[key];
+          return (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor={key}>Link público da query</Label>
+                {s?.configured && (
+                  <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                    <Check size={12} />
+                    Configurado
+                  </span>
+                )}
+              </div>
+              {s?.configured && s.updatedAt && (
+                <p className="text-xs text-muted-foreground">
+                  Última atualização: {formatDate(s.updatedAt)}{s.updatedBy ? ` por ${s.updatedBy}` : ""}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <Input
+                  id={key}
+                  type="text"
+                  placeholder={s?.configured ? "Cole aqui para atualizar..." : "https://bi.caelumalura.com.br/public/result?id=..."}
+                  value={values[key]}
+                  onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
+                  className="font-mono text-xs"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => handleSave(key)}
+                  disabled={!values[key].trim() || saving === key}
+                  className={cn(saved === key && "bg-green-600 hover:bg-green-600")}
+                >
+                  {saved === key ? (
+                    <><Check size={14} className="mr-1" /> Salvo!</>
+                  ) : (
+                    <><Save size={14} className="mr-1" /> Salvar</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

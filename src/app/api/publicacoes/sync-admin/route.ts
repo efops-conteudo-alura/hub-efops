@@ -4,134 +4,15 @@ import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
 import { NextResponse } from "next/server";
 
-const BASE_URL = "https://cursos.alura.com.br/admin/courses";
-const USER_AGENT =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-
-// ---------- helpers de parsing (validados em scripts/test-sync-admin.ts) ----------
-
-function extractSelectedOption(html: string, selectClass: string): string {
-  const reSelect = new RegExp(
-    `<select[^>]*class="[^"]*${selectClass}[^"]*"[^>]*>([\\s\\S]*?)<\\/select>`,
-    "i"
-  );
-  const selMatch = html.match(reSelect);
-  if (!selMatch) return "";
-  const reOption = /<option[^>]*\bselected\b[^>]*>/i;
-  const optTag = selMatch[1].match(reOption);
-  if (!optTag) return "";
-  const valMatch = optTag[0].match(/value="([^"]*)"/i);
-  return valMatch ? valMatch[1].trim() : "";
-}
-
-function extractCatalogs(html: string): string[] {
-  const re = /<[^>]*class="[^"]*course-catalog-code[^"]*"[^>]*>([^<]+)<\//gi;
-  const result: string[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(html)) !== null) {
-    result.push(m[1].trim());
-  }
-  return result;
-}
-
-function parseDate(raw: string): Date | null {
-  const m = raw.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-  if (!m) return null;
-  // Usar meio-dia UTC evita o bug de timezone (meia-noite UTC → dia anterior no fuso brasileiro)
-  return new Date(`${m[3]}-${m[2]}-${m[1]}T12:00:00.000Z`);
-}
-
-interface CourseRow {
-  isExclusive: boolean;
-  aluraId: number | null;
-  slug: string;
-  nome: string;
-  instrutor: string;
-  catalogos: string[];
-  nivel: string;
-  statusPub: string;
-  dataPublicacao: Date | null;
-  statusCriacao: string;
-  tipoContrato: string;
-  tipo: string;
-}
-
-function parseTr(tr: string): CourseRow {
-  const isExclusive = /class="exclusive-course"/i.test(tr);
-
-  const tds: string[] = [];
-  const reTd = /<td[^>]*>([\s\S]*?)<\/td>/gi;
-  let m: RegExpExecArray | null;
-  while ((m = reTd.exec(tr)) !== null) {
-    tds.push(m[1]);
-  }
-
-  const cleanTd = (i: number) =>
-    (tds[i] ?? "").replace(/<[^>]+>/g, "").trim();
-
-  const tipoMatch = tr.match(/<span[^>]*class="[^"]*label[^"]*"[^>]*>([^<]+)<\/span>/i);
-  const tipo = tipoMatch ? tipoMatch[1].trim() : "";
-
-  const rawId = cleanTd(0);
-  const aluraId = rawId ? parseInt(rawId, 10) || null : null;
-
-  return {
-    isExclusive,
-    aluraId,
-    slug: cleanTd(1),
-    nome: cleanTd(2),
-    instrutor: cleanTd(3),
-    catalogos: extractCatalogs(tr),
-    nivel: cleanTd(5),
-    statusPub: cleanTd(6),
-    dataPublicacao: parseDate(cleanTd(8)), // coluna "Publicação" do admin
-    statusCriacao: extractSelectedOption(tr, "change-creation_status"),
-    tipoContrato: extractSelectedOption(tr, "change-contract_type"),
-    tipo,
-  };
-}
-
-function parsePage(html: string): CourseRow[] {
-  const tableMatch = html.match(/<table[^>]*id="courses-table"[^>]*>([\s\S]*?)<\/table>/i);
-  if (!tableMatch) return [];
-
-  const tableContent = tableMatch[1].replace(/<thead[\s\S]*?<\/thead>/i, "");
-
-  const rows: CourseRow[] = [];
-  const reTr = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-  let m: RegExpExecArray | null;
-  while ((m = reTr.exec(tableContent)) !== null) {
-    rows.push(parseTr(m[0]));
-  }
-  return rows;
-}
-
-async function fetchPage(
-  page: number,
-  cookieHeader: string
-): Promise<{ html: string; isLoginPage: boolean }> {
-  const res = await fetch(`${BASE_URL}?page=${page}`, {
-    headers: {
-      "User-Agent": USER_AGENT,
-      Cookie: cookieHeader,
-    },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status} na página ${page}`);
-  const html = await res.text();
-  const isLoginPage =
-    /<title[^>]*>[^<]*[Ll]ogin[^<]*<\/title>/i.test(html) ||
-    /<title[^>]*>[^<]*[Ee]ntrar[^<]*<\/title>/i.test(html) ||
-    html.includes('action="/login"');
-  return { html, isLoginPage };
-}
-
 async function getConfigValue(key: string): Promise<string> {
   const config = await prisma.systemConfig.findUnique({ where: { key } });
   if (config?.value) return decrypt(config.value);
   return process.env[key] ?? "";
 }
 
-// ---------- POST handler ----------
+// Caelum BI retorna linhas como arrays de valores (não objetos)
+// Ordem: [aluraId, slug, nome, dataPublicacao, statusPub, statusCriacao, tipoContrato, isExclusive, catalogos]
+type BiRow = string[];
 
 export async function POST() {
   const session = await getServerSession(authOptions);
@@ -139,99 +20,98 @@ export async function POST() {
     return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
   }
 
-  // Lê cookies do banco (criptografados) com fallback para .env
-  const [sessionCookie, caelumToken, aluraUserId] = await Promise.all([
-    getConfigValue("ALURA_SESSION_COOKIE"),
-    getConfigValue("ALURA_CAELUM_TOKEN"),
-    getConfigValue("ALURA_USER_ID"),
-  ]);
-
-  if (!sessionCookie && !caelumToken) {
+  const biUrl = await getConfigValue("CAELUM_BI_URL");
+  if (!biUrl) {
     return NextResponse.json(
-      { error: "Cookies de acesso não configurados. Acesse Admin → Configurações para configurá-los." },
+      { error: "URL do Caelum BI não configurada. Acesse Admin → Configurações." },
       { status: 500 }
     );
   }
 
-  const cookieParts: string[] = [];
-  if (sessionCookie) cookieParts.push(`SESSION=${sessionCookie}`);
-  if (caelumToken) cookieParts.push(`caelum.login.token=${caelumToken}`);
-  if (aluraUserId) cookieParts.push(`alura.userId=${aluraUserId}`);
-  const cookieHeader = cookieParts.join("; ");
+  let rows: BiRow[];
+  try {
+    const fetchUrl = biUrl.includes("?") ? `${biUrl}&format=json` : `${biUrl}?format=json`;
+    const res = await fetch(fetchUrl, { headers: { "Cache-Control": "no-cache" } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const raw = await res.json();
+    console.log("[sync-admin] Caelum BI raw type:", typeof raw, Array.isArray(raw) ? `array[${raw.length}]` : JSON.stringify(raw).slice(0, 200));
+    // Suporta array direto ou wrapped em { data, rows, results }
+    if (Array.isArray(raw)) {
+      rows = raw;
+    } else if (Array.isArray(raw?.data)) {
+      rows = raw.data;
+    } else if (Array.isArray(raw?.rows)) {
+      rows = raw.rows;
+    } else if (Array.isArray(raw?.results)) {
+      rows = raw.results;
+    } else if (Array.isArray(raw?.result)) {
+      rows = raw.result;
+    } else {
+      return NextResponse.json({ error: `Formato inesperado do Caelum BI: ${JSON.stringify(raw).slice(0, 200)}` }, { status: 500 });
+    }
+  } catch (err) {
+    console.error("[sync-admin] Erro ao buscar Caelum BI:", err);
+    return NextResponse.json({ error: "Erro ao buscar dados do Caelum BI" }, { status: 500 });
+  }
 
-  const CUTOFF_DATE = new Date("2025-01-01");
+  if (rows.length === 0) {
+    return NextResponse.json({ error: "Nenhum curso retornado pelo Caelum BI" }, { status: 500 });
+  }
 
+  // 1. Parse tudo em memória (zero DB)
+  // [0]=aluraId [1]=slug [2]=nome [3]=dataPublicacao [4]=statusPub
+  // [5]=statusCriacao [6]=tipoContrato [7]=isExclusive [8]=catalogos
+  const parsed = rows.flatMap((row) => {
+    const slug = row[1];
+    if (!slug) return [];
+    const catalogos = (row[8] ?? "")
+      .split(", ")
+      .map((c) => c.trim())
+      .filter((c) => c && !c.toLowerCase().includes("teste") && !c.toLowerCase().includes("trial"));
+    return [{
+      slug,
+      data: {
+        nome: row[2] || slug,
+        aluraId: row[0] ? Number(row[0]) : null,
+        statusPub: row[4] || null,
+        statusCriacao: row[5] || null,
+        tipoContrato: row[6] || null,
+        catalogos,
+        isExclusive: row[7] === "1" || row[7] === "true",
+        dataPublicacao: row[3] ? new Date(row[3]) : null,
+      },
+    }];
+  });
+
+  // 2. Uma query para saber quais slugs já existem
+  const existingSlugs = new Set(
+    (await prisma.aluraCourse.findMany({
+      where: { slug: { in: parsed.map((p) => p.slug) } },
+      select: { slug: true },
+    })).map((c) => c.slug)
+  );
+
+  // 3. Upserts em batches de 20 em paralelo
+  const BATCH = 20;
   let created = 0;
   let updated = 0;
-  let page = 1;
 
-  try {
-    while (true) {
-      const { html, isLoginPage } = await fetchPage(page, cookieHeader);
-
-      if (isLoginPage) {
-        return NextResponse.json(
-          { error: "Cookie expirado ou inválido. Acesse Admin → Configurações e atualize os cookies." },
-          { status: 401 }
-        );
-      }
-
-      const rows = parsePage(html);
-
-      if (rows.length === 0) break;
-
-      let reachedCutoff = false;
-
-      for (const row of rows) {
-        if (!row.slug) continue;
-
-        // Para paginação quando encontrar curso anterior a jan/2025
-        if (row.dataPublicacao && row.dataPublicacao < CUTOFF_DATE) {
-          reachedCutoff = true;
-          break;
-        }
-
-        // Remove catálogos de teste/trial do array (curso ainda é salvo se tiver outros catálogos)
-        const catalogosFiltrados = row.catalogos.filter(
-          (c) => !c.toLowerCase().includes("teste") && !c.toLowerCase().includes("trial")
-        );
-
-        const existing = await prisma.aluraCourse.findUnique({
-          where: { slug: row.slug },
-          select: { id: true },
-        });
-
-        const data = {
-          nome: row.nome || row.slug,
-          aluraId: row.aluraId,
-          instrutor: row.instrutor || null,
-          nivel: row.nivel || null,
-          statusPub: row.statusPub || null,
-          statusCriacao: row.statusCriacao || null,
-          tipoContrato: row.tipoContrato || null,
-          tipo: row.tipo || null,
-          catalogos: catalogosFiltrados,
-          isExclusive: row.isExclusive,
-          dataPublicacao: row.dataPublicacao,
-        };
-
-        if (existing) {
-          await prisma.aluraCourse.update({ where: { slug: row.slug }, data });
-          updated++;
-        } else {
-          await prisma.aluraCourse.create({ data: { slug: row.slug, ...data } });
-          created++;
-        }
-      }
-
-      if (reachedCutoff) break;
-
-      page++;
+  for (let i = 0; i < parsed.length; i += BATCH) {
+    const batch = parsed.slice(i, i + BATCH);
+    await Promise.allSettled(
+      batch.map(({ slug, data }) =>
+        prisma.aluraCourse.upsert({
+          where: { slug },
+          create: { slug, ...data },
+          update: data,
+        })
+      )
+    );
+    for (const { slug } of batch) {
+      if (existingSlugs.has(slug)) updated++;
+      else created++;
     }
-
-    return NextResponse.json({ created, updated, total: created + updated });
-  } catch (err) {
-    console.error("[sync-admin] Erro:", err);
-    return NextResponse.json({ error: "Erro interno ao sincronizar" }, { status: 500 });
   }
+
+  return NextResponse.json({ created, updated, total: created + updated });
 }

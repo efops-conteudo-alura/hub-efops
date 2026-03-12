@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const courses = await prisma.aluraCourse.findMany({
     where: {
       // Cursos publicados (statusPub = "pub") ou sem statusPub (legado do sync público)
-      OR: [{ statusPub: "pub" }, { statusPub: null }],
+      OR: [{ statusPub: "pub" }, { statusPub: "PUBLISHED" }, { statusPub: null }],
       dataPublicacao: {
         gte: gteDate,
         ...(lteDate ? { lte: lteDate } : {}),
