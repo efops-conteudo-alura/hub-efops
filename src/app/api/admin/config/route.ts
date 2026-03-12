@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { encrypt, decrypt } from "@/lib/crypto";
 import { NextRequest, NextResponse } from "next/server";
 
-const ALLOWED_KEYS = ["ALURA_SESSION_COOKIE", "ALURA_CAELUM_TOKEN", "ALURA_USER_ID", "CAELUM_BI_URL"] as const;
+const ALLOWED_KEYS = ["CAELUM_BI_URL"] as const;
 type ConfigKey = (typeof ALLOWED_KEYS)[number];
 
 // GET — retorna os valores mascarados (apenas para saber se estão configurados)

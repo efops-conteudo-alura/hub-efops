@@ -132,7 +132,7 @@ export async function GET() {
 |---|---|---|---|
 | Home | `/home` | Dashboard de boas-vindas | — |
 | KPIs | `/kpis` | Produção mensal, edição, pesos e níveis de carreiras | API Alura (carreiras) |
-| Publicações | `/publicacoes` | Catálogo de cursos, trilhas, artigos e carreiras | API Alura |
+| Publicações | `/publicacoes` | Catálogo de cursos, trilhas, artigos e carreiras | Caelum BI (cursos), API Alura (trilhas/artigos) |
 | Gastos | `/gastos` e `/gastos/categorias` | Controle de despesas do departamento | ClickUp (tasks) |
 | Relatórios | `/relatorios` | Builder de formulários + coleta de respostas via link público | — |
 | Processos | `/processos` | Documentação de processos com flow (@xyflow) e rich text (TipTap) | — |
@@ -173,6 +173,24 @@ Rotas de sync seguem o padrão:
 ```
 
 Exemplos existentes: `gastos/sync-clickup`, `kpis/carreiras/sync`, `publicacoes/cursos/sync`
+
+### Sync de cursos via Caelum BI
+
+O sync de cursos (`/api/publicacoes/sync-admin`) usa o **Caelum BI** (`bi.caelumalura.com.br`) como fonte de dados — uma ferramenta interna da Alura com acesso ao banco de produção (`aluraproduction`).
+
+- A query SQL está salva no Caelum BI como **"Hub EfOps - Cursos Publicados"** (query #2722)
+- O link público é armazenado criptografado no banco como `SystemConfig` com chave `CAELUM_BI_URL`
+- Configurável em `/admin/configuracoes` → seção "Caelum BI"
+- O Caelum BI retorna `{ columns: [...], result: [[...], [...]] }` — linhas como arrays, não objetos
+- Ordem das colunas: `[aluraId, slug, nome, dataPublicacao, statusPub, statusCriacao, tipoContrato, isExclusive, catalogos]`
+- `statusPub` no banco da Alura é `PUBLISHED` (não `"pub"` como vinha do scraping antigo) — o GET de cursos aceita ambos
+- O link público não expira enquanto a query existir no Caelum BI
+- Se a query precisar ser recriada, basta salvar o novo link em `/admin/configuracoes`
+
+**Tabelas relevantes do banco `aluraproduction`:**
+- `Course` — cursos (campos: `id`, `code`=slug, `name`, `publicationDate`, `situation`=statusPub, `creationStatus`, `contractType`, `isExclusive`)
+- `Catalog_Content` — join entre cursos e catálogos (`content_id` → `Course.id`, `catalog_id` → `Catalog.id`)
+- `Catalog` — catálogos (`id`, `code`, `name`)
 
 ---
 
