@@ -80,13 +80,6 @@ function parseCourseIdAndName(raw: string): { id: string; nome: string } {
   return { id: "", nome: text };
 }
 
-// Tipo de status "não iniciado" no ClickUp — ignorar estas tarefas
-// task.status.type === "open" corresponde ao tipo "Não iniciado" na interface do ClickUp
-function isStatusIgnorado(task: ClickUpTask): boolean {
-  const tipo = task.status?.type?.toLowerCase().trim() ?? "";
-  return tipo === "open";
-}
-
 async function fetchPaginado(url: string): Promise<ClickUpTask[]> {
   const tasks: ClickUpTask[] = [];
   let page = 0;
@@ -120,22 +113,30 @@ async function fetchTasksDoMes(
     const base = `https://api.clickup.com/api/v2/list/${listId}/task`;
 
     // Busca 1: tarefas concluídas no período
+    // Aceita qualquer tipo exceto "open" (não iniciado — não deveria aparecer aqui, mas por segurança)
     const comData = await fetchPaginado(
       `${base}?include_closed=true&date_done_gt=${gtMs}&date_done_lte=${lteMs}`
     );
+    const comDataFiltradas = comData.filter(
+      (t) => t.status?.type?.toLowerCase().trim() !== "open"
+    );
 
-    // Busca 2: tarefas abertas (sem data de conclusão)
+    // Busca 2: tarefas abertas — apenas "in_progress"
+    // Exclui "open" (não iniciado) e "done" (publicado/concluído mas não fechado no ClickUp)
     const abertas = await fetchPaginado(`${base}?include_closed=false`);
+    const abertasFiltradas = abertas.filter(
+      (t) => t.status?.type?.toLowerCase().trim() === "in_progress"
+    );
 
-    todasTasks.push(...comData, ...abertas);
+    todasTasks.push(...comDataFiltradas, ...abertasFiltradas);
   }
 
-  // Deduplica por ID e filtra status ignorados
+  // Deduplica por ID
   const vistas = new Set<string>();
   return todasTasks.filter((t) => {
     if (vistas.has(t.id)) return false;
     vistas.add(t.id);
-    return !isStatusIgnorado(t);
+    return true;
   });
 }
 
