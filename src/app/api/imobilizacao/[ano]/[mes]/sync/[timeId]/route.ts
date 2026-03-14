@@ -6,7 +6,8 @@ import { prisma } from "@/lib/db";
 const CLICKUP_API_KEY = process.env.CLICKUP_API_KEY!;
 
 // Nomes de status a ignorar (tipo incorreto no ClickUp mas semanticamente "não iniciado")
-const NOMES_STATUS_IGNORADOS = new Set(["em planejamento", "planejamento"]);
+// Comparação case-insensitive (toLowerCase aplicado na hora do filtro)
+const NOMES_STATUS_IGNORADOS = new Set(["2. em planejamento", "em planejamento", "planejamento"]);
 
 interface ClickUpAssignee {
   id: number;
