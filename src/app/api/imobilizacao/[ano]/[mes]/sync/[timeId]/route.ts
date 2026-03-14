@@ -124,11 +124,11 @@ async function fetchTasksDoMes(
 
     // Busca 1: tarefas concluídas no período
     const comData = await fetchPaginado(
-      `${base}?include_closed=true&custom_fields=true&date_done_gt=${gtMs}&date_done_lte=${lteMs}`
+      `${base}?include_closed=true&date_done_gt=${gtMs}&date_done_lte=${lteMs}`
     );
 
     // Busca 2: tarefas abertas (sem data de conclusão)
-    const abertas = await fetchPaginado(`${base}?include_closed=false&custom_fields=true`);
+    const abertas = await fetchPaginado(`${base}?include_closed=false`);
 
     todasTasks.push(...comData, ...abertas);
   }
