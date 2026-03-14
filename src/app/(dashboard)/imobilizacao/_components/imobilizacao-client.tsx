@@ -17,7 +17,6 @@ interface Colaborador {
   nome: string;
   clickupUsername: string | null;
   ordem: number;
-  ignorar: boolean;
 }
 
 interface Time {
@@ -72,9 +71,8 @@ function buildImobilizacaoTsv(
   time: Time,
   entries: Entry[]
 ): string {
-  // Colaboradores do time em ordem (excluindo ignorados)
+  // Colaboradores do time em ordem configurada
   const colaboradores = time.colaboradores
-    .filter((c) => !c.ignorar)
     .sort((a, b) => a.ordem - b.ordem);
 
   // Filtra entries deste time
@@ -357,9 +355,19 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
     });
   };
 
-  // Pivot table: colaboradores únicos (para tabela geral)
+  // Pivot table: colaboradores na ordem configurada nos times
+  const nomesNasEntries = detalhe
+    ? new Set(detalhe.entries.map((e) => e.colaboradorNome))
+    : new Set<string>();
+  const nomesOrdenados = times
+    .sort((a, b) => a.ordem - b.ordem)
+    .flatMap((t) => t.colaboradores.sort((a, b) => a.ordem - b.ordem).map((c) => c.nome))
+    .filter((nome, idx, arr) => arr.indexOf(nome) === idx); // deduplicar
   const colaboradoresGerais = detalhe
-    ? [...new Set(detalhe.entries.map((e) => e.colaboradorNome))].sort()
+    ? [
+        ...nomesOrdenados.filter((n) => nomesNasEntries.has(n)),
+        ...[...nomesNasEntries].filter((n) => !nomesOrdenados.includes(n)).sort(),
+      ]
     : [];
 
   type ProdutoKey = { tipo: string | null; id: string | null; nome: string };

@@ -21,13 +21,10 @@ const schema = z.object({
   matricula: z.string().optional(),
   cargaHorariaDiaria: z.coerce.number().min(1).max(24).default(8),
   tipo: z.enum(["NORMAL", "LIDER", "ESPECIAL"]).default("NORMAL"),
-  ignorar: z.boolean().default(false),
-  // Campos de regra (serializados em regraJson)
-  regraLiderados: z.string().optional(), // nomes separados por vírgula
-  regraEspecialTipo: z.enum(["1H_OU_5H", "FIXO_POR_CURSO", ""]).default(""),
+  // Campos de regra
+  regraLiderados: z.string().optional(),
   regraHorasPresente: z.coerce.number().optional(),
   regraHorasAusente: z.coerce.number().optional(),
-  regraHorasFixas: z.coerce.number().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -40,7 +37,6 @@ interface Colaborador {
   cargaHorariaDiaria: number;
   tipo: "NORMAL" | "LIDER" | "ESPECIAL";
   regraJson: string | null;
-  ignorar: boolean;
 }
 
 interface Props {
@@ -58,15 +54,11 @@ function parseRegraJson(col?: Colaborador): Partial<FormData> {
     if (col.tipo === "LIDER") {
       return { regraLiderados: (r.liderados ?? []).join(", ") };
     }
-    if (r.tipo === "1H_OU_5H") {
+    if (col.tipo === "ESPECIAL") {
       return {
-        regraEspecialTipo: "1H_OU_5H",
         regraHorasPresente: r.horasPresente,
         regraHorasAusente: r.horasAusente,
       };
-    }
-    if (r.tipo === "FIXO_POR_CURSO") {
-      return { regraEspecialTipo: "FIXO_POR_CURSO", regraHorasFixas: r.horas };
     }
   } catch {
     return {};
@@ -83,16 +75,11 @@ function buildRegraJson(data: FormData): Record<string, unknown> | null {
     return liderados.length > 0 ? { liderados } : null;
   }
   if (data.tipo === "ESPECIAL") {
-    if (data.regraEspecialTipo === "1H_OU_5H") {
-      return {
-        tipo: "1H_OU_5H",
-        horasPresente: data.regraHorasPresente ?? 5,
-        horasAusente: data.regraHorasAusente ?? 1,
-      };
-    }
-    if (data.regraEspecialTipo === "FIXO_POR_CURSO") {
-      return { tipo: "FIXO_POR_CURSO", horas: data.regraHorasFixas ?? 1 };
-    }
+    return {
+      tipo: "1H_OU_5H",
+      horasPresente: data.regraHorasPresente ?? 5,
+      horasAusente: data.regraHorasAusente ?? 1,
+    };
   }
   return null;
 }
@@ -115,17 +102,13 @@ export function ColaboradorFormDialog({
       matricula: "",
       cargaHorariaDiaria: 8,
       tipo: "NORMAL",
-      ignorar: false,
       regraLiderados: "",
-      regraEspecialTipo: "",
       regraHorasPresente: 5,
       regraHorasAusente: 1,
-      regraHorasFixas: 1,
     },
   });
 
   const tipo = useWatch({ control, name: "tipo" });
-  const regraEspecialTipo = useWatch({ control, name: "regraEspecialTipo" });
 
   useEffect(() => {
     if (open) {
@@ -135,11 +118,9 @@ export function ColaboradorFormDialog({
         matricula: colaborador?.matricula ?? "",
         cargaHorariaDiaria: colaborador?.cargaHorariaDiaria ?? 8,
         tipo: colaborador?.tipo ?? "NORMAL",
-        ignorar: colaborador?.ignorar ?? false,
-        regraEspecialTipo: "",
+        regraLiderados: "",
         regraHorasPresente: 5,
         regraHorasAusente: 1,
-        regraHorasFixas: 1,
         ...parseRegraJson(colaborador),
       });
       setError(null);
@@ -157,7 +138,6 @@ export function ColaboradorFormDialog({
         matricula: data.matricula || null,
         cargaHorariaDiaria: data.cargaHorariaDiaria,
         tipo: data.tipo,
-        ignorar: data.ignorar,
         regraJson,
       };
 
@@ -223,12 +203,11 @@ export function ColaboradorFormDialog({
               >
                 <option value="NORMAL">Normal — fórmula base</option>
                 <option value="LIDER">Líder — 1h se liderado tiver horas</option>
-                <option value="ESPECIAL">Especial — regra customizada</option>
+                <option value="ESPECIAL">Especial — 1h ausente / 5h presente</option>
               </select>
             </div>
           </div>
 
-          {/* Campos dinâmicos por tipo */}
           {tipo === "LIDER" && (
             <div className="space-y-1 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
               <Label htmlFor="regraLiderados">Nomes dos liderados (separados por vírgula)</Label>
@@ -245,54 +224,19 @@ export function ColaboradorFormDialog({
 
           {tipo === "ESPECIAL" && (
             <div className="space-y-3 p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
-              <div className="space-y-1">
-                <Label>Tipo de regra especial</Label>
-                <select
-                  {...register("regraEspecialTipo")}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="">Selecione...</option>
-                  <option value="1H_OU_5H">Base + Presente (ex: 1h sempre, 5h se no curso)</option>
-                  <option value="FIXO_POR_CURSO">Fixo por curso até o máximo (ex: 1h, 5h...)</option>
-                </select>
-              </div>
-
-              {regraEspecialTipo === "1H_OU_5H" && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label>Horas se ausente</Label>
-                    <Input type="number" min={0} {...register("regraHorasAusente")} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Horas se presente</Label>
-                    <Input type="number" min={0} {...register("regraHorasPresente")} />
-                  </div>
-                </div>
-              )}
-
-              {regraEspecialTipo === "FIXO_POR_CURSO" && (
+              <p className="text-xs text-muted-foreground font-medium">Regra: horas fixas por presença no curso</p>
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label>Horas por curso</Label>
-                  <Input type="number" min={1} {...register("regraHorasFixas")} />
-                  <p className="text-xs text-muted-foreground">
-                    Será alocado neste valor em cada curso, até atingir o máximo (75% das horas do mês).
-                  </p>
+                  <Label>Horas se ausente</Label>
+                  <Input type="number" min={0} {...register("regraHorasAusente")} />
                 </div>
-              )}
+                <div className="space-y-1">
+                  <Label>Horas se presente</Label>
+                  <Input type="number" min={0} {...register("regraHorasPresente")} />
+                </div>
+              </div>
             </div>
           )}
-
-          <div className="flex items-center gap-2">
-            <input
-              id="ignorar"
-              type="checkbox"
-              {...register("ignorar")}
-              className="h-4 w-4 rounded border"
-            />
-            <Label htmlFor="ignorar" className="cursor-pointer font-normal">
-              Ignorar este colaborador (não aparece nas tabelas e não gera erros)
-            </Label>
-          </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 

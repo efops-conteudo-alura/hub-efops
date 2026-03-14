@@ -25,7 +25,6 @@ interface Colaborador {
   cargaHorariaDiaria: number;
   tipo: string;
   regraJson: string | null;
-  ignorar: boolean;
   ordem: number;
 }
 
@@ -97,7 +96,7 @@ function calcularImobilizacao(
   for (const [, pessoas] of cursoParaPessoas) {
     for (const nome of pessoas) {
       const col = colaboradores.find((c) => c.nome === nome || c.clickupUsername === nome);
-      if (!col || col.tipo !== "NORMAL" || col.ignorar) continue;
+      if (!col || col.tipo !== "NORMAL") continue;
       contagemPorPessoa[col.nome] = (contagemPorPessoa[col.nome] || 0) + 1;
     }
   }
@@ -105,16 +104,13 @@ function calcularImobilizacao(
   const alloc = new Map<string, Map<string, number>>();
   for (const curso of cursos) alloc.set(curso.key, new Map());
 
-  // 2. Calcula alocação base por tipo (exceto LIDER e FIXO_POR_CURSO)
+  // 2. Calcula alocação base por tipo
   for (const curso of cursos) {
     const presentes = cursoParaPessoas.get(curso.key) ?? new Set();
     const mapa = alloc.get(curso.key)!;
 
     for (const col of colaboradores) {
-      if (col.ignorar) continue;
       const regra = col.regraJson ? (JSON.parse(col.regraJson) as Record<string, unknown>) : null;
-
-      // Normaliza: um colaborador pode ser identificado pelo nome ou clickupUsername
       const estaPresente = presentes.has(col.nome) || (col.clickupUsername ? presentes.has(col.clickupUsername) : false);
 
       if (col.tipo === "NORMAL" && estaPresente) {
@@ -122,17 +118,17 @@ function calcularImobilizacao(
         mapa.set(col.nome, Math.ceil(maxAlloc / n));
       }
 
-      if (col.tipo === "ESPECIAL" && regra?.tipo === "1H_OU_5H") {
+      if (col.tipo === "ESPECIAL") {
         const horas = estaPresente
-          ? (regra.horasPresente as number)
-          : (regra.horasAusente as number);
+          ? (regra?.horasPresente as number ?? 5)
+          : (regra?.horasAusente as number ?? 1);
         mapa.set(col.nome, horas);
       }
     }
   }
 
   // 3. LÍDERES: 1h se algum liderado tem horas no curso
-  for (const col of colaboradores.filter((c) => c.tipo === "LIDER" && !c.ignorar)) {
+  for (const col of colaboradores.filter((c) => c.tipo === "LIDER")) {
     const regra = col.regraJson ? (JSON.parse(col.regraJson) as { liderados?: string[] }) : {};
     const liderados = regra.liderados ?? [];
     for (const [key, mapa] of alloc) {
@@ -140,26 +136,6 @@ function calcularImobilizacao(
       if (algumLideradoTemHoras && !mapa.has(col.nome)) {
         mapa.set(col.nome, 1);
       }
-    }
-  }
-
-  // 4. FIXO_POR_CURSO: horas fixas por curso até o teto (maxAlloc), em ordem de curso
-  for (const col of colaboradores.filter((c) => {
-    if (c.ignorar || c.tipo !== "ESPECIAL") return false;
-    const r = c.regraJson ? JSON.parse(c.regraJson) : null;
-    return r?.tipo === "FIXO_POR_CURSO";
-  })) {
-    const regra = JSON.parse(col.regraJson!) as { horas: number };
-    let restante = maxAlloc;
-    for (const curso of cursos) {
-      const mapa = alloc.get(curso.key)!;
-      if (restante <= 0) {
-        mapa.delete(col.nome);
-        continue;
-      }
-      const dar = Math.min(regra.horas, restante);
-      mapa.set(col.nome, dar);
-      restante -= dar;
     }
   }
 
@@ -225,25 +201,19 @@ export async function POST(
 
     // Nomes válidos do time (inclui clickupUsername como alternativa)
     const nomesValidos = new Set<string>();
-    const nomesIgnorados = new Set<string>();
     for (const col of time.colaboradores) {
-      if (col.ignorar) {
-        nomesIgnorados.add(col.nome);
-        if (col.clickupUsername) nomesIgnorados.add(col.clickupUsername);
-      } else {
-        nomesValidos.add(col.nome);
-        if (col.clickupUsername) nomesValidos.add(col.clickupUsername);
-      }
+      nomesValidos.add(col.nome);
+      if (col.clickupUsername) nomesValidos.add(col.clickupUsername);
     }
 
     for (const task of tasks) {
       const { id: cursoId, nome: cursoNome } = parseCourseIdAndName(task.name);
       const cursoKey = task.name.trim();
 
-      // Filtra assignees: remove ignorados, mantém apenas os do time
+      // Filtra assignees: mantém apenas os do time
       const responsaveis = task.assignees
         .map((a) => a.username)
-        .filter((u) => nomesValidos.has(u) && !nomesIgnorados.has(u));
+        .filter((u) => nomesValidos.has(u));
 
       if (responsaveis.length === 0) continue;
 
@@ -334,7 +304,7 @@ export async function POST(
     return NextResponse.json({
       ok: true,
       cursos: cursos.length,
-      colaboradores: time.colaboradores.filter((c) => !c.ignorar).length,
+      colaboradores: time.colaboradores.length,
       entries_criadas: entries.length,
     });
   } catch (err) {

@@ -24,7 +24,6 @@ export async function PUT(
     cargaHorariaDiaria,
     tipo,
     regraJson,
-    ignorar,
     ordem,
   } = body;
 
@@ -43,7 +42,6 @@ export async function PUT(
   if (cargaHorariaDiaria !== undefined) data.cargaHorariaDiaria = Number(cargaHorariaDiaria);
   if (tipo !== undefined) data.tipo = tipo as ColaboradorTipo;
   if (regraJson !== undefined) data.regraJson = regraJson ? JSON.stringify(regraJson) : null;
-  if (ignorar !== undefined) data.ignorar = Boolean(ignorar);
   if (ordem !== undefined) data.ordem = Number(ordem);
 
   const colaborador = await prisma.imobilizacaoColaborador.update({

@@ -42,7 +42,6 @@ export async function POST(
     cargaHorariaDiaria = 8,
     tipo = "NORMAL",
     regraJson,
-    ignorar = false,
   } = body;
 
   if (!nome?.trim()) {
@@ -68,7 +67,6 @@ export async function POST(
       cargaHorariaDiaria: Number(cargaHorariaDiaria),
       tipo: tipo as ColaboradorTipo,
       regraJson: regraJson ? JSON.stringify(regraJson) : null,
-      ignorar: Boolean(ignorar),
       ordem,
     },
   });

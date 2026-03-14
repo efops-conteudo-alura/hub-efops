@@ -11,7 +11,9 @@ import {
   ArrowUp,
   ArrowDown,
   Settings2,
+  ArrowLeft,
 } from "lucide-react";
+import Link from "next/link";
 import { TimeFormDialog } from "./time-form-dialog";
 import { ColaboradorFormDialog } from "./colaborador-form-dialog";
 
@@ -25,7 +27,6 @@ interface Colaborador {
   ordem: number;
   tipo: "NORMAL" | "LIDER" | "ESPECIAL";
   regraJson: string | null;
-  ignorar: boolean;
 }
 
 interface Time {
@@ -114,7 +115,13 @@ export function TimesConfigClient({ times: initialTimes }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <Link href="/imobilizacao">
+          <Button variant="outline" size="sm">
+            <ArrowLeft size={14} className="mr-2" />
+            Voltar para Imobilização
+          </Button>
+        </Link>
         <Button onClick={() => setTimeDialog({ open: true })}>
           <Plus size={14} className="mr-2" />
           Novo Time
@@ -185,9 +192,7 @@ export function TimesConfigClient({ times: initialTimes }: Props) {
                   {time.colaboradores.map((col, idx) => (
                     <div
                       key={col.id}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm border ${
-                        col.ignorar ? "opacity-50 bg-muted/20" : "bg-background"
-                      }`}
+                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sm border bg-background"
                     >
                       {/* Reordenar */}
                       <div className="flex flex-col gap-0.5">
@@ -227,11 +232,6 @@ export function TimesConfigClient({ times: initialTimes }: Props) {
                           >
                             {TIPO_LABELS[col.tipo]}
                           </span>
-                          {col.ignorar && (
-                            <span className="text-xs px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">
-                              Ignorado
-                            </span>
-                          )}
                         </div>
                         {col.regraJson && (
                           <p className="text-xs text-muted-foreground mt-0.5">

@@ -361,7 +361,6 @@ model ImobilizacaoColaborador {
   ordem              Int              @default(0)
   tipo               ColaboradorTipo  @default(NORMAL)
   regraJson          String?          // JSON com regras especiais
-  ignorar            Boolean          @default(false)
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 }
