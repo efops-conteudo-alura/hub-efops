@@ -57,10 +57,12 @@ function parseCourseIdAndName(raw: string): { id: string; nome: string } {
   return { id: "", nome: text };
 }
 
+const MAX_PAGES = 20;
+
 async function fetchPaginado(url: string): Promise<ClickUpTask[]> {
   const tasks: ClickUpTask[] = [];
   let page = 0;
-  while (true) {
+  while (page < MAX_PAGES) {
     const res = await fetch(`${url}&page=${page}`, {
       headers: { Authorization: CLICKUP_API_KEY },
     });
@@ -82,7 +84,9 @@ async function fetchTasksDoMes(
   dataFim: Date
 ): Promise<ClickUpTask[]> {
   const gtMs = dataInicio.getTime();
-  const lteMs = dataFim.getTime() + 86399999; // até o final do dia
+  // Fim do dia BRT (UTC-3): dataFim às 23:59:59 BRT = +3h = dia seguinte 02:59:59 UTC
+  // dataFim já está salvo como meio-dia UTC (T12:00:00Z), somamos 12h para chegar às 00:00 do dia seguinte UTC
+  const lteMs = dataFim.getTime() + 12 * 60 * 60 * 1000;
 
   const todasTasks: ClickUpTask[] = [];
 
@@ -148,7 +152,10 @@ function calcularImobilizacao(
     const mapa = alloc.get(curso.key)!;
 
     for (const col of colaboradores) {
-      const regra = col.regraJson ? (JSON.parse(col.regraJson) as Record<string, unknown>) : null;
+      let regra: Record<string, unknown> | null = null;
+      if (col.regraJson) {
+        try { regra = JSON.parse(col.regraJson) as Record<string, unknown>; } catch { regra = null; }
+      }
       const estaPresente = presentes.has(col.nome) || (col.clickupUsername ? presentes.has(col.clickupUsername) : false);
 
       if (col.tipo === "NORMAL" && estaPresente) {
@@ -167,7 +174,10 @@ function calcularImobilizacao(
 
   // 3. LÍDERES: 1h se algum liderado tem horas no curso
   for (const col of colaboradores.filter((c) => c.tipo === "LIDER")) {
-    const regra = col.regraJson ? (JSON.parse(col.regraJson) as { liderados?: string[] }) : {};
+    let regra: { liderados?: string[] } = {};
+    if (col.regraJson) {
+      try { regra = JSON.parse(col.regraJson) as { liderados?: string[] }; } catch { regra = {}; }
+    }
     const liderados = regra.liderados ?? [];
     for (const [key, mapa] of alloc) {
       const algumLideradoTemHoras = liderados.some((l) => (mapa.get(l) ?? 0) > 0);
@@ -252,8 +262,6 @@ export async function POST(
       if (col.clickupUsername) nomesValidos.add(col.clickupUsername);
     }
 
-    console.log("[imobilizacao sync] total tasks brutas:", tasks.length);
-
     for (const task of tasks) {
       const { id: cursoId, nome: cursoNome } = parseCourseIdAndName(task.name);
       if (!cursoId) continue; // ignora tarefas sem ID de curso no título
@@ -277,8 +285,6 @@ export async function POST(
         cursoParaPessoas.get(cursoKey)!.add(r);
       }
     }
-
-    console.log("[imobilizacao sync] cursos encontrados:", cursosOrder.length);
 
     if (cursosOrder.length === 0) {
       return NextResponse.json({

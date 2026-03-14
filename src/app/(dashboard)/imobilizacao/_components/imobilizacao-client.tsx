@@ -141,12 +141,16 @@ function CelulaHorasEditavel({
     if (novoValor === valor) { setEditando(false); return; }
     setSalvando(true);
     try {
-      await fetch(`/api/imobilizacao/${ano}/${mes}/entries/${entryId}`, {
+      const res = await fetch(`/api/imobilizacao/${ano}/${mes}/entries/${entryId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ horas: novoValor }),
       });
-      onSalvo(novoValor);
+      if (res.ok) {
+        onSalvo(novoValor);
+      } else {
+        setInput(String(valor)); // reverte se falhou
+      }
     } finally {
       setSalvando(false);
       setEditando(false);
@@ -259,14 +263,21 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
     }
   };
 
+  const [deletandoPeriodo, setDeletandoPeriodo] = useState(false);
+
   const deletarPeriodo = async () => {
-    if (!mesSelecionado) return;
+    if (!mesSelecionado || deletandoPeriodo) return;
     if (!confirm("Excluir o período e todos os lançamentos? Essa ação não pode ser desfeita.")) return;
-    const res = await fetch(`/api/imobilizacao/${anoSelecionado}/${mesSelecionado}`, { method: "DELETE" });
-    if (!res.ok) { alert("Erro ao excluir o período."); return; }
-    await reloadPeriodos();
-    setMesSelecionado(null);
-    setDetalhe(null);
+    setDeletandoPeriodo(true);
+    try {
+      const res = await fetch(`/api/imobilizacao/${anoSelecionado}/${mesSelecionado}`, { method: "DELETE" });
+      if (!res.ok) { alert("Erro ao excluir o período."); return; }
+      await reloadPeriodos();
+      setMesSelecionado(null);
+      setDetalhe(null);
+    } finally {
+      setDeletandoPeriodo(false);
+    }
   };
 
   const syncTime = async (timeId: string) => {
@@ -336,29 +347,40 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
     });
   };
 
+  const [addCursoErro, setAddCursoErro] = useState<string | null>(null);
+
   const adicionarCurso = async () => {
     if (!addCursoNome.trim() || !timeAtivo || mesSelecionado === null) return;
     setAddCursoLoading(true);
+    setAddCursoErro(null);
     try {
       const cols = timeAtivo.colaboradores.sort((a, b) => a.ordem - b.ordem);
-      for (const col of cols) {
-        await fetch(`/api/imobilizacao/${anoSelecionado}/${mesSelecionado}/entries`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            colaboradorNome: col.nome,
-            produtoTipo: "curso",
-            produtoId: addCursoId.trim() || null,
-            produtoNome: addCursoNome.trim(),
-            horas: 0,
-            timeId: timeAtivo.id,
-          }),
-        });
+      const results = await Promise.all(
+        cols.map((col) =>
+          fetch(`/api/imobilizacao/${anoSelecionado}/${mesSelecionado}/entries`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              colaboradorNome: col.nome,
+              produtoTipo: "curso",
+              produtoId: addCursoId.trim() || null,
+              produtoNome: addCursoNome.trim(),
+              horas: 0,
+              timeId: timeAtivo.id,
+            }),
+          })
+        )
+      );
+      if (results.some((r) => !r.ok)) {
+        setAddCursoErro("Alguns lançamentos falharam. Tente novamente.");
+        return;
       }
       setAddCursoOpen(false);
       setAddCursoNome("");
       setAddCursoId("");
       await loadDetalhe(anoSelecionado, mesSelecionado);
+    } catch {
+      setAddCursoErro("Erro de conexão.");
     } finally {
       setAddCursoLoading(false);
     }
@@ -518,9 +540,9 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
                   <Pencil size={14} className="mr-1" />
                   Editar
                 </Button>
-                <Button size="sm" variant="destructive" onClick={deletarPeriodo}>
+                <Button size="sm" variant="destructive" onClick={deletarPeriodo} disabled={deletandoPeriodo}>
                   <Trash2 size={14} className="mr-1" />
-                  Excluir Período
+                  {deletandoPeriodo ? "Excluindo..." : "Excluir Período"}
                 </Button>
               </div>
             </div>
@@ -740,6 +762,7 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
             <p className="text-xs text-muted-foreground">
               Serão criadas entradas com 0h para cada colaborador de {timeAtivo?.nome ?? "este time"}.
             </p>
+            {addCursoErro && <p className="text-xs text-destructive">{addCursoErro}</p>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddCursoOpen(false)} disabled={addCursoLoading}>
