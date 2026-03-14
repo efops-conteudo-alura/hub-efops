@@ -10,21 +10,27 @@ export default async function ImobilizacaoPage() {
     redirect("/home");
   }
 
-  const periodos = await prisma.imobilizacaoPeriodo.findMany({
-    orderBy: [{ ano: "desc" }, { mes: "desc" }],
-    select: {
-      id: true,
-      ano: true,
-      mes: true,
-      dataInicio: true,
-      dataFim: true,
-      feriados: true,
-      diasUteis: true,
-      createdAt: true,
-      updatedAt: true,
-      _count: { select: { entries: true } },
-    },
-  });
+  const [periodos, times] = await Promise.all([
+    prisma.imobilizacaoPeriodo.findMany({
+      orderBy: [{ ano: "desc" }, { mes: "desc" }],
+      select: {
+        id: true,
+        ano: true,
+        mes: true,
+        dataInicio: true,
+        dataFim: true,
+        feriados: true,
+        diasUteis: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: { select: { entries: true } },
+      },
+    }),
+    prisma.imobilizacaoTime.findMany({
+      orderBy: { ordem: "asc" },
+      include: { colaboradores: { orderBy: { ordem: "asc" } } },
+    }),
+  ]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -34,7 +40,10 @@ export default async function ImobilizacaoPage() {
           Registro de horas por colaborador e produto por período.
         </p>
       </div>
-      <ImobilizacaoClient periodos={JSON.parse(JSON.stringify(periodos))} />
+      <ImobilizacaoClient
+        periodos={JSON.parse(JSON.stringify(periodos))}
+        times={JSON.parse(JSON.stringify(times))}
+      />
     </div>
   );
 }

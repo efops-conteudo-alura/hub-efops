@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -39,9 +40,10 @@ interface Props {
 
 export function PeriodoFormDialog({ open, onOpenChange, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
+  const [calcLoading, setCalcLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
     defaultValues: {
       ano: new Date().getFullYear(),
@@ -50,6 +52,30 @@ export function PeriodoFormDialog({ open, onOpenChange, onSuccess }: Props) {
       diasUteis: 0,
     },
   });
+
+  const dataInicio = watch("dataInicio");
+  const dataFim = watch("dataFim");
+  const ano = watch("ano");
+
+  const calcularDiasUteis = async () => {
+    if (!dataInicio || !dataFim) return;
+    setCalcLoading(true);
+    try {
+      const params = new URLSearchParams({
+        ano: String(ano),
+        dataInicio,
+        dataFim,
+      });
+      const res = await fetch(`/api/imobilizacao/dias-uteis?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setValue("diasUteis", data.diasUteis);
+        setValue("feriados", data.feriados);
+      }
+    } finally {
+      setCalcLoading(false);
+    }
+  };
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -104,20 +130,35 @@ export function PeriodoFormDialog({ open, onOpenChange, onSuccess }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label htmlFor="dataInicio">Data início</Label>
-              <Input id="dataInicio" type="date" {...register("dataInicio")} />
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="dataInicio">Data início</Label>
+                <Input id="dataInicio" type="date" {...register("dataInicio")} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="dataFim">Data fim</Label>
+                <Input id="dataFim" type="date" {...register("dataFim")} />
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="dataFim">Data fim</Label>
-              <Input id="dataFim" type="date" {...register("dataFim")} />
-            </div>
+            {dataInicio && dataFim && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={calcularDiasUteis}
+                disabled={calcLoading}
+                className="w-full"
+              >
+                {calcLoading && <Loader2 size={13} className="mr-2 animate-spin" />}
+                Calcular dias úteis automaticamente
+              </Button>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <Label htmlFor="feriados">Feriados</Label>
+              <Label htmlFor="feriados">Feriados nacionais</Label>
               <Input id="feriados" type="number" min={0} {...register("feriados")} />
             </div>
             <div className="space-y-1">

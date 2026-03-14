@@ -320,19 +320,54 @@ model ImobilizacaoPeriodo {
 }
 
 model ImobilizacaoEntry {
-  id                   String              @id @default(cuid())
+  id                   String               @id @default(cuid())
   periodoId            String
-  periodo              ImobilizacaoPeriodo @relation(fields: [periodoId], references: [id], onDelete: Cascade)
+  periodo              ImobilizacaoPeriodo  @relation(fields: [periodoId], references: [id], onDelete: Cascade)
+  timeId               String?              // FK para ImobilizacaoTime (sync automático)
+  time                 ImobilizacaoTime?    @relation(fields: [timeId], references: [id], onDelete: SetNull)
   colaboradorNome      String
   colaboradorMatricula String?
   cargaHorariaTotal    Int?
   cargaHorariaDiaria   Int?
-  produtoTipo          String?             // "curso", "trilha", etc.
-  produtoId            String?             // ID externo do produto/curso
+  produtoTipo          String?              // "curso", "trilha", etc.
+  produtoId            String?              // ID externo do produto/curso
   produtoNome          String
-  horas                Int                 @default(0)
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
+  horas                Int                  @default(0)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
 
   @@unique([periodoId, colaboradorNome, produtoNome])
+}
+
+model ImobilizacaoTime {
+  id            String                    @id @default(cuid())
+  nome          String
+  clickupListId String
+  ordem         Int                       @default(0)
+  colaboradores ImobilizacaoColaborador[]
+  entries       ImobilizacaoEntry[]
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+}
+
+model ImobilizacaoColaborador {
+  id                 String          @id @default(cuid())
+  timeId             String
+  time               ImobilizacaoTime @relation(fields: [timeId], references: [id], onDelete: Cascade)
+  nome               String
+  clickupUsername    String?          // username no ClickUp para matching (se diferente do nome)
+  matricula          String?
+  cargaHorariaDiaria Float            @default(8)
+  ordem              Int              @default(0)
+  tipo               ColaboradorTipo  @default(NORMAL)
+  regraJson          String?          // JSON com regras especiais
+  ignorar            Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+enum ColaboradorTipo {
+  NORMAL
+  LIDER
+  ESPECIAL
 }
