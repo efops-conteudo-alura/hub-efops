@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Pencil, CalendarRange, Copy, Check, RefreshCw, Settings } from "lucide-react";
+import { Plus, Trash2, CalendarRange, Copy, Check, RefreshCw, Settings } from "lucide-react";
 import { PeriodoFormDialog } from "./periodo-form-dialog";
-import { EntryFormDialog, type EntryData } from "./entry-form-dialog";
 import Link from "next/link";
 
 const MESES = [
@@ -66,22 +65,13 @@ function fmt(date: string | null) {
   return new Date(date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
-// Constrói TSV no formato da planilha de imobilização
-function buildImobilizacaoTsv(
-  time: Time,
-  entries: Entry[]
-): string {
-  // Colaboradores do time em ordem configurada
-  const colaboradores = time.colaboradores
-    .sort((a, b) => a.ordem - b.ordem);
-
-  // Filtra entries deste time
+function buildImobilizacaoTsv(time: Time, entries: Entry[]): string {
+  const colaboradores = time.colaboradores.sort((a, b) => a.ordem - b.ordem);
   const entriesDoTime = entries.filter((e) => e.timeId === time.id);
 
-  // Monta mapa: produtoKey → (colaborador → horas)
   type ProdKey = { id: string; nome: string; key: string };
   const produtoMap = new Map<string, ProdKey>();
-  const horasMap = new Map<string, Map<string, number>>(); // prodKey → colab → horas
+  const horasMap = new Map<string, Map<string, number>>();
 
   for (const e of entriesDoTime) {
     const key = `${e.produtoId ?? ""}__${e.produtoNome}`;
@@ -96,17 +86,14 @@ function buildImobilizacaoTsv(
 
   const produtos = [...produtoMap.values()];
   const nomes = colaboradores.map((c) => c.nome);
-
   const header = ["ID", "Produto", ...nomes, "Total por Curso"].join("\t");
 
-  // Linha "Total por Pessoa"
   const totaisPorPessoa = nomes.map((nome) =>
     produtos.reduce((s, p) => s + (horasMap.get(p.key)?.get(nome) ?? 0), 0)
   );
   const grandTotal = totaisPorPessoa.reduce((s, v) => s + v, 0);
   const totalRow = ["", "Total por Pessoa", ...totaisPorPessoa, grandTotal].join("\t");
 
-  // Linhas de produtos
   const rows = produtos.map((p) => {
     const horasPorPessoa = nomes.map((nome) => horasMap.get(p.key)?.get(nome) ?? "");
     const totalCurso = nomes.reduce((s, nome) => s + (horasMap.get(p.key)?.get(nome) ?? 0), 0);
@@ -116,7 +103,6 @@ function buildImobilizacaoTsv(
   return [header, totalRow, ...rows].join("\n");
 }
 
-// Célula editável inline de horas
 function CelulaHorasEditavel({
   entryId,
   valor,
@@ -136,9 +122,7 @@ function CelulaHorasEditavel({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (editando && inputRef.current) {
-      inputRef.current.select();
-    }
+    if (editando && inputRef.current) inputRef.current.select();
   }, [editando]);
 
   const salvar = async () => {
@@ -146,7 +130,6 @@ function CelulaHorasEditavel({
     const novoValor = parseInt(input, 10);
     if (isNaN(novoValor) || novoValor < 0) { setEditando(false); setInput(String(valor)); return; }
     if (novoValor === valor) { setEditando(false); return; }
-
     setSalvando(true);
     try {
       await fetch(`/api/imobilizacao/${ano}/${mes}/entries/${entryId}`, {
@@ -174,7 +157,7 @@ function CelulaHorasEditavel({
           if (e.key === "Enter") salvar();
           if (e.key === "Escape") { setEditando(false); setInput(String(valor)); }
         }}
-        className="w-14 text-center text-sm border rounded px-1 py-0.5 bg-background"
+        className="w-12 text-center text-xs border rounded px-1 py-0.5 bg-background"
         disabled={salvando}
       />
     );
@@ -183,7 +166,7 @@ function CelulaHorasEditavel({
   return (
     <button
       onClick={() => { setEditando(true); setInput(String(valor)); }}
-      className={`w-full text-center px-1 rounded hover:bg-muted/50 transition-colors ${
+      className={`w-full text-center px-1 rounded hover:bg-muted/50 transition-colors text-xs ${
         valor > 0 ? "" : "text-muted-foreground"
       }`}
       title="Clique para editar"
@@ -207,8 +190,11 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
   const [loadingDetalhe, setLoadingDetalhe] = useState(false);
   const [erroDetalhe, setErroDetalhe] = useState<string | null>(null);
   const [periodoDialogOpen, setPeriodoDialogOpen] = useState(false);
-  const [entryDialogOpen, setEntryDialogOpen] = useState(false);
-  const [entryEditando, setEntryEditando] = useState<EntryData | null>(null);
+
+  // Aba de time selecionada
+  const [timeSelecionadoId, setTimeSelecionadoId] = useState<string | null>(
+    times.length > 0 ? times[0].id : null
+  );
 
   // Sync por time
   const [syncLoading, setSyncLoading] = useState<Record<string, boolean>>({});
@@ -233,11 +219,8 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
     setErroDetalhe(null);
     try {
       const res = await fetch(`/api/imobilizacao/${ano}/${mes}`);
-      if (res.ok) {
-        setDetalhe(await res.json());
-      } else {
-        setErroDetalhe("Erro ao carregar os dados do período.");
-      }
+      if (res.ok) setDetalhe(await res.json());
+      else setErroDetalhe("Erro ao carregar os dados do período.");
     } catch {
       setErroDetalhe("Erro de conexão ao carregar o período.");
     } finally {
@@ -246,11 +229,8 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
   }, []);
 
   useEffect(() => {
-    if (mesSelecionado !== null) {
-      loadDetalhe(anoSelecionado, mesSelecionado);
-    } else {
-      setDetalhe(null);
-    }
+    if (mesSelecionado !== null) loadDetalhe(anoSelecionado, mesSelecionado);
+    else setDetalhe(null);
   }, [anoSelecionado, mesSelecionado, loadDetalhe]);
 
   const onPeriodoSuccess = async (novoPeriodo?: { ano: number; mes: number }) => {
@@ -259,20 +239,6 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
       setAnoSelecionado(novoPeriodo.ano);
       setMesSelecionado(novoPeriodo.mes);
     }
-  };
-
-  const onEntrySuccess = async () => {
-    await Promise.all([
-      mesSelecionado !== null ? loadDetalhe(anoSelecionado, mesSelecionado) : Promise.resolve(),
-      reloadPeriodos(),
-    ]);
-  };
-
-  const deletarEntry = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este lançamento?")) return;
-    const res = await fetch(`/api/imobilizacao/${anoSelecionado}/${mesSelecionado}/entries/${id}`, { method: "DELETE" });
-    if (!res.ok) { alert("Erro ao excluir o lançamento."); return; }
-    await onEntrySuccess();
   };
 
   const deletarPeriodo = async () => {
@@ -299,7 +265,8 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
           ...prev,
           [timeId]: json.aviso ?? `✓ ${json.cursos} cursos · ${json.entries_criadas} entradas`,
         }));
-        await onEntrySuccess();
+        if (mesSelecionado !== null) await loadDetalhe(anoSelecionado, mesSelecionado);
+        await reloadPeriodos();
       } else {
         setSyncResultado((prev) => ({ ...prev, [timeId]: `Erro: ${json.error}` }));
       }
@@ -315,7 +282,6 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
     const tsv = buildImobilizacaoTsv(time, detalhe.entries);
     if (!tsv) { alert("Nenhum dado para copiar neste time."); return; }
 
-    // Gera HTML da tabela para colagem com formatação
     function esc(s: string) {
       return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
@@ -342,52 +308,55 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
     setTimeout(() => setCopied((prev) => ({ ...prev, [time.id]: false })), 2000);
   };
 
-  // Atualiza horas de uma entry no estado local (sem reload)
   const atualizarHorasLocal = (entryId: string, novoValor: number) => {
     setDetalhe((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
-        entries: prev.entries.map((e) =>
-          e.id === entryId ? { ...e, horas: novoValor } : e
-        ),
+        entries: prev.entries.map((e) => e.id === entryId ? { ...e, horas: novoValor } : e),
       };
     });
   };
 
-  // Pivot table: colaboradores na ordem configurada nos times
-  const nomesNasEntries = detalhe
-    ? new Set(detalhe.entries.map((e) => e.colaboradorNome))
-    : new Set<string>();
-  const nomesOrdenados = times
-    .sort((a, b) => a.ordem - b.ordem)
-    .flatMap((t) => t.colaboradores.sort((a, b) => a.ordem - b.ordem).map((c) => c.nome))
-    .filter((nome, idx, arr) => arr.indexOf(nome) === idx); // deduplicar
-  const colaboradoresGerais = detalhe
-    ? [
-        ...nomesOrdenados.filter((n) => nomesNasEntries.has(n)),
-        ...[...nomesNasEntries].filter((n) => !nomesOrdenados.includes(n)).sort(),
-      ]
+  const periodoAtual = periodos.find((p) => p.ano === anoSelecionado && p.mes === mesSelecionado);
+
+  // Time ativo
+  const timeAtivo = times.find((t) => t.id === timeSelecionadoId) ?? null;
+
+  // Colaboradores e entries do time ativo
+  const colaboradoresDoTime = timeAtivo
+    ? timeAtivo.colaboradores.sort((a, b) => a.ordem - b.ordem)
     : [];
 
+  const entriesDoTime = detalhe && timeAtivo
+    ? detalhe.entries.filter((e) => e.timeId === timeAtivo.id)
+    : detalhe?.entries ?? [];
+
+  // Produtos únicos (do time ativo ou todos se sem times)
   type ProdutoKey = { tipo: string | null; id: string | null; nome: string };
   const produtosMap = new Map<string, ProdutoKey>();
-  detalhe?.entries.forEach((e) => {
+  entriesDoTime.forEach((e) => {
     const key = `${e.produtoId ?? ""}__${e.produtoNome}`;
     if (!produtosMap.has(key)) produtosMap.set(key, { tipo: e.produtoTipo, id: e.produtoId, nome: e.produtoNome });
   });
   const produtos = [...produtosMap.entries()];
 
+  // Colunas de colaboradores
+  const colaboradoresGerais = timeAtivo
+    ? colaboradoresDoTime
+        .filter((c) => entriesDoTime.some((e) => e.colaboradorNome === c.nome))
+        .map((c) => c.nome)
+    : [...new Set(entriesDoTime.map((e) => e.colaboradorNome))].sort();
+
   const getEntry = (produtoKey: string, colab: string) =>
-    detalhe?.entries.find(
+    entriesDoTime.find(
       (e) => `${e.produtoId ?? ""}__${e.produtoNome}` === produtoKey && e.colaboradorNome === colab
     ) ?? null;
 
   const totalPorColaborador = (colab: string) =>
-    detalhe?.entries.filter((e) => e.colaboradorNome === colab).reduce((s, e) => s + e.horas, 0) ?? 0;
+    entriesDoTime.filter((e) => e.colaboradorNome === colab).reduce((s, e) => s + e.horas, 0);
 
-  const totalGeral = detalhe?.entries.reduce((s, e) => s + e.horas, 0) ?? 0;
-  const periodoAtual = periodos.find((p) => p.ano === anoSelecionado && p.mes === mesSelecionado);
+  const totalGeral = entriesDoTime.reduce((s, e) => s + e.horas, 0);
 
   if (periodos.length === 0) {
     return (
@@ -395,7 +364,7 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
         <CalendarRange size={48} className="text-muted-foreground" />
         <div>
           <p className="text-lg font-medium">Nenhum período cadastrado</p>
-          <p className="text-sm text-muted-foreground mt-1">Crie o primeiro período para começar a registrar horas.</p>
+          <p className="text-sm text-muted-foreground mt-1">Crie o primeiro período para começar.</p>
         </div>
         <Button onClick={() => setPeriodoDialogOpen(true)}>
           <Plus size={16} className="mr-2" />
@@ -412,7 +381,7 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
 
   return (
     <div className="space-y-6">
-      {/* Cabeçalho: seletor de ano + link configurações + novo período */}
+      {/* Cabeçalho */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Ano:</span>
@@ -483,86 +452,73 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
                   {periodoAtual.diasUteis}
                 </span>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => { setEntryEditando(null); setEntryDialogOpen(true); }}
-                >
-                  <Plus size={14} className="mr-1" />
-                  Lançamento Manual
-                </Button>
-                <Button size="sm" variant="destructive" onClick={deletarPeriodo}>
-                  <Trash2 size={14} className="mr-1" />
-                  Excluir Período
-                </Button>
-              </div>
+              <Button size="sm" variant="destructive" onClick={deletarPeriodo}>
+                <Trash2 size={14} className="mr-1" />
+                Excluir Período
+              </Button>
             </div>
           )}
 
-          {/* Painel de sync por time */}
+          {/* Abas por time */}
           {times.length > 0 && (
-            <div className="p-3 rounded-lg border space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Calcular via ClickUp</p>
-              <div className="flex flex-wrap gap-2">
-                {times
-                  .sort((a, b) => a.ordem - b.ordem)
-                  .map((time) => (
-                    <div key={time.id} className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={syncLoading[time.id] || !periodoAtual?.diasUteis}
-                        onClick={() => syncTime(time.id)}
-                      >
-                        <RefreshCw
-                          size={13}
-                          className={`mr-1 ${syncLoading[time.id] ? "animate-spin" : ""}`}
-                        />
-                        {syncLoading[time.id] ? "Calculando..." : `Calcular ${time.nome}`}
-                      </Button>
-                      {syncResultado[time.id] && (
-                        <span
-                          className={`text-xs ${
-                            syncResultado[time.id].startsWith("Erro")
-                              ? "text-destructive"
-                              : "text-green-600 dark:text-green-400"
-                          }`}
-                        >
-                          {syncResultado[time.id]}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-              </div>
-              {periodoAtual?.diasUteis === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  ⚠️ Configure os dias úteis no período antes de calcular.
-                </p>
-              )}
+            <div className="flex gap-1 border-b">
+              {times.sort((a, b) => a.ordem - b.ordem).map((time) => (
+                <button
+                  key={time.id}
+                  onClick={() => setTimeSelecionadoId(time.id)}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                    timeSelecionadoId === time.id
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {time.nome}
+                </button>
+              ))}
             </div>
           )}
 
-          {/* Botões de cópia por time */}
-          {times.length > 0 && detalhe && detalhe.entries.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {times
-                .filter((t) => detalhe.entries.some((e) => e.timeId === t.id))
-                .sort((a, b) => a.ordem - b.ordem)
-                .map((time) => (
-                  <Button
-                    key={time.id}
-                    size="sm"
-                    variant="outline"
-                    onClick={() => copiarTime(time)}
-                  >
-                    {copied[time.id] ? (
-                      <><Check size={13} className="mr-1 text-green-600" />Copiado!</>
-                    ) : (
-                      <><Copy size={13} className="mr-1" />Copiar {time.nome}</>
-                    )}
-                  </Button>
-                ))}
+          {/* Painel de sync + copiar do time ativo */}
+          {timeAtivo && (
+            <div className="flex items-center gap-3 flex-wrap">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={syncLoading[timeAtivo.id] || !periodoAtual?.diasUteis}
+                onClick={() => syncTime(timeAtivo.id)}
+              >
+                <RefreshCw
+                  size={13}
+                  className={`mr-1 ${syncLoading[timeAtivo.id] ? "animate-spin" : ""}`}
+                />
+                {syncLoading[timeAtivo.id] ? "Calculando..." : `Calcular ${timeAtivo.nome}`}
+              </Button>
+
+              {detalhe && entriesDoTime.length > 0 && (
+                <Button size="sm" variant="outline" onClick={() => copiarTime(timeAtivo)}>
+                  {copied[timeAtivo.id] ? (
+                    <><Check size={13} className="mr-1 text-green-600" />Copiado!</>
+                  ) : (
+                    <><Copy size={13} className="mr-1" />Copiar {timeAtivo.nome}</>
+                  )}
+                </Button>
+              )}
+
+              {syncResultado[timeAtivo.id] && (
+                <span className={`text-xs ${
+                  syncResultado[timeAtivo.id].startsWith("Erro")
+                    ? "text-destructive"
+                    : "text-green-600 dark:text-green-400"
+                }`}>
+                  {syncResultado[timeAtivo.id]}
+                </span>
+              )}
+
+              {periodoAtual?.diasUteis === 0 && (
+                <span className="text-xs text-muted-foreground">
+                  ⚠️ Configure os dias úteis antes de calcular.
+                </span>
+              )}
             </div>
           )}
 
@@ -575,41 +531,47 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
             <div className="flex items-center justify-center h-32 text-destructive text-sm border rounded-lg bg-destructive/5">
               {erroDetalhe}
             </div>
-          ) : detalhe && detalhe.entries.length > 0 ? (
+          ) : detalhe && entriesDoTime.length > 0 ? (
             <div className="overflow-x-auto rounded-lg border">
-              <table className="w-full text-sm">
+              <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b bg-muted/50">
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground w-20">Tipo</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground w-24">ID</th>
-                    <th className="text-left px-3 py-2 font-medium text-muted-foreground min-w-48">Produto</th>
+                    <th className="text-left px-2 py-1.5 font-medium text-muted-foreground w-16">Tipo</th>
+                    <th className="text-left px-2 py-1.5 font-medium text-muted-foreground w-20">ID</th>
+                    <th className="text-left px-2 py-1.5 font-medium text-muted-foreground min-w-40">Produto</th>
                     {colaboradoresGerais.map((c) => (
-                      <th key={c} className="text-center px-3 py-2 font-medium text-muted-foreground whitespace-nowrap">
+                      <th key={c} className="text-center px-1 py-1.5 font-medium text-muted-foreground whitespace-nowrap w-14">
                         {c}
                       </th>
                     ))}
-                    <th className="text-center px-3 py-2 font-medium text-muted-foreground">TOTAL</th>
-                    <th className="px-2 py-2 w-16"></th>
+                    <th className="text-center px-2 py-1.5 font-medium text-muted-foreground w-14">TOTAL</th>
                   </tr>
                 </thead>
                 <tbody>
+                  {/* Total por pessoa — primeira linha */}
+                  <tr className="border-b bg-muted/30 font-semibold">
+                    <td className="px-2 py-1.5 text-muted-foreground" colSpan={3}>Total por Pessoa</td>
+                    {colaboradoresGerais.map((c) => (
+                      <td key={c} className="px-2 py-1.5 text-center">{totalPorColaborador(c)}</td>
+                    ))}
+                    <td className="px-2 py-1.5 text-center">{totalGeral}</td>
+                  </tr>
+
+                  {/* Linhas de produtos */}
                   {produtos.map(([key, produto]) => {
                     const totalCurso = colaboradoresGerais.reduce(
                       (s, c) => s + (getEntry(key, c)?.horas ?? 0),
                       0
                     );
-                    const firstEntry = detalhe.entries.find(
-                      (e) => `${e.produtoId ?? ""}__${e.produtoNome}` === key
-                    );
                     return (
                       <tr key={key} className="border-b hover:bg-muted/20 transition-colors">
-                        <td className="px-3 py-2 text-muted-foreground">{produto.tipo ?? "—"}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{produto.id ?? "—"}</td>
-                        <td className="px-3 py-2 font-medium">{produto.nome}</td>
+                        <td className="px-2 py-1 text-muted-foreground">{produto.tipo ?? "—"}</td>
+                        <td className="px-2 py-1 text-muted-foreground">{produto.id ?? "—"}</td>
+                        <td className="px-2 py-1 font-medium">{produto.nome}</td>
                         {colaboradoresGerais.map((c) => {
                           const entry = getEntry(key, c);
                           return (
-                            <td key={c} className="px-1 py-1 text-center">
+                            <td key={c} className="px-0.5 py-0.5 text-center">
                               <CelulaHorasEditavel
                                 entryId={entry?.id ?? null}
                                 valor={entry?.horas ?? 0}
@@ -622,65 +584,25 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
                             </td>
                           );
                         })}
-                        <td className="px-3 py-2 text-center font-semibold">{totalCurso > 0 ? totalCurso : "—"}</td>
-                        <td className="px-2 py-2">
-                          {firstEntry && (
-                            <div className="flex gap-1 justify-end">
-                              <button
-                                title="Editar"
-                                onClick={() => {
-                                  setEntryEditando(firstEntry);
-                                  setEntryDialogOpen(true);
-                                }}
-                                className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                              >
-                                <Pencil size={13} />
-                              </button>
-                              <button
-                                title="Excluir"
-                                onClick={() => deletarEntry(firstEntry.id)}
-                                className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-muted transition-colors"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          )}
-                        </td>
+                        <td className="px-2 py-1 text-center font-semibold">{totalCurso > 0 ? totalCurso : "—"}</td>
                       </tr>
                     );
                   })}
                 </tbody>
-                <tfoot>
-                  <tr className="border-t bg-muted/30 font-semibold">
-                    <td className="px-3 py-2 text-muted-foreground" colSpan={3}>TOTAL</td>
-                    {colaboradoresGerais.map((c) => (
-                      <td key={c} className="px-3 py-2 text-center">{totalPorColaborador(c)}</td>
-                    ))}
-                    <td className="px-3 py-2 text-center">{totalGeral}</td>
-                    <td></td>
-                  </tr>
-                </tfoot>
               </table>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-32 gap-2 text-center border rounded-lg bg-muted/10">
-              <p className="text-sm text-muted-foreground">Nenhuma entry neste período.</p>
-              <div className="flex gap-2">
-                {times.length > 0 && periodoAtual?.diasUteis ? (
-                  <p className="text-xs text-muted-foreground">
-                    Use os botões "Calcular" acima para importar do ClickUp, ou adicione manualmente.
-                  </p>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => { setEntryEditando(null); setEntryDialogOpen(true); }}
-                  >
-                    <Plus size={14} className="mr-1" />
-                    Adicionar Lançamento
-                  </Button>
-                )}
-              </div>
+              <p className="text-sm text-muted-foreground">
+                {timeAtivo
+                  ? `Nenhum dado para ${timeAtivo.nome} neste período.`
+                  : "Nenhuma entry neste período."}
+              </p>
+              {timeAtivo && periodoAtual?.diasUteis ? (
+                <p className="text-xs text-muted-foreground">
+                  Use o botão "Calcular" acima para importar do ClickUp.
+                </p>
+              ) : null}
             </div>
           )}
         </div>
@@ -691,20 +613,6 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
         onOpenChange={setPeriodoDialogOpen}
         onSuccess={onPeriodoSuccess}
       />
-
-      {mesSelecionado !== null && (
-        <EntryFormDialog
-          open={entryDialogOpen}
-          onOpenChange={(open) => {
-            setEntryDialogOpen(open);
-            if (!open) setEntryEditando(null);
-          }}
-          onSuccess={onEntrySuccess}
-          ano={anoSelecionado}
-          mes={mesSelecionado}
-          entry={entryEditando}
-        />
-      )}
     </div>
   );
 }

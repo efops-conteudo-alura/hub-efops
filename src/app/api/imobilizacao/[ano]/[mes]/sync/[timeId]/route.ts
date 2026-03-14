@@ -11,12 +11,45 @@ interface ClickUpAssignee {
   email: string;
 }
 
+interface ClickUpCustomField {
+  id: string;
+  name: string;
+  type: string;
+  value: unknown;
+  type_config?: {
+    options?: Array<{ id: string; name: string; orderindex: number }>;
+  };
+}
+
 interface ClickUpTask {
   id: string;
   name: string;
   date_done: string | null;
   assignees: ClickUpAssignee[];
   status: { status: string; type: string };
+  custom_type?: string | null;
+  custom_fields?: ClickUpCustomField[];
+}
+
+// Constantes de filtro — ajuste aqui se os nomes mudarem no ClickUp
+const CAMPO_ORIGEM = "Origem do Curso";
+const VALOR_ORIGEM = "100% Novo";
+const TASK_TYPE_CURSO = "Curso";
+
+function getValorCampoPersonalizado(task: ClickUpTask, nomeCampo: string): string | null {
+  const campo = task.custom_fields?.find(
+    (f) => f.name?.toLowerCase().trim() === nomeCampo.toLowerCase().trim()
+  );
+  if (!campo || campo.value === null || campo.value === undefined) return null;
+
+  if ((campo.type === "drop_down" || campo.type === "labels") && campo.type_config?.options) {
+    const opt = campo.type_config.options.find(
+      (o) => o.orderindex === campo.value || String(o.orderindex) === String(campo.value)
+    );
+    return opt?.name ?? null;
+  }
+
+  return String(campo.value);
 }
 
 interface Colaborador {
@@ -238,6 +271,13 @@ export async function POST(
     }
 
     for (const task of tasks) {
+      // Filtro: tipo de tarefa deve ser "Curso"
+      if (task.custom_type?.toLowerCase() !== TASK_TYPE_CURSO.toLowerCase()) continue;
+
+      // Filtro: campo "Origem do Curso" deve ser "100% Novo"
+      const origem = getValorCampoPersonalizado(task, CAMPO_ORIGEM);
+      if (!origem || origem.toLowerCase() !== VALOR_ORIGEM.toLowerCase()) continue;
+
       const { id: cursoId, nome: cursoNome } = parseCourseIdAndName(task.name);
       const cursoKey = task.name.trim();
 
