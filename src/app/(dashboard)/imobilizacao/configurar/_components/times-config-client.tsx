@@ -33,6 +33,7 @@ interface Time {
   id: string;
   nome: string;
   clickupListId: string;
+  clickupListIdsAdicionais: string | null;
   ordem: number;
   colaboradores: Colaborador[];
 }
@@ -150,7 +151,8 @@ export function TimesConfigClient({ times: initialTimes }: Props) {
                 {aberto ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 <span className="font-semibold">{time.nome}</span>
                 <span className="text-xs text-muted-foreground ml-1">
-                  ({time.colaboradores.length} colaboradores · List: {time.clickupListId})
+                  ({time.colaboradores.length} colaboradores · List: {time.clickupListId}
+                  {time.clickupListIdsAdicionais && `, ${time.clickupListIdsAdicionais}`})
                 </span>
               </button>
               <div className="flex gap-2">

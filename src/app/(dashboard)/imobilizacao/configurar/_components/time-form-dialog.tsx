@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 const schema = z.object({
   nome: z.string().min(1, "Nome é obrigatório"),
   clickupListId: z.string().min(1, "ID da lista ClickUp é obrigatório"),
+  clickupListIdsAdicionais: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -26,6 +27,7 @@ interface Time {
   id: string;
   nome: string;
   clickupListId: string;
+  clickupListIdsAdicionais: string | null;
 }
 
 interface Props {
@@ -41,12 +43,16 @@ export function TimeFormDialog({ open, time, onOpenChange, onSuccess }: Props) {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { nome: "", clickupListId: "" },
+    defaultValues: { nome: "", clickupListId: "", clickupListIdsAdicionais: "" },
   });
 
   useEffect(() => {
     if (open) {
-      reset({ nome: time?.nome ?? "", clickupListId: time?.clickupListId ?? "" });
+      reset({
+        nome: time?.nome ?? "",
+        clickupListId: time?.clickupListId ?? "",
+        clickupListIdsAdicionais: time?.clickupListIdsAdicionais ?? "",
+      });
       setError(null);
     }
   }, [open, time, reset]);
@@ -60,7 +66,11 @@ export function TimeFormDialog({ open, time, onOpenChange, onSuccess }: Props) {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          nome: data.nome,
+          clickupListId: data.clickupListId,
+          clickupListIdsAdicionais: data.clickupListIdsAdicionais?.trim() || null,
+        }),
       });
       if (!res.ok) {
         const json = await res.json();
@@ -99,6 +109,17 @@ export function TimeFormDialog({ open, time, onOpenChange, onSuccess }: Props) {
             )}
             <p className="text-xs text-muted-foreground">
               Encontre o ID na URL do ClickUp: /v/li/<strong>ID</strong>
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="clickupListIdsAdicionais">Listas adicionais (opcional)</Label>
+            <Input
+              id="clickupListIdsAdicionais"
+              placeholder="Ex: 901306782160, 901306782161"
+              {...register("clickupListIdsAdicionais")}
+            />
+            <p className="text-xs text-muted-foreground">
+              IDs separados por vírgula. Usados quando mais de uma lista compõe o mesmo time.
             </p>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}

@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { nome, clickupListId } = body;
+  const { nome, clickupListId, clickupListIdsAdicionais } = body;
 
   if (!nome?.trim() || !clickupListId?.trim()) {
     return NextResponse.json({ error: "Nome e clickupListId são obrigatórios" }, { status: 400 });
@@ -37,7 +37,12 @@ export async function POST(req: Request) {
   const ordem = (maxOrdem._max.ordem ?? -1) + 1;
 
   const time = await prisma.imobilizacaoTime.create({
-    data: { nome: nome.trim(), clickupListId: clickupListId.trim(), ordem },
+    data: {
+      nome: nome.trim(),
+      clickupListId: clickupListId.trim(),
+      clickupListIdsAdicionais: clickupListIdsAdicionais?.trim() || null,
+      ordem,
+    },
     include: { colaboradores: true },
   });
 

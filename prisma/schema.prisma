@@ -340,10 +340,11 @@ model ImobilizacaoEntry {
 }
 
 model ImobilizacaoTime {
-  id            String                    @id @default(cuid())
-  nome          String
-  clickupListId String
-  ordem         Int                       @default(0)
+  id                       String                    @id @default(cuid())
+  nome                     String
+  clickupListId            String
+  clickupListIdsAdicionais String?                   // IDs adicionais separados por vírgula
+  ordem                    Int                       @default(0)
   colaboradores ImobilizacaoColaborador[]
   entries       ImobilizacaoEntry[]
   createdAt     DateTime                  @default(now())

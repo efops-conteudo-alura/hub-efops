@@ -16,6 +16,7 @@ interface ClickUpTask {
   name: string;
   date_done: string | null;
   assignees: ClickUpAssignee[];
+  status: { status: string; type: string };
 }
 
 interface Colaborador {
@@ -45,42 +46,64 @@ function parseCourseIdAndName(raw: string): { id: string; nome: string } {
   return { id: "", nome: text };
 }
 
-async function fetchTasksDoMes(
-  listId: string,
-  dataInicio: Date,
-  dataFim: Date
-): Promise<ClickUpTask[]> {
+// Status considerados "não iniciado" — ignorar estas tarefas
+const STATUS_IGNORADOS = new Set(["not started", "não iniciado", "nao iniciado"]);
+
+function isStatusIgnorado(task: ClickUpTask): boolean {
+  const s = task.status?.status?.toLowerCase().trim() ?? "";
+  return STATUS_IGNORADOS.has(s);
+}
+
+async function fetchPaginado(url: string): Promise<ClickUpTask[]> {
   const tasks: ClickUpTask[] = [];
   let page = 0;
-
-  // ClickUp usa timestamps em milissegundos
-  const gtMs = dataInicio.getTime();
-  const lteMs = dataFim.getTime() + 86399999; // até o final do dia
-
   while (true) {
-    const url =
-      `https://api.clickup.com/api/v2/list/${listId}/task` +
-      `?include_closed=true` +
-      `&date_done_gt=${gtMs}` +
-      `&date_done_lte=${lteMs}` +
-      `&page=${page}`;
-
-    const res = await fetch(url, {
+    const res = await fetch(`${url}&page=${page}`, {
       headers: { Authorization: CLICKUP_API_KEY },
     });
-
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`ClickUp API error ${res.status}: ${text}`);
     }
-
     const data = await res.json();
     tasks.push(...(data.tasks ?? []));
     if (data.last_page === true || !data.tasks?.length) break;
     page++;
   }
-
   return tasks;
+}
+
+async function fetchTasksDoMes(
+  listIds: string[],
+  dataInicio: Date,
+  dataFim: Date
+): Promise<ClickUpTask[]> {
+  const gtMs = dataInicio.getTime();
+  const lteMs = dataFim.getTime() + 86399999; // até o final do dia
+
+  const todasTasks: ClickUpTask[] = [];
+
+  for (const listId of listIds) {
+    const base = `https://api.clickup.com/api/v2/list/${listId}/task`;
+
+    // Busca 1: tarefas concluídas no período
+    const comData = await fetchPaginado(
+      `${base}?include_closed=true&date_done_gt=${gtMs}&date_done_lte=${lteMs}`
+    );
+
+    // Busca 2: tarefas abertas (sem data de conclusão)
+    const abertas = await fetchPaginado(`${base}?include_closed=false`);
+
+    todasTasks.push(...comData, ...abertas);
+  }
+
+  // Deduplica por ID e filtra status ignorados
+  const vistas = new Set<string>();
+  return todasTasks.filter((t) => {
+    if (vistas.has(t.id)) return false;
+    vistas.add(t.id);
+    return !isStatusIgnorado(t);
+  });
 }
 
 function calcularImobilizacao(
@@ -191,8 +214,16 @@ export async function POST(
   const dataFim = periodo.dataFim ?? new Date(ano, mes, 0); // último dia do mês
 
   try {
-    // Busca tasks do ClickUp no intervalo
-    const tasks = await fetchTasksDoMes(time.clickupListId, dataInicio, dataFim);
+    // Monta lista de IDs (principal + adicionais)
+    const listIds = [
+      time.clickupListId,
+      ...(time.clickupListIdsAdicionais
+        ? time.clickupListIdsAdicionais.split(",").map((s) => s.trim()).filter(Boolean)
+        : []),
+    ];
+
+    // Busca tasks do ClickUp: concluídas no período + abertas (sem data de conclusão)
+    const tasks = await fetchTasksDoMes(listIds, dataInicio, dataFim);
 
     // Monta mapa: cursoKey → Set<nomeResponsável>
     const cursoParaPessoas = new Map<string, Set<string>>();
