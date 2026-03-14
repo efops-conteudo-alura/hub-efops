@@ -27,14 +27,12 @@ interface ClickUpTask {
   date_done: string | null;
   assignees: ClickUpAssignee[];
   status: { status: string; type: string };
-  custom_type?: string | null;
   custom_fields?: ClickUpCustomField[];
 }
 
 // Constantes de filtro — ajuste aqui se os nomes mudarem no ClickUp
 const CAMPO_ORIGEM = "Origem do Curso";
 const VALOR_ORIGEM = "100% Novo";
-const TASK_TYPE_CURSO = "Curso";
 
 function getValorCampoPersonalizado(task: ClickUpTask, nomeCampo: string): string | null {
   const campo = task.custom_fields?.find(
@@ -273,21 +271,11 @@ export async function POST(
       if (col.clickupUsername) nomesValidos.add(col.clickupUsername);
     }
 
-    // Debug: log tipos e campos das primeiras tasks
-    const amostra = tasks.slice(0, 3);
     console.log("[imobilizacao sync] total tasks brutas:", tasks.length);
-    console.log("[imobilizacao sync] amostra custom_type:", amostra.map((t) => ({ id: t.id, name: t.name, custom_type: t.custom_type, custom_fields_count: t.custom_fields?.length ?? 0 })));
 
-    let descartadasTipo = 0;
     let descartadasOrigem = 0;
 
     for (const task of tasks) {
-      // Filtro: tipo de tarefa deve ser "Curso"
-      if (task.custom_type?.toLowerCase() !== TASK_TYPE_CURSO.toLowerCase()) {
-        descartadasTipo++;
-        continue;
-      }
-
       // Filtro: campo "Origem do Curso" deve ser "100% Novo"
       const origem = getValorCampoPersonalizado(task, CAMPO_ORIGEM);
       if (!origem || origem.toLowerCase() !== VALOR_ORIGEM.toLowerCase()) {
@@ -316,14 +304,14 @@ export async function POST(
       }
     }
 
-    console.log("[imobilizacao sync] descartadas por tipo:", descartadasTipo, "| por origem:", descartadasOrigem, "| restantes:", cursosOrder.length);
+    console.log("[imobilizacao sync] descartadas por origem:", descartadasOrigem, "| restantes:", cursosOrder.length);
 
     if (cursosOrder.length === 0) {
       return NextResponse.json({
         ok: true,
         cursos: 0,
         entries_criadas: 0,
-        aviso: `Nenhum curso encontrado. Tasks brutas: ${tasks.length} | Descartadas por tipo (≠ "${TASK_TYPE_CURSO}"): ${descartadasTipo} | Descartadas por origem (≠ "${VALOR_ORIGEM}"): ${descartadasOrigem}`,
+        aviso: `Nenhum curso encontrado. Tasks brutas: ${tasks.length} | Descartadas por origem (≠ "${VALOR_ORIGEM}"): ${descartadasOrigem}`,
       });
     }
 
