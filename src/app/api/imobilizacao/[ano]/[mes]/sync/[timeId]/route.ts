@@ -30,28 +30,6 @@ interface ClickUpTask {
   custom_fields?: ClickUpCustomField[];
 }
 
-// Constantes de filtro — ajuste aqui se os nomes mudarem no ClickUp
-const CAMPO_ORIGEM = "Origem do Curso";
-const VALOR_ORIGEM = "100% Novo";
-
-function getValorCampoPersonalizado(task: ClickUpTask, nomeCampo: string): string | null {
-  const campo = task.custom_fields?.find(
-    (f) => f.name?.toLowerCase().trim() === nomeCampo.toLowerCase().trim()
-  );
-  if (!campo || campo.value === null || campo.value === undefined) return null;
-
-  if ((campo.type === "drop_down" || campo.type === "labels") && campo.type_config?.options) {
-    const opt = campo.type_config.options.find(
-      (o) =>
-        o.id === campo.value ||
-        o.orderindex === campo.value ||
-        String(o.orderindex) === String(campo.value)
-    );
-    return opt?.name ?? null;
-  }
-
-  return String(campo.value);
-}
 
 interface Colaborador {
   id: string;
@@ -273,16 +251,7 @@ export async function POST(
 
     console.log("[imobilizacao sync] total tasks brutas:", tasks.length);
 
-    let descartadasOrigem = 0;
-
     for (const task of tasks) {
-      // Filtro: campo "Origem do Curso" deve ser "100% Novo"
-      const origem = getValorCampoPersonalizado(task, CAMPO_ORIGEM);
-      if (!origem || origem.toLowerCase() !== VALOR_ORIGEM.toLowerCase()) {
-        descartadasOrigem++;
-        continue;
-      }
-
       const { id: cursoId, nome: cursoNome } = parseCourseIdAndName(task.name);
       const cursoKey = task.name.trim();
 
@@ -304,14 +273,14 @@ export async function POST(
       }
     }
 
-    console.log("[imobilizacao sync] descartadas por origem:", descartadasOrigem, "| restantes:", cursosOrder.length);
+    console.log("[imobilizacao sync] cursos encontrados:", cursosOrder.length);
 
     if (cursosOrder.length === 0) {
       return NextResponse.json({
         ok: true,
         cursos: 0,
         entries_criadas: 0,
-        aviso: `Nenhum curso encontrado. Tasks brutas: ${tasks.length} | Descartadas por origem (≠ "${VALOR_ORIGEM}"): ${descartadasOrigem}`,
+        aviso: `Nenhum curso encontrado com responsáveis deste time no período (tasks brutas: ${tasks.length})`,
       });
     }
 
