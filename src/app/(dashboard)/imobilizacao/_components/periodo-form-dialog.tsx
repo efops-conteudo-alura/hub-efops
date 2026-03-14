@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,16 +32,32 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+function toDateInput(val: string | null | undefined): string {
+  if (!val) return "";
+  return new Date(val).toISOString().split("T")[0];
+}
+
+export interface PeriodoData {
+  ano: number;
+  mes: number;
+  dataInicio: string | null;
+  dataFim: string | null;
+  feriados: number;
+  diasUteis: number;
+}
+
 interface Props {
   open: boolean;
+  periodo?: PeriodoData;
   onOpenChange: (open: boolean) => void;
   onSuccess: (novoPeriodo?: { ano: number; mes: number }) => void;
 }
 
-export function PeriodoFormDialog({ open, onOpenChange, onSuccess }: Props) {
+export function PeriodoFormDialog({ open, periodo, onOpenChange, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [calcLoading, setCalcLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isEditing = !!periodo;
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
@@ -53,6 +69,31 @@ export function PeriodoFormDialog({ open, onOpenChange, onSuccess }: Props) {
     },
   });
 
+  useEffect(() => {
+    if (open) {
+      if (periodo) {
+        reset({
+          ano: periodo.ano,
+          mes: periodo.mes,
+          dataInicio: toDateInput(periodo.dataInicio),
+          dataFim: toDateInput(periodo.dataFim),
+          feriados: periodo.feriados,
+          diasUteis: periodo.diasUteis,
+        });
+      } else {
+        reset({
+          ano: new Date().getFullYear(),
+          mes: new Date().getMonth() + 1,
+          feriados: 0,
+          diasUteis: 0,
+          dataInicio: "",
+          dataFim: "",
+        });
+      }
+      setError(null);
+    }
+  }, [open, periodo, reset]);
+
   const dataInicio = watch("dataInicio");
   const dataFim = watch("dataFim");
   const ano = watch("ano");
@@ -61,11 +102,7 @@ export function PeriodoFormDialog({ open, onOpenChange, onSuccess }: Props) {
     if (!dataInicio || !dataFim) return;
     setCalcLoading(true);
     try {
-      const params = new URLSearchParams({
-        ano: String(ano),
-        dataInicio,
-        dataFim,
-      });
+      const params = new URLSearchParams({ ano: String(ano), dataInicio, dataFim });
       const res = await fetch(`/api/imobilizacao/dias-uteis?${params}`);
       if (res.ok) {
         const data = await res.json();
@@ -81,20 +118,35 @@ export function PeriodoFormDialog({ open, onOpenChange, onSuccess }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/imobilizacao", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      let res: Response;
+      if (isEditing) {
+        res = await fetch(`/api/imobilizacao/${periodo!.ano}/${periodo!.mes}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dataInicio: data.dataInicio || null,
+            dataFim: data.dataFim || null,
+            feriados: data.feriados,
+            diasUteis: data.diasUteis,
+          }),
+        });
+      } else {
+        res = await fetch("/api/imobilizacao", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+      }
+
       if (!res.ok) {
         const json = await res.json();
-        setError(json.error ?? "Erro ao criar período");
+        setError(json.error ?? "Erro ao salvar período");
         return;
       }
-      const criado = await res.json();
+      const salvo = await res.json();
       reset();
       onOpenChange(false);
-      onSuccess({ ano: criado.ano, mes: criado.mes });
+      onSuccess({ ano: salvo.ano, mes: salvo.mes });
     } catch {
       setError("Erro de conexão");
     } finally {
@@ -106,13 +158,13 @@ export function PeriodoFormDialog({ open, onOpenChange, onSuccess }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Novo Período</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar Período" : "Novo Período"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label htmlFor="ano">Ano *</Label>
-              <Input id="ano" type="number" {...register("ano")} />
+              <Input id="ano" type="number" {...register("ano")} disabled={isEditing} />
               {errors.ano && <p className="text-xs text-destructive">{errors.ano.message}</p>}
             </div>
             <div className="space-y-1">
@@ -120,7 +172,8 @@ export function PeriodoFormDialog({ open, onOpenChange, onSuccess }: Props) {
               <select
                 id="mes"
                 {...register("mes")}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                disabled={isEditing}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
               >
                 {MESES.map((nome, i) => (
                   <option key={i + 1} value={i + 1}>{nome}</option>
@@ -174,7 +227,7 @@ export function PeriodoFormDialog({ open, onOpenChange, onSuccess }: Props) {
               Cancelar
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Salvando..." : "Criar Período"}
+              {loading ? "Salvando..." : isEditing ? "Salvar" : "Criar Período"}
             </Button>
           </DialogFooter>
         </form>

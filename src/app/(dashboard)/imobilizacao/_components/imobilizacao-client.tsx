@@ -2,8 +2,17 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, CalendarRange, Copy, Check, RefreshCw, Settings } from "lucide-react";
-import { PeriodoFormDialog } from "./periodo-form-dialog";
+import { Plus, Trash2, CalendarRange, Copy, Check, RefreshCw, Settings, Pencil } from "lucide-react";
+import { PeriodoFormDialog, type PeriodoData } from "./periodo-form-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import Link from "next/link";
 
 const MESES = [
@@ -203,6 +212,15 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
   // Copy por time
   const [copied, setCopied] = useState<Record<string, boolean>>({});
 
+  // Editar período
+  const [periodoParaEditar, setPeriodoParaEditar] = useState<PeriodoData | null>(null);
+
+  // Adicionar curso manualmente
+  const [addCursoOpen, setAddCursoOpen] = useState(false);
+  const [addCursoLoading, setAddCursoLoading] = useState(false);
+  const [addCursoNome, setAddCursoNome] = useState("");
+  const [addCursoId, setAddCursoId] = useState("");
+
   const anos = [...new Set(periodos.map((p) => p.ano))].sort((a, b) => b - a);
   const mesesDoAno = periodos
     .filter((p) => p.ano === anoSelecionado)
@@ -316,6 +334,34 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
         entries: prev.entries.map((e) => e.id === entryId ? { ...e, horas: novoValor } : e),
       };
     });
+  };
+
+  const adicionarCurso = async () => {
+    if (!addCursoNome.trim() || !timeAtivo || mesSelecionado === null) return;
+    setAddCursoLoading(true);
+    try {
+      const cols = timeAtivo.colaboradores.sort((a, b) => a.ordem - b.ordem);
+      for (const col of cols) {
+        await fetch(`/api/imobilizacao/${anoSelecionado}/${mesSelecionado}/entries`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            colaboradorNome: col.nome,
+            produtoTipo: "curso",
+            produtoId: addCursoId.trim() || null,
+            produtoNome: addCursoNome.trim(),
+            horas: 0,
+            timeId: timeAtivo.id,
+          }),
+        });
+      }
+      setAddCursoOpen(false);
+      setAddCursoNome("");
+      setAddCursoId("");
+      await loadDetalhe(anoSelecionado, mesSelecionado);
+    } finally {
+      setAddCursoLoading(false);
+    }
   };
 
   const periodoAtual = periodos.find((p) => p.ano === anoSelecionado && p.mes === mesSelecionado);
@@ -452,10 +498,31 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
                   {periodoAtual.diasUteis}
                 </span>
               </div>
-              <Button size="sm" variant="destructive" onClick={deletarPeriodo}>
-                <Trash2 size={14} className="mr-1" />
-                Excluir Período
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    if (!periodoAtual) return;
+                    setPeriodoParaEditar({
+                      ano: periodoAtual.ano,
+                      mes: periodoAtual.mes,
+                      dataInicio: periodoAtual.dataInicio,
+                      dataFim: periodoAtual.dataFim,
+                      feriados: periodoAtual.feriados,
+                      diasUteis: periodoAtual.diasUteis,
+                    });
+                    setPeriodoDialogOpen(true);
+                  }}
+                >
+                  <Pencil size={14} className="mr-1" />
+                  Editar
+                </Button>
+                <Button size="sm" variant="destructive" onClick={deletarPeriodo}>
+                  <Trash2 size={14} className="mr-1" />
+                  Excluir Período
+                </Button>
+              </div>
             </div>
           )}
 
@@ -588,6 +655,21 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
                       </tr>
                     );
                   })}
+
+                  {/* Linha de adicionar curso */}
+                  {timeAtivo && (
+                    <tr>
+                      <td colSpan={3 + colaboradoresGerais.length + 1} className="px-2 py-1">
+                        <button
+                          onClick={() => setAddCursoOpen(true)}
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Plus size={12} />
+                          Adicionar curso manualmente
+                        </button>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -598,11 +680,22 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
                   ? `Nenhum dado para ${timeAtivo.nome} neste período.`
                   : "Nenhuma entry neste período."}
               </p>
-              {timeAtivo && periodoAtual?.diasUteis ? (
-                <p className="text-xs text-muted-foreground">
-                  Use o botão "Calcular" acima para importar do ClickUp.
-                </p>
-              ) : null}
+              {timeAtivo && (
+                <div className="flex gap-2">
+                  {periodoAtual?.diasUteis ? (
+                    <p className="text-xs text-muted-foreground">
+                      Use o botão "Calcular" acima para importar do ClickUp.
+                    </p>
+                  ) : null}
+                  <button
+                    onClick={() => setAddCursoOpen(true)}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Plus size={12} />
+                    Adicionar curso manualmente
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -610,9 +703,54 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
 
       <PeriodoFormDialog
         open={periodoDialogOpen}
-        onOpenChange={setPeriodoDialogOpen}
+        periodo={periodoParaEditar ?? undefined}
+        onOpenChange={(open) => {
+          setPeriodoDialogOpen(open);
+          if (!open) setPeriodoParaEditar(null);
+        }}
         onSuccess={onPeriodoSuccess}
       />
+
+      {/* Dialog para adicionar curso manualmente */}
+      <Dialog open={addCursoOpen} onOpenChange={(open) => { setAddCursoOpen(open); if (!open) { setAddCursoNome(""); setAddCursoId(""); } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Adicionar curso manualmente</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <Label htmlFor="addCursoId">ID do curso</Label>
+              <Input
+                id="addCursoId"
+                placeholder="Ex: 1234"
+                value={addCursoId}
+                onChange={(e) => setAddCursoId(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="addCursoNome">Nome do curso *</Label>
+              <Input
+                id="addCursoNome"
+                placeholder="Ex: JavaScript para iniciantes"
+                value={addCursoNome}
+                onChange={(e) => setAddCursoNome(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") adicionarCurso(); }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Serão criadas entradas com 0h para cada colaborador de {timeAtivo?.nome ?? "este time"}.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddCursoOpen(false)} disabled={addCursoLoading}>
+              Cancelar
+            </Button>
+            <Button onClick={adicionarCurso} disabled={!addCursoNome.trim() || addCursoLoading}>
+              {addCursoLoading ? "Adicionando..." : "Adicionar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

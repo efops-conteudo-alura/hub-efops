@@ -30,6 +30,34 @@ export async function GET(_req: Request, { params }: Params) {
   }
 }
 
+export async function PUT(request: Request, { params }: Params) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { ano, mes } = await params;
+    const body = await request.json();
+    const { dataInicio, dataFim, feriados, diasUteis } = body;
+
+    const periodo = await prisma.imobilizacaoPeriodo.update({
+      where: { ano_mes: { ano: Number(ano), mes: Number(mes) } },
+      data: {
+        dataInicio: dataInicio ? new Date(dataInicio) : null,
+        dataFim: dataFim ? new Date(dataFim) : null,
+        feriados: feriados !== undefined ? Number(feriados) : undefined,
+        diasUteis: diasUteis !== undefined ? Number(diasUteis) : undefined,
+      },
+    });
+
+    return NextResponse.json(periodo);
+  } catch (err) {
+    console.error("[imobilizacao/[ano]/[mes] PUT]", err);
+    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
+  }
+}
+
 export async function DELETE(_req: Request, { params }: Params) {
   try {
     const session = await getServerSession(authOptions);

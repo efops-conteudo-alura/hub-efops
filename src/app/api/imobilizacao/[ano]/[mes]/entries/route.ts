@@ -38,9 +38,12 @@ export async function POST(request: Request, { params }: Params) {
       return NextResponse.json({ error: "colaboradorNome e produtoNome são obrigatórios" }, { status: 400 });
     }
 
+    const { timeId } = body;
+
     const entry = await prisma.imobilizacaoEntry.create({
       data: {
         periodoId: periodo.id,
+        timeId: timeId || null,
         colaboradorNome,
         colaboradorMatricula: colaboradorMatricula || null,
         cargaHorariaTotal: cargaHorariaTotal ? Number(cargaHorariaTotal) : null,
