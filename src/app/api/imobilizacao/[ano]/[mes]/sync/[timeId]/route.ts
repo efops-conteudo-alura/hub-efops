@@ -5,6 +5,9 @@ import { prisma } from "@/lib/db";
 
 const CLICKUP_API_KEY = process.env.CLICKUP_API_KEY!;
 
+// Nomes de status a ignorar (tipo incorreto no ClickUp mas semanticamente "não iniciado")
+const NOMES_STATUS_IGNORADOS = new Set(["em planejamento", "planejamento"]);
+
 interface ClickUpAssignee {
   id: number;
   username: string;
@@ -43,18 +46,13 @@ interface Colaborador {
 
 function parseCourseIdAndName(raw: string): { id: string; nome: string } {
   const text = raw.trim();
-  // Formato: "1234 - Nome do curso" ou "1234 Nome do curso"
+  // Formato: "1234 - Nome do curso"
   const m = text.match(/^(\d{4})\s*[-–—]\s*(.+)$/);
   if (m) return { id: m[1], nome: m[2].trim() };
+  // Formato: "1234 Nome do curso"
   const m2 = text.match(/^(\d{4})\s+(.+)$/);
   if (m2) return { id: m2[1], nome: m2[2].trim() };
-  // Formato audiovisual: ID pode estar no meio
-  const mAny = text.match(/(\d{4})/);
-  if (mAny) {
-    const id = mAny[1];
-    const nome = text.replace(id, "").replace(/[-–—:|]/g, " ").replace(/\s+/g, " ").trim();
-    return { id, nome };
-  }
+  // Sem ID identificável — usa o título completo
   return { id: "", nome: text };
 }
 
@@ -99,13 +97,15 @@ async function fetchTasksDoMes(
       (t) => t.status?.type?.toLowerCase().trim() !== "open"
     );
 
-    // Busca 2: tarefas em produção (sem date_done) e não "não iniciado"
-    // Usar !date_done é mais robusto que filtrar por status type,
-    // pois tasks done/published sempre têm date_done preenchido pelo ClickUp
+    // Busca 2: tarefas em produção (sem date_done), excluindo "não iniciado" por tipo ou nome
     const abertas = await fetchPaginado(`${base}?include_closed=false`);
     const abertasFiltradas = abertas.filter((t) => {
+      if (t.date_done) return false;
       const tipo = t.status?.type?.toLowerCase().trim();
-      return tipo !== "open" && !t.date_done;
+      if (tipo === "open") return false;
+      const nomeStatus = t.status?.status?.toLowerCase().trim() ?? "";
+      if (NOMES_STATUS_IGNORADOS.has(nomeStatus)) return false;
+      return true;
     });
 
     todasTasks.push(...comDataFiltradas, ...abertasFiltradas);
