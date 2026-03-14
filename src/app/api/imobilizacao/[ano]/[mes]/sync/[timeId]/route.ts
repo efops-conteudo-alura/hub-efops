@@ -99,12 +99,14 @@ async function fetchTasksDoMes(
       (t) => t.status?.type?.toLowerCase().trim() !== "open"
     );
 
-    // Busca 2: tarefas abertas — apenas "in_progress"
-    // Exclui "open" (não iniciado) e "done" (publicado/concluído mas não fechado no ClickUp)
+    // Busca 2: tarefas em produção (sem date_done) e não "não iniciado"
+    // Usar !date_done é mais robusto que filtrar por status type,
+    // pois tasks done/published sempre têm date_done preenchido pelo ClickUp
     const abertas = await fetchPaginado(`${base}?include_closed=false`);
-    const abertasFiltradas = abertas.filter(
-      (t) => t.status?.type?.toLowerCase().trim() === "in_progress"
-    );
+    const abertasFiltradas = abertas.filter((t) => {
+      const tipo = t.status?.type?.toLowerCase().trim();
+      return tipo !== "open" && !t.date_done;
+    });
 
     todasTasks.push(...comDataFiltradas, ...abertasFiltradas);
   }

@@ -44,8 +44,8 @@ export async function PUT(request: Request, { params }: Params) {
     const periodo = await prisma.imobilizacaoPeriodo.update({
       where: { ano_mes: { ano: Number(ano), mes: Number(mes) } },
       data: {
-        dataInicio: dataInicio ? new Date(dataInicio) : null,
-        dataFim: dataFim ? new Date(dataFim) : null,
+        dataInicio: dataInicio ? new Date(dataInicio + "T12:00:00.000Z") : null,
+        dataFim: dataFim ? new Date(dataFim + "T12:00:00.000Z") : null,
         feriados: feriados !== undefined ? Number(feriados) : undefined,
         diasUteis: diasUteis !== undefined ? Number(diasUteis) : undefined,
       },

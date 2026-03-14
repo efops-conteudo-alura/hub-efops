@@ -59,8 +59,8 @@ export async function POST(request: Request) {
       data: {
         ano: Number(ano),
         mes: Number(mes),
-        dataInicio: dataInicio ? new Date(dataInicio) : null,
-        dataFim: dataFim ? new Date(dataFim) : null,
+        dataInicio: dataInicio ? new Date(dataInicio + "T12:00:00.000Z") : null,
+        dataFim: dataFim ? new Date(dataFim + "T12:00:00.000Z") : null,
         feriados: Number(feriados ?? 0),
         diasUteis: Number(diasUteis ?? 0),
       },
