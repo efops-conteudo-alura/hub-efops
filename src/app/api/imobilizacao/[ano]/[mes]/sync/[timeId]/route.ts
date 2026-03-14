@@ -80,12 +80,11 @@ function parseCourseIdAndName(raw: string): { id: string; nome: string } {
   return { id: "", nome: text };
 }
 
-// Status considerados "não iniciado" — ignorar estas tarefas
-const STATUS_IGNORADOS = new Set(["not started", "não iniciado", "nao iniciado"]);
-
+// Tipo de status "não iniciado" no ClickUp — ignorar estas tarefas
+// task.status.type === "open" corresponde ao tipo "Não iniciado" na interface do ClickUp
 function isStatusIgnorado(task: ClickUpTask): boolean {
-  const s = task.status?.status?.toLowerCase().trim() ?? "";
-  return STATUS_IGNORADOS.has(s);
+  const tipo = task.status?.type?.toLowerCase().trim() ?? "";
+  return tipo === "open";
 }
 
 async function fetchPaginado(url: string): Promise<ClickUpTask[]> {
