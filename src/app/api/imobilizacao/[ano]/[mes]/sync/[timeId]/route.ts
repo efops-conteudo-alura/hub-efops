@@ -44,7 +44,10 @@ function getValorCampoPersonalizado(task: ClickUpTask, nomeCampo: string): strin
 
   if ((campo.type === "drop_down" || campo.type === "labels") && campo.type_config?.options) {
     const opt = campo.type_config.options.find(
-      (o) => o.orderindex === campo.value || String(o.orderindex) === String(campo.value)
+      (o) =>
+        o.id === campo.value ||
+        o.orderindex === campo.value ||
+        String(o.orderindex) === String(campo.value)
     );
     return opt?.name ?? null;
   }
@@ -121,11 +124,11 @@ async function fetchTasksDoMes(
 
     // Busca 1: tarefas concluídas no período
     const comData = await fetchPaginado(
-      `${base}?include_closed=true&date_done_gt=${gtMs}&date_done_lte=${lteMs}`
+      `${base}?include_closed=true&custom_fields=true&date_done_gt=${gtMs}&date_done_lte=${lteMs}`
     );
 
     // Busca 2: tarefas abertas (sem data de conclusão)
-    const abertas = await fetchPaginado(`${base}?include_closed=false`);
+    const abertas = await fetchPaginado(`${base}?include_closed=false&custom_fields=true`);
 
     todasTasks.push(...comData, ...abertas);
   }
@@ -270,13 +273,27 @@ export async function POST(
       if (col.clickupUsername) nomesValidos.add(col.clickupUsername);
     }
 
+    // Debug: log tipos e campos das primeiras tasks
+    const amostra = tasks.slice(0, 3);
+    console.log("[imobilizacao sync] total tasks brutas:", tasks.length);
+    console.log("[imobilizacao sync] amostra custom_type:", amostra.map((t) => ({ id: t.id, name: t.name, custom_type: t.custom_type, custom_fields_count: t.custom_fields?.length ?? 0 })));
+
+    let descartadasTipo = 0;
+    let descartadasOrigem = 0;
+
     for (const task of tasks) {
       // Filtro: tipo de tarefa deve ser "Curso"
-      if (task.custom_type?.toLowerCase() !== TASK_TYPE_CURSO.toLowerCase()) continue;
+      if (task.custom_type?.toLowerCase() !== TASK_TYPE_CURSO.toLowerCase()) {
+        descartadasTipo++;
+        continue;
+      }
 
       // Filtro: campo "Origem do Curso" deve ser "100% Novo"
       const origem = getValorCampoPersonalizado(task, CAMPO_ORIGEM);
-      if (!origem || origem.toLowerCase() !== VALOR_ORIGEM.toLowerCase()) continue;
+      if (!origem || origem.toLowerCase() !== VALOR_ORIGEM.toLowerCase()) {
+        descartadasOrigem++;
+        continue;
+      }
 
       const { id: cursoId, nome: cursoNome } = parseCourseIdAndName(task.name);
       const cursoKey = task.name.trim();
@@ -299,12 +316,14 @@ export async function POST(
       }
     }
 
+    console.log("[imobilizacao sync] descartadas por tipo:", descartadasTipo, "| por origem:", descartadasOrigem, "| restantes:", cursosOrder.length);
+
     if (cursosOrder.length === 0) {
       return NextResponse.json({
         ok: true,
         cursos: 0,
         entries_criadas: 0,
-        aviso: "Nenhum curso encontrado com responsáveis deste time no período",
+        aviso: `Nenhum curso encontrado. Tasks brutas: ${tasks.length} | Descartadas por tipo (≠ "${TASK_TYPE_CURSO}"): ${descartadasTipo} | Descartadas por origem (≠ "${VALOR_ORIGEM}"): ${descartadasOrigem}`,
       });
     }
 
