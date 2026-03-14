@@ -255,6 +255,8 @@ export async function POST(
 
     for (const task of tasks) {
       const { id: cursoId, nome: cursoNome } = parseCourseIdAndName(task.name);
+      if (!cursoId) continue; // ignora tarefas sem ID de curso no título
+
       const cursoKey = task.name.trim();
 
       // Filtra assignees: mantém apenas os do time
