@@ -71,6 +71,34 @@ export async function POST(
     return NextResponse.json({ error: "Nenhuma linha encontrada no período selecionado." }, { status: 400 });
   }
 
+  // Buscar cursos do ClickUp se necessário
+  let clickupInfo = "";
+  if (report.aiNeedsClickup && report.aiClickupListIds) {
+    const apiKey = process.env.CLICKUP_API_KEY;
+    if (apiKey) {
+      const listIds = report.aiClickupListIds.split(",").map((s) => s.trim()).filter(Boolean);
+      const allTaskNames: string[] = [];
+
+      for (const listId of listIds) {
+        let page = 0;
+        while (true) {
+          const url = `https://api.clickup.com/api/v2/list/${listId}/task?include_closed=true&page=${page}`;
+          const res = await fetch(url, { headers: { Authorization: apiKey } });
+          if (!res.ok) break;
+          const data = await res.json() as { tasks?: { name: string }[]; last_page?: boolean };
+          const names = (data.tasks ?? []).map((t) => t.name.trim()).filter(Boolean);
+          allTaskNames.push(...names);
+          if (data.last_page === true || !data.tasks?.length) break;
+          page++;
+        }
+      }
+
+      if (allTaskNames.length > 0) {
+        clickupInfo = `\nCURSOS EM PRODUÇÃO (ClickUp):\n${allTaskNames.map((n, i) => `${i + 1}. ${n}`).join("\n")}\n`;
+      }
+    }
+  }
+
   // Montar mensagem para Claude
   const periodInfo = periodoInicio && periodoFim
     ? `Período de análise: ${new Date(periodoInicio).toLocaleDateString("pt-BR")} a ${new Date(periodoFim).toLocaleDateString("pt-BR")}\nTotal de respostas no período: ${rows.length}\n\n`
@@ -86,12 +114,12 @@ export async function POST(
       }).join("\n")
     : "(nenhum dado fornecido)";
 
-  const userMessage = `${periodInfo}DADOS:\n${dadosFormatados}`;
+  const userMessage = `${periodInfo}${clickupInfo}DADOS:\n${dadosFormatados}`;
 
   // Chamar Claude
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
-    max_tokens: 4096,
+    max_tokens: 16000,
     system: report.aiInstructions,
     messages: [{ role: "user", content: userMessage }],
   });

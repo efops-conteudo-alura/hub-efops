@@ -170,8 +170,10 @@ model Report {
   aiInstructions String?          // system prompt para o Claude
   aiNeedsFile    Boolean          @default(false)
   aiNeedsDate    Boolean          @default(false)
-  aiOutputFormat String           @default("text") // "text" | "pdf"
-  aiResultados   AiAnaliseResult[]
+  aiOutputFormat   String           @default("text") // "text" | "pdf"
+  aiNeedsClickup   Boolean          @default(false)
+  aiClickupListIds String?          // IDs de listas separados por vírgula
+  aiResultados     AiAnaliseResult[]
 }
 
 model ReportResponse {

@@ -52,6 +52,8 @@ export default async function EditarRelatorioPage({
           initialNeedsFile={report.aiNeedsFile}
           initialNeedsDate={report.aiNeedsDate}
           initialOutputFormat={report.aiOutputFormat}
+          initialNeedsClickup={report.aiNeedsClickup}
+          initialClickupListIds={report.aiClickupListIds ?? ""}
         />
       ) : (
         <ReportBuilder

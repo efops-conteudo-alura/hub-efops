@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BrainCircuit, Play, Trash2, Eye, FileText } from "lucide-react";
+import { BrainCircuit, Play, Trash2, Eye, FileText, Pencil } from "lucide-react";
+import Link from "next/link";
 import { AiAnaliseDialog } from "./ai-analise-dialog";
 import { AiAnaliseResultado } from "./ai-analise-resultado";
 
@@ -79,9 +80,11 @@ export function AiAnaliseView({ report, resultados: initialResultados }: AiAnali
             <p className="text-muted-foreground text-sm">{report.objective}</p>
           )}
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="shrink-0">
-          <Play size={14} className="mr-1.5" />
-          Executar análise
+        <Button variant="outline" size="sm" asChild className="shrink-0">
+          <Link href={`/relatorios/${report.id}/editar`}>
+            <Pencil size={13} className="mr-1.5" />
+            Editar
+          </Link>
         </Button>
       </div>
 
@@ -96,7 +99,13 @@ export function AiAnaliseView({ report, resultados: initialResultados }: AiAnali
         </div>
       ) : (
         <div className="space-y-2">
-          <h2 className="text-sm font-medium text-muted-foreground">Histórico de análises</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-muted-foreground">Histórico de análises</h2>
+            <Button size="sm" onClick={() => setDialogOpen(true)}>
+              <Play size={13} className="mr-1.5" />
+              Nova análise
+            </Button>
+          </div>
           {resultados.map((r) => (
             <div
               key={r.id}

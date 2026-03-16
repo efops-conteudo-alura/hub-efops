@@ -34,7 +34,7 @@ export async function PUT(
 
   const { id } = await params;
   const body = await request.json();
-  const { type, title, objective, fields, aiInstructions, aiNeedsFile, aiNeedsDate, aiOutputFormat } = body as {
+  const { type, title, objective, fields, aiInstructions, aiNeedsFile, aiNeedsDate, aiOutputFormat, aiNeedsClickup, aiClickupListIds } = body as {
     type?: string;
     title?: string;
     objective?: string;
@@ -43,6 +43,8 @@ export async function PUT(
     aiNeedsFile?: boolean;
     aiNeedsDate?: boolean;
     aiOutputFormat?: string;
+    aiNeedsClickup?: boolean;
+    aiClickupListIds?: string | null;
   };
 
   if (!title?.trim()) {
@@ -62,6 +64,8 @@ export async function PUT(
         aiNeedsFile: aiNeedsFile ?? true,
         aiNeedsDate: aiNeedsDate ?? true,
         aiOutputFormat: aiOutputFormat ?? "text",
+        aiNeedsClickup: aiNeedsClickup ?? false,
+        aiClickupListIds: aiClickupListIds ?? null,
       },
     });
     return NextResponse.json(report);

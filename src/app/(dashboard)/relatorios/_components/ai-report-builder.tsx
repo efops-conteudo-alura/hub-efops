@@ -17,6 +17,8 @@ interface AiReportBuilderProps {
   initialNeedsFile?: boolean;
   initialNeedsDate?: boolean;
   initialOutputFormat?: string;
+  initialNeedsClickup?: boolean;
+  initialClickupListIds?: string;
 }
 
 export function AiReportBuilder({
@@ -27,6 +29,8 @@ export function AiReportBuilder({
   initialNeedsFile = true,
   initialNeedsDate = true,
   initialOutputFormat = "text",
+  initialNeedsClickup = false,
+  initialClickupListIds = "",
 }: AiReportBuilderProps) {
   const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
@@ -35,6 +39,8 @@ export function AiReportBuilder({
   const [needsFile, setNeedsFile] = useState(initialNeedsFile);
   const [needsDate, setNeedsDate] = useState(initialNeedsDate);
   const [outputFormat, setOutputFormat] = useState(initialOutputFormat);
+  const [needsClickup, setNeedsClickup] = useState(initialNeedsClickup);
+  const [clickupListIds, setClickupListIds] = useState(initialClickupListIds);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isEdit = !!reportId;
@@ -61,6 +67,8 @@ export function AiReportBuilder({
           aiNeedsFile: needsFile,
           aiNeedsDate: needsDate,
           aiOutputFormat: outputFormat,
+          aiNeedsClickup: needsClickup,
+          aiClickupListIds: needsClickup ? clickupListIds.trim() || null : null,
         }),
       });
       const json = await res.json();
@@ -140,6 +148,34 @@ export function AiReportBuilder({
             onCheckedChange={setNeedsDate}
           />
         </div>
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="needs-clickup" className="cursor-pointer">Integrar com ClickUp</Label>
+            <p className="text-xs text-muted-foreground">Busca cursos em produção no ClickUp e injeta no prompt da IA</p>
+          </div>
+          <Switch
+            id="needs-clickup"
+            checked={needsClickup}
+            onCheckedChange={setNeedsClickup}
+          />
+        </div>
+
+        {needsClickup && (
+          <div className="space-y-1.5 pl-0">
+            <Label htmlFor="clickup-list-ids">IDs das listas do ClickUp <span className="text-destructive">*</span></Label>
+            <p className="text-xs text-muted-foreground">
+              Separe múltiplos IDs por vírgula. Ex: <code className="bg-muted px-1 rounded text-xs">abc123, def456</code>
+            </p>
+            <Input
+              id="clickup-list-ids"
+              value={clickupListIds}
+              onChange={(e) => setClickupListIds(e.target.value)}
+              placeholder="901234567, 901234568"
+              className="font-mono text-sm"
+            />
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <Label>Formato de saída</Label>
