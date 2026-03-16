@@ -56,6 +56,8 @@ export default async function ReportPage({
             id: r.id,
             params: r.params as Record<string, string>,
             resultado: r.resultado,
+            resultadoApresentacao: r.resultadoApresentacao,
+            gammaUrl: r.gammaUrl,
             totalRows: r.totalRows,
             createdAt: r.createdAt.toISOString(),
           }))}

@@ -19,6 +19,7 @@ interface AiReportBuilderProps {
   initialOutputFormat?: string;
   initialNeedsClickup?: boolean;
   initialClickupListIds?: string;
+  initialHasPresentation?: boolean;
 }
 
 export function AiReportBuilder({
@@ -31,6 +32,7 @@ export function AiReportBuilder({
   initialOutputFormat = "text",
   initialNeedsClickup = false,
   initialClickupListIds = "",
+  initialHasPresentation = false,
 }: AiReportBuilderProps) {
   const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
@@ -41,6 +43,7 @@ export function AiReportBuilder({
   const [outputFormat, setOutputFormat] = useState(initialOutputFormat);
   const [needsClickup, setNeedsClickup] = useState(initialNeedsClickup);
   const [clickupListIds, setClickupListIds] = useState(initialClickupListIds);
+  const [hasPresentation, setHasPresentation] = useState(initialHasPresentation);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isEdit = !!reportId;
@@ -69,6 +72,7 @@ export function AiReportBuilder({
           aiOutputFormat: outputFormat,
           aiNeedsClickup: needsClickup,
           aiClickupListIds: needsClickup ? clickupListIds.trim() || null : null,
+          aiHasPresentation: hasPresentation,
         }),
       });
       const json = await res.json();
@@ -176,6 +180,18 @@ export function AiReportBuilder({
             />
           </div>
         )}
+
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="has-presentation" className="cursor-pointer">Exportar para Gamma</Label>
+            <p className="text-xs text-muted-foreground">Gera roteiro de apresentação separável e exportável para o Gamma.app</p>
+          </div>
+          <Switch
+            id="has-presentation"
+            checked={hasPresentation}
+            onCheckedChange={setHasPresentation}
+          />
+        </div>
 
         <div className="space-y-1.5">
           <Label>Formato de saída</Label>

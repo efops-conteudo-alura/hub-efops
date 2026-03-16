@@ -18,6 +18,8 @@ export async function GET(
     id: resultado.id,
     params: resultado.params,
     resultado: resultado.resultado,
+    resultadoApresentacao: resultado.resultadoApresentacao,
+    gammaUrl: resultado.gammaUrl,
     totalRows: resultado.totalRows,
     createdAt: resultado.createdAt.toISOString(),
   });

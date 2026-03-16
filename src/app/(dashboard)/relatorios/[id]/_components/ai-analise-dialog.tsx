@@ -24,6 +24,8 @@ interface AiResultado {
   id: string;
   params: Record<string, string>;
   resultado: string;
+  resultadoApresentacao: string | null;
+  gammaUrl: string | null;
   totalRows: number | null;
   createdAt: string;
 }

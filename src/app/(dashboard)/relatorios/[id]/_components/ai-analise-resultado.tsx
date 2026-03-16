@@ -1,26 +1,49 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { marked } from "marked";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Printer } from "lucide-react";
+import { ChevronLeft, Printer, Presentation, ExternalLink, Loader2 } from "lucide-react";
 
 interface AiResultado {
   id: string;
   params: Record<string, string>;
   resultado: string;
+  resultadoApresentacao: string | null;
+  gammaUrl: string | null;
   totalRows: number | null;
   createdAt: string;
 }
 
 interface AiAnaliseResultadoProps {
   resultado: AiResultado;
+  reportId: string;
   outputFormat: string;
   onBack: () => void;
 }
 
-export function AiAnaliseResultado({ resultado, outputFormat, onBack }: AiAnaliseResultadoProps) {
+export function AiAnaliseResultado({ resultado, reportId, outputFormat, onBack }: AiAnaliseResultadoProps) {
   const html = useMemo(() => marked(resultado.resultado) as string, [resultado.resultado]);
+  const [gammaUrl, setGammaUrl] = useState<string | null>(resultado.gammaUrl);
+  const [gammaLoading, setGammaLoading] = useState(false);
+  const [gammaError, setGammaError] = useState<string | null>(null);
+
+  async function handleExportGamma() {
+    setGammaLoading(true);
+    setGammaError(null);
+    try {
+      const res = await fetch(`/api/relatorios/${reportId}/resultados/${resultado.id}/gamma`, {
+        method: "POST",
+      });
+      const json = await res.json();
+      if (!res.ok) { setGammaError(json.error ?? "Erro ao exportar para Gamma."); return; }
+      setGammaUrl(json.gammaUrl);
+    } catch {
+      setGammaError("Não foi possível conectar ao servidor.");
+    } finally {
+      setGammaLoading(false);
+    }
+  }
 
   function formatPeriod() {
     if (resultado.params.periodoInicio && resultado.params.periodoFim) {
@@ -92,12 +115,32 @@ export function AiAnaliseResultado({ resultado, outputFormat, onBack }: AiAnalis
             </p>
           </div>
         </div>
-        {(outputFormat === "pdf" || true) && (
-          <Button variant="outline" size="sm" onClick={handlePrint}>
-            <Printer size={13} className="mr-1.5" />
-            Exportar PDF
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {resultado.resultadoApresentacao && (
+            gammaUrl ? (
+              <Button variant="outline" size="sm" asChild>
+                <a href={gammaUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink size={13} className="mr-1.5" />
+                  Abrir no Gamma
+                </a>
+              </Button>
+            ) : (
+              <Button variant="outline" size="sm" onClick={handleExportGamma} disabled={gammaLoading}>
+                {gammaLoading
+                  ? <><Loader2 size={13} className="animate-spin mr-1.5" />Gerando apresentação...</>
+                  : <><Presentation size={13} className="mr-1.5" />Exportar para Gamma</>
+                }
+              </Button>
+            )
+          )}
+          {(outputFormat === "pdf" || true) && (
+            <Button variant="outline" size="sm" onClick={handlePrint}>
+              <Printer size={13} className="mr-1.5" />
+              Exportar PDF
+            </Button>
+          )}
+        </div>
+        {gammaError && <p className="text-xs text-destructive">{gammaError}</p>}
       </div>
 
       <div className="border rounded-lg p-6 bg-card">

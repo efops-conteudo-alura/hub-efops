@@ -20,6 +20,8 @@ export async function GET(
     id: r.id,
     params: r.params,
     resultado: r.resultado,
+    resultadoApresentacao: r.resultadoApresentacao,
+    gammaUrl: r.gammaUrl,
     totalRows: r.totalRows,
     createdAt: r.createdAt.toISOString(),
   })));

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BrainCircuit, Play, Trash2, Eye, FileText, Pencil } from "lucide-react";
@@ -21,6 +22,8 @@ interface AiResultado {
   id: string;
   params: Record<string, string>;
   resultado: string;
+  resultadoApresentacao: string | null;
+  gammaUrl: string | null;
   totalRows: number | null;
   createdAt: string;
 }
@@ -31,9 +34,18 @@ interface AiAnaliseViewProps {
 }
 
 export function AiAnaliseView({ report, resultados: initialResultados }: AiAnaliseViewProps) {
+  const router = useRouter();
   const [resultados, setResultados] = useState<AiResultado[]>(initialResultados);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewResultado, setViewResultado] = useState<AiResultado | null>(null);
+  const [deletingReport, setDeletingReport] = useState(false);
+
+  async function handleDeleteReport() {
+    if (!confirm(`Excluir o relatório "${report.title}" e todo o histórico de análises? Esta ação não pode ser desfeita.`)) return;
+    setDeletingReport(true);
+    await fetch(`/api/relatorios/${report.id}`, { method: "DELETE" });
+    router.push("/relatorios");
+  }
 
   function handleNewResultado(resultado: AiResultado) {
     setResultados((prev) => [resultado, ...prev]);
@@ -61,6 +73,7 @@ export function AiAnaliseView({ report, resultados: initialResultados }: AiAnali
     return (
       <AiAnaliseResultado
         resultado={viewResultado}
+        reportId={report.id}
         outputFormat={report.aiOutputFormat}
         onBack={() => setViewResultado(null)}
       />
@@ -80,12 +93,23 @@ export function AiAnaliseView({ report, resultados: initialResultados }: AiAnali
             <p className="text-muted-foreground text-sm">{report.objective}</p>
           )}
         </div>
-        <Button variant="outline" size="sm" asChild className="shrink-0">
-          <Link href={`/relatorios/${report.id}/editar`}>
-            <Pencil size={13} className="mr-1.5" />
-            Editar
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/relatorios/${report.id}/editar`}>
+              <Pencil size={13} className="mr-1.5" />
+              Editar
+            </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:text-destructive"
+            onClick={handleDeleteReport}
+            disabled={deletingReport}
+          >
+            <Trash2 size={13} />
+          </Button>
+        </div>
       </div>
 
       {resultados.length === 0 ? (

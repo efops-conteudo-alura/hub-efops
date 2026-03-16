@@ -116,18 +116,33 @@ export async function POST(
 
   const userMessage = `${periodInfo}${clickupInfo}DADOS:\n${dadosFormatados}`;
 
+  // Injetar instrução do marcador Gamma se necessário
+  const systemPrompt = report.aiHasPresentation
+    ? `${report.aiInstructions}\n\nIMPORTANTE: Antes da seção de roteiro de apresentação, insira exatamente esta linha isolada, sem nada antes ou depois dela na mesma linha:\n<!-- GAMMA_SLIDES -->`
+    : report.aiInstructions;
+
   // Chamar Claude
   const message = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 16000,
-    system: report.aiInstructions,
+    system: systemPrompt,
     messages: [{ role: "user", content: userMessage }],
   });
 
-  const resultado = message.content
+  const textoCompleto = message.content
     .filter((c) => c.type === "text")
     .map((c) => (c as { type: "text"; text: string }).text)
     .join("\n");
+
+  // Separar roteiro de apresentação do restante usando o marcador injetado
+  const GAMMA_MARKER = "<!-- GAMMA_SLIDES -->";
+  const markerIndex = textoCompleto.indexOf(GAMMA_MARKER);
+  const resultado = markerIndex !== -1
+    ? textoCompleto.slice(0, markerIndex).trimEnd()
+    : textoCompleto;
+  const resultadoApresentacao = markerIndex !== -1
+    ? textoCompleto.slice(markerIndex + GAMMA_MARKER.length).trim()
+    : null;
 
   // Salvar resultado
   const analise = await prisma.aiAnaliseResult.create({
@@ -139,6 +154,7 @@ export async function POST(
         ...(arquivoNome ? { arquivoNome } : {}),
       },
       resultado,
+      resultadoApresentacao,
       totalRows: rows.length > 0 ? rows.length : null,
     },
   });
@@ -147,6 +163,8 @@ export async function POST(
     id: analise.id,
     params: analise.params,
     resultado: analise.resultado,
+    resultadoApresentacao: analise.resultadoApresentacao,
+    gammaUrl: analise.gammaUrl,
     totalRows: analise.totalRows,
     createdAt: analise.createdAt.toISOString(),
   });

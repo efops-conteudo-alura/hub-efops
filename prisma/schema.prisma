@@ -173,6 +173,7 @@ model Report {
   aiOutputFormat   String           @default("text") // "text" | "pdf"
   aiNeedsClickup   Boolean          @default(false)
   aiClickupListIds String?          // IDs de listas separados por vírgula
+  aiHasPresentation Boolean         @default(false) // injeta marcador <!-- GAMMA_SLIDES --> no prompt
   aiResultados     AiAnaliseResult[]
 }
 
@@ -185,14 +186,16 @@ model ReportResponse {
 }
 
 model AiAnaliseResult {
-  id        String   @id @default(cuid())
-  reportId  String
-  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  params    Json     // { periodoInicio?, periodoFim?, arquivoNome? }
-  resultado String   // Markdown gerado pelo Claude
-  totalRows Int?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  reportId              String
+  report                Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  params                Json     // { periodoInicio?, periodoFim?, arquivoNome? }
+  resultado             String   // Markdown gerado pelo Claude (seções A–E)
+  resultadoApresentacao String?  // Seção F separada (roteiro para o Gamma)
+  gammaUrl              String?  // URL da apresentação gerada no Gamma
+  totalRows             Int?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 // KPIs de Conteúdo
