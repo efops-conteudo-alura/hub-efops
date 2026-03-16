@@ -252,7 +252,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [courses, sortField, sortDir, showEmBreve, showCheckpoint, activeCatalogFilters]);
+  }, [courses, sortField, sortDir, showEmBreve, showCheckpoint, activeCatalogFilters, activeSubcatFilters, filterSemSubcat]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -665,12 +665,14 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
                       {course.nome}
                       <ExternalLink size={11} className="shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </a>
-                    {course.categoria && (
-                      <span className="text-xs text-muted-foreground">{course.categoria}</span>
-                    )}
-                    {course.subcategorias && (
-                      <span className="text-xs text-muted-foreground/70">{course.subcategorias}</span>
-                    )}
+                    <div className="flex flex-col gap-0">
+                      {course.categoria && (
+                        <span className="text-xs text-muted-foreground">{course.categoria}</span>
+                      )}
+                      {course.subcategorias && (
+                        <span className="text-xs italic text-muted-foreground/50">{course.subcategorias}</span>
+                      )}
+                    </div>
                     {(course.catalogos.length > 0 || course.nome.toLowerCase().includes("em breve") || course.nome.toLowerCase().includes("checkpoint")) && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {course.catalogos.map((cat) => (
