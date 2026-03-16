@@ -74,6 +74,14 @@ export function ConfigClient() {
           <strong>Caelum BI</strong> (<code>bi.caelumalura.com.br</code>). Cole aqui o link público da
           query para que o Hub consiga acessá-la.
         </p>
+        <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-3 flex gap-2 text-sm text-blue-800 dark:text-blue-300">
+          <AlertCircle size={16} className="shrink-0 mt-0.5" />
+          <span>
+            Caso a query tenha sido editada, você deverá rodá-la novamente no Caelum BI antes de clicar
+            em <strong>Sync BI</strong>, para atualizar o cache e buscar os dados atualizados. Abra a
+            query no Caelum BI e clique em <strong>"Executar agora"</strong>.
+          </span>
+        </div>
         <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 flex gap-2 text-sm text-amber-800 dark:text-amber-300">
           <AlertCircle size={16} className="shrink-0 mt-0.5" />
           <span>
