@@ -78,7 +78,7 @@ export async function POST(
       numCards: 8,
       textOptions: {
         amount: "medium",
-        language: "pt-BR",
+        language: "pt-br",
       },
       imageOptions: {
         source: "pictographic",
