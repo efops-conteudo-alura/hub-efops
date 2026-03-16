@@ -60,7 +60,7 @@ export async function POST() {
 
   // 1. Parse tudo em memória (zero DB)
   // [0]=aluraId [1]=slug [2]=nome [3]=dataPublicacao [4]=statusPub
-  // [5]=statusCriacao [6]=tipoContrato [7]=isExclusive [8]=catalogos
+  // [5]=statusCriacao [6]=tipoContrato [7]=isExclusive [8]=catalogos [9]=subcategorias
   const parsed = rows.flatMap((row) => {
     const slug = row[1];
     if (!slug) return [];
@@ -79,6 +79,7 @@ export async function POST() {
         catalogos,
         isExclusive: row[7] === "1" || row[7] === "true",
         dataPublicacao: row[3] ? new Date(row[3]) : null,
+        subcategorias: row[9] || null,
       },
     }];
   });
