@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
       cargaHoraria: true,
       dataPublicacao: true,
       catalogos: true,
+      subcategorias: true,
       isExclusive: true,
       tipo: true,
     },

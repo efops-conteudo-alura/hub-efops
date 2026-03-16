@@ -14,6 +14,7 @@ interface Course {
   slug: string;
   nome: string;
   categoria: string | null;
+  subcategorias: string | null;
   instrutores: string[];
   instrutor: string | null;
   cargaHoraria: number | null;
@@ -39,6 +40,20 @@ function parseCatalogFilters(searchParams: URLSearchParams): Record<string, Cata
   return result;
 }
 
+function parseSubcatFilters(searchParams: URLSearchParams): Record<string, CatalogFilterValue> {
+  const result: Record<string, CatalogFilterValue> = {};
+  const inc = searchParams.get("s_inc");
+  const exc = searchParams.get("s_exc");
+  if (inc) inc.split("|").filter(Boolean).forEach((c) => { result[c] = "include"; });
+  if (exc) exc.split("|").filter(Boolean).forEach((c) => { result[c] = "exclude"; });
+  return result;
+}
+
+function getCourseSubcats(course: { subcategorias: string | null }): string[] {
+  if (!course.subcategorias) return [];
+  return course.subcategorias.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   const searchParams = useSearchParams();
   const searchParamsRef = useRef(searchParams);
@@ -59,6 +74,13 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   const [catalogFilters, setCatalogFilters] = useState<Record<string, CatalogFilterValue>>(
     () => parseCatalogFilters(searchParams)
   );
+  const [subcatFilters, setSubcatFilters] = useState<Record<string, CatalogFilterValue>>(
+    () => parseSubcatFilters(searchParams)
+  );
+  const [filterSemSubcat, setFilterSemSubcat] = useState<CatalogFilterValue | null>(() => {
+    const v = searchParams.get("s_none");
+    return v === "include" || v === "exclude" ? v : null;
+  });
   const [sortField, setSortField] = useState<"aluraId" | "nome" | "instrutores" | "dataPublicacao">(() => {
     const sf = searchParams.get("c_sf");
     return sf === "nome" || sf === "instrutores" || sf === "aluraId" ? sf : "dataPublicacao";
@@ -84,9 +106,15 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     excludes.length > 0 ? params.set("c_exc", excludes.join(",")) : params.delete("c_exc");
     params.delete("c_cats"); // limpa param legado
 
+    const sincInc = Object.entries(subcatFilters).filter(([, v]) => v === "include").map(([k]) => k);
+    const sincExc = Object.entries(subcatFilters).filter(([, v]) => v === "exclude").map(([k]) => k);
+    sincInc.length > 0 ? params.set("s_inc", sincInc.join("|")) : params.delete("s_inc");
+    sincExc.length > 0 ? params.set("s_exc", sincExc.join("|")) : params.delete("s_exc");
+    filterSemSubcat ? params.set("s_none", filterSemSubcat) : params.delete("s_none");
+
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthFrom, monthTo, showEmBreve, showCheckpoint, catalogFilters, sortField, sortDir, router, pathname]);
+  }, [monthFrom, monthTo, showEmBreve, showCheckpoint, catalogFilters, subcatFilters, filterSemSubcat, sortField, sortDir, router, pathname]);
 
   function toggleCatalogFilter(cat: string, value: CatalogFilterValue) {
     setCatalogFilters((prev) => {
@@ -98,6 +126,22 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
       }
       return next;
     });
+  }
+
+  function toggleSubcatFilter(cat: string, value: CatalogFilterValue) {
+    setSubcatFilters((prev) => {
+      const next = { ...prev };
+      if (next[cat] === value) {
+        delete next[cat];
+      } else {
+        next[cat] = value;
+      }
+      return next;
+    });
+  }
+
+  function toggleSemSubcat(value: CatalogFilterValue) {
+    setFilterSemSubcat((prev) => (prev === value ? null : value));
   }
 
   function handleSort(field: typeof sortField) {
@@ -120,6 +164,11 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     [courses]
   );
 
+  const availableSubcats = useMemo(
+    () => [...new Set(courses.flatMap((c) => getCourseSubcats(c)))].sort(),
+    [courses]
+  );
+
   const activeCatalogFilters = useMemo(
     () => Object.entries(catalogFilters).filter(([cat]) => availableCatalogs.includes(cat)),
     [catalogFilters, availableCatalogs]
@@ -135,7 +184,25 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     return `${activeCatalogFilters.length} filtros`;
   }, [activeCatalogFilters]);
 
-  const hasFilters = (monthFrom && monthFrom !== "2025-01") || monthTo || !showEmBreve || !showCheckpoint || activeCatalogFilters.length > 0;
+  const activeSubcatFilters = useMemo(
+    () => Object.entries(subcatFilters).filter(([cat]) => availableSubcats.includes(cat)),
+    [subcatFilters, availableSubcats]
+  );
+
+  const subcatTriggerLabel = useMemo(() => {
+    const total = activeSubcatFilters.length + (filterSemSubcat ? 1 : 0);
+    if (total === 0) return "Subcategorias";
+    if (total <= 2) {
+      const parts = activeSubcatFilters.map(([k, v]) => `${k}: ${v === "include" ? "é" : "não é"}`);
+      if (filterSemSubcat) parts.push(`sem subcat: ${filterSemSubcat === "include" ? "é" : "não é"}`);
+      return parts.join(" · ");
+    }
+    return `${total} filtros`;
+  }, [activeSubcatFilters, filterSemSubcat]);
+
+  const hasSubcatFilters = activeSubcatFilters.length > 0 || filterSemSubcat !== null;
+
+  const hasFilters = (monthFrom && monthFrom !== "2025-01") || monthTo || !showEmBreve || !showCheckpoint || activeCatalogFilters.length > 0 || hasSubcatFilters;
 
   const sortedCourses = useMemo(() => {
     let filtered = courses;
@@ -155,6 +222,21 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     }
     if (excludes.length > 0) {
       filtered = filtered.filter((c) => !excludes.some((cat) => c.catalogos.includes(cat)));
+    }
+
+    const subcatIncludes = activeSubcatFilters.filter(([, v]) => v === "include").map(([k]) => k);
+    const subcatExcludes = activeSubcatFilters.filter(([, v]) => v === "exclude").map(([k]) => k);
+
+    if (filterSemSubcat === "include") {
+      filtered = filtered.filter((c) => getCourseSubcats(c).length === 0);
+    } else if (filterSemSubcat === "exclude") {
+      filtered = filtered.filter((c) => getCourseSubcats(c).length > 0);
+    }
+    if (subcatIncludes.length > 0) {
+      filtered = filtered.filter((c) => subcatIncludes.some((s) => getCourseSubcats(c).includes(s)));
+    }
+    if (subcatExcludes.length > 0) {
+      filtered = filtered.filter((c) => !subcatExcludes.some((s) => getCourseSubcats(c).includes(s)));
     }
 
     return [...filtered].sort((a, b) => {
@@ -331,6 +413,108 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
           </Popover>
         )}
 
+        {availableSubcats.length > 0 && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className={cn(
+                "flex items-center gap-1.5 h-8 px-3 rounded-md border text-xs transition-colors",
+                hasSubcatFilters
+                  ? "bg-primary/10 text-primary border-primary/30 dark:bg-primary/20"
+                  : "bg-transparent text-muted-foreground border-border hover:border-foreground"
+              )}>
+                <span className="max-w-[200px] truncate">{subcatTriggerLabel}</span>
+                <ChevronDown size={12} className="shrink-0" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-0" align="start">
+              <div className="px-3 py-2 border-b">
+                <p className="text-xs font-medium text-muted-foreground">Filtrar por subcategoria</p>
+              </div>
+              <div className="px-2 py-1.5">
+                <div className="flex items-center px-2 pb-1">
+                  <span className="flex-1 text-[10px] text-muted-foreground/60 uppercase tracking-wide">Subcategoria</span>
+                  <div className="flex items-center gap-1">
+                    <span className="w-14 text-center text-[10px] text-muted-foreground/60 uppercase tracking-wide">É</span>
+                    <span className="w-14 text-center text-[10px] text-muted-foreground/60 uppercase tracking-wide">Não é</span>
+                  </div>
+                </div>
+                <div className="max-h-64 overflow-y-auto space-y-0.5">
+                  {/* Opção especial: sem subcategoria */}
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted/50 transition-colors">
+                    <span className="flex-1 text-xs truncate text-muted-foreground italic">sem subcategoria</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => toggleSemSubcat("include")}
+                        className={cn(
+                          "w-14 py-0.5 rounded text-[10px] font-medium border transition-all",
+                          filterSemSubcat === "include"
+                            ? "bg-emerald-500 text-white border-emerald-500 dark:bg-emerald-600 dark:border-emerald-600"
+                            : "bg-transparent text-muted-foreground border-border hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                        )}
+                      >
+                        É
+                      </button>
+                      <button
+                        onClick={() => toggleSemSubcat("exclude")}
+                        className={cn(
+                          "w-14 py-0.5 rounded text-[10px] font-medium border transition-all",
+                          filterSemSubcat === "exclude"
+                            ? "bg-rose-500 text-white border-rose-500 dark:bg-rose-600 dark:border-rose-600"
+                            : "bg-transparent text-muted-foreground border-border hover:border-rose-400 hover:text-rose-600 dark:hover:text-rose-400"
+                        )}
+                      >
+                        Não é
+                      </button>
+                    </div>
+                  </div>
+                  {availableSubcats.map((cat) => {
+                    const current = subcatFilters[cat];
+                    return (
+                      <div key={cat} className="flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted/50 transition-colors">
+                        <span className="flex-1 text-xs truncate text-foreground">{cat}</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => toggleSubcatFilter(cat, "include")}
+                            className={cn(
+                              "w-14 py-0.5 rounded text-[10px] font-medium border transition-all",
+                              current === "include"
+                                ? "bg-emerald-500 text-white border-emerald-500 dark:bg-emerald-600 dark:border-emerald-600"
+                                : "bg-transparent text-muted-foreground border-border hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                            )}
+                          >
+                            É
+                          </button>
+                          <button
+                            onClick={() => toggleSubcatFilter(cat, "exclude")}
+                            className={cn(
+                              "w-14 py-0.5 rounded text-[10px] font-medium border transition-all",
+                              current === "exclude"
+                                ? "bg-rose-500 text-white border-rose-500 dark:bg-rose-600 dark:border-rose-600"
+                                : "bg-transparent text-muted-foreground border-border hover:border-rose-400 hover:text-rose-600 dark:hover:text-rose-400"
+                            )}
+                          >
+                            Não é
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              {hasSubcatFilters && (
+                <div className="px-3 py-2 border-t">
+                  <button
+                    onClick={() => { setSubcatFilters({}); setFilterSemSubcat(null); }}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Limpar filtros de subcategoria
+                  </button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+        )}
+
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={() => {
             setMonthFrom("");
@@ -338,6 +522,8 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
             setShowEmBreve(true);
             setShowCheckpoint(true);
             setCatalogFilters({});
+            setSubcatFilters({});
+            setFilterSemSubcat(null);
           }}>
             Limpar tudo
           </Button>
@@ -356,17 +542,19 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
                 <RefreshCw size={14} className={cn("mr-2", syncing && "animate-spin")} />
                 {syncing ? "Sincronizando..." : "Sync BI"}
               </Button>
-              <a
-                href="https://bi.caelumalura.com.br/query?id=2722"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                title="Abrir query no Caelum BI"
-              >
-                <ExternalLink size={13} />
-                Caelum BI
-              </a>
-              {syncResult && <p className="text-xs text-muted-foreground">{syncResult}</p>}
+              <div className="flex flex-col items-end gap-0.5">
+                <a
+                  href="https://bi.caelumalura.com.br/query?id=2722"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  title="Abrir query no Caelum BI"
+                >
+                  <ExternalLink size={13} />
+                  Caelum BI
+                </a>
+                {syncResult && <p className="text-[10px] text-muted-foreground/70">{syncResult}</p>}
+              </div>
             </>
           )}
         </div>
@@ -479,6 +667,9 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
                     </a>
                     {course.categoria && (
                       <span className="text-xs text-muted-foreground">{course.categoria}</span>
+                    )}
+                    {course.subcategorias && (
+                      <span className="text-xs text-muted-foreground/70">{course.subcategorias}</span>
                     )}
                     {(course.catalogos.length > 0 || course.nome.toLowerCase().includes("em breve") || course.nome.toLowerCase().includes("checkpoint")) && (
                       <div className="flex flex-wrap gap-1 mt-1">
