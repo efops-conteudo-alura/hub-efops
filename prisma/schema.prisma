@@ -151,15 +151,27 @@ enum DocumentationStatus {
   PUBLISHED
 }
 
+enum ReportType {
+  FORM
+  AI_ANALYSIS
+}
+
 model Report {
-  id        String           @id @default(cuid())
-  title     String
-  objective String?
-  fields    Json             // ReportField[]
-  token     String           @unique @default(cuid())
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  responses ReportResponse[]
+  id             String           @id @default(cuid())
+  title          String
+  objective      String?
+  fields         Json             // ReportField[] (usado apenas no tipo FORM)
+  token          String           @unique @default(cuid())
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  responses      ReportResponse[]
+  // campos de análise de IA
+  type           ReportType       @default(FORM)
+  aiInstructions String?          // system prompt para o Claude
+  aiNeedsFile    Boolean          @default(false)
+  aiNeedsDate    Boolean          @default(false)
+  aiOutputFormat String           @default("text") // "text" | "pdf"
+  aiResultados   AiAnaliseResult[]
 }
 
 model ReportResponse {
@@ -168,6 +180,17 @@ model ReportResponse {
   report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
   data      Json     // Record<fieldId, string>
   createdAt DateTime @default(now())
+}
+
+model AiAnaliseResult {
+  id        String   @id @default(cuid())
+  reportId  String
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  params    Json     // { periodoInicio?, periodoFim?, arquivoNome? }
+  resultado String   // Markdown gerado pelo Claude
+  totalRows Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // KPIs de Conteúdo

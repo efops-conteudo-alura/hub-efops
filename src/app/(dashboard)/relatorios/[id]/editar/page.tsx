@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { ReportBuilder } from "../../_components/report-builder";
+import { AiReportBuilder } from "../../_components/ai-report-builder";
 
 interface ReportField {
   id: string;
@@ -33,16 +34,33 @@ export default async function EditarRelatorioPage({
           <ChevronLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">Editar formulário</h1>
-          <p className="text-muted-foreground text-sm">O link público não será alterado</p>
+          <h1 className="text-2xl font-bold">
+            {report.type === "AI_ANALYSIS" ? "Editar análise de IA" : "Editar formulário"}
+          </h1>
+          {report.type !== "AI_ANALYSIS" && (
+            <p className="text-muted-foreground text-sm">O link público não será alterado</p>
+          )}
         </div>
       </div>
-      <ReportBuilder
-        reportId={id}
-        initialTitle={report.title}
-        initialObjective={report.objective ?? ""}
-        initialFields={report.fields as unknown as ReportField[]}
-      />
+
+      {report.type === "AI_ANALYSIS" ? (
+        <AiReportBuilder
+          reportId={id}
+          initialTitle={report.title}
+          initialObjective={report.objective ?? ""}
+          initialInstructions={report.aiInstructions ?? ""}
+          initialNeedsFile={report.aiNeedsFile}
+          initialNeedsDate={report.aiNeedsDate}
+          initialOutputFormat={report.aiOutputFormat}
+        />
+      ) : (
+        <ReportBuilder
+          reportId={id}
+          initialTitle={report.title}
+          initialObjective={report.objective ?? ""}
+          initialFields={report.fields as unknown as ReportField[]}
+        />
+      )}
     </div>
   );
 }

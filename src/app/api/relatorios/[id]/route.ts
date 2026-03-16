@@ -34,15 +34,39 @@ export async function PUT(
 
   const { id } = await params;
   const body = await request.json();
-  const { title, objective, fields } = body as {
+  const { type, title, objective, fields, aiInstructions, aiNeedsFile, aiNeedsDate, aiOutputFormat } = body as {
+    type?: string;
     title?: string;
     objective?: string;
     fields?: unknown[];
+    aiInstructions?: string;
+    aiNeedsFile?: boolean;
+    aiNeedsDate?: boolean;
+    aiOutputFormat?: string;
   };
 
   if (!title?.trim()) {
     return NextResponse.json({ error: "Título obrigatório" }, { status: 400 });
   }
+
+  if (type === "AI_ANALYSIS") {
+    if (!aiInstructions?.trim()) {
+      return NextResponse.json({ error: "Instruções para a IA são obrigatórias" }, { status: 400 });
+    }
+    const report = await prisma.report.update({
+      where: { id },
+      data: {
+        title: title.trim(),
+        objective: objective?.trim() || null,
+        aiInstructions: aiInstructions.trim(),
+        aiNeedsFile: aiNeedsFile ?? true,
+        aiNeedsDate: aiNeedsDate ?? true,
+        aiOutputFormat: aiOutputFormat ?? "text",
+      },
+    });
+    return NextResponse.json(report);
+  }
+
   if (!Array.isArray(fields) || fields.length === 0) {
     return NextResponse.json({ error: "Adicione ao menos um campo" }, { status: 400 });
   }

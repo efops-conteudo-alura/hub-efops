@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { ReportView } from "../_components/report-view";
+import { AiAnaliseView } from "./_components/ai-analise-view";
 
 interface ReportField {
   id: string;
@@ -25,7 +26,10 @@ export default async function ReportPage({
   const { id } = await params;
   const report = await prisma.report.findUnique({
     where: { id },
-    include: { responses: { orderBy: { createdAt: "asc" } } },
+    include: {
+      responses: { orderBy: { createdAt: "asc" } },
+      aiResultados: { orderBy: { createdAt: "desc" } },
+    },
   });
 
   if (!report) notFound();
@@ -37,20 +41,41 @@ export default async function ReportPage({
           <ChevronLeft size={20} />
         </Link>
       </div>
-      <ReportView
-        report={{
-          id: report.id,
-          title: report.title,
-          objective: report.objective,
-          fields: report.fields as unknown as ReportField[],
-          token: report.token,
-          responses: report.responses.map((r) => ({
+
+      {report.type === "AI_ANALYSIS" ? (
+        <AiAnaliseView
+          report={{
+            id: report.id,
+            title: report.title,
+            objective: report.objective,
+            aiNeedsFile: report.aiNeedsFile,
+            aiNeedsDate: report.aiNeedsDate,
+            aiOutputFormat: report.aiOutputFormat,
+          }}
+          resultados={report.aiResultados.map((r) => ({
             id: r.id,
-            data: r.data as unknown as Record<string, string>,
+            params: r.params as Record<string, string>,
+            resultado: r.resultado,
+            totalRows: r.totalRows,
             createdAt: r.createdAt.toISOString(),
-          })),
-        }}
-      />
+          }))}
+        />
+      ) : (
+        <ReportView
+          report={{
+            id: report.id,
+            title: report.title,
+            objective: report.objective,
+            fields: report.fields as unknown as ReportField[],
+            token: report.token,
+            responses: report.responses.map((r) => ({
+              id: r.id,
+              data: r.data as unknown as Record<string, string>,
+              createdAt: r.createdAt.toISOString(),
+            })),
+          }}
+        />
+      )}
     </div>
   );
 }

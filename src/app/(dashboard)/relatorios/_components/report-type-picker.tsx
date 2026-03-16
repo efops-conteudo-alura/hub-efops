@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TableProperties } from "lucide-react";
+import { TableProperties, BrainCircuit } from "lucide-react";
 
 const TYPES = [
   {
@@ -12,6 +12,15 @@ const TYPES = [
     description: "Crie campos personalizados e compartilhe um formulário de coleta. As respostas são organizadas em tabela exportável.",
     icon: TableProperties,
     available: true,
+    href: "/relatorios/novo/planilha",
+  },
+  {
+    key: "ia",
+    label: "Análise de IA",
+    description: "Configure instruções para o Claude analisar dados de uma planilha e gerar relatórios executivos automaticamente.",
+    icon: BrainCircuit,
+    available: true,
+    href: "/relatorios/novo/ia",
   },
   {
     key: "grafico",
@@ -19,6 +28,7 @@ const TYPES = [
     description: "Visualize dados em gráficos interativos com filtros por período.",
     icon: TableProperties,
     available: false,
+    href: "",
   },
 ];
 
@@ -37,7 +47,7 @@ export function ReportTypePicker() {
                 ? "cursor-pointer hover:border-primary hover:shadow-sm"
                 : "opacity-50 cursor-not-allowed"
             }`}
-            onClick={() => type.available && router.push(`/relatorios/novo/planilha`)}
+            onClick={() => type.available && router.push(type.href)}
           >
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
