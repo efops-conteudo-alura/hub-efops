@@ -10,9 +10,13 @@ async function getConfigValue(key: string): Promise<string> {
   return process.env[key] ?? "";
 }
 
-// Caelum BI retorna linhas como arrays de valores (não objetos)
-// Ordem: [aluraId, slug, nome, dataPublicacao, statusPub, statusCriacao, tipoContrato, isExclusive, catalogos]
-type BiRow = string[];
+// Caelum BI retorna linhas como arrays ou objetos com chaves nomeadas
+type BiRow = string[] | Record<string, string>;
+
+function col(row: BiRow, index: number, key: string): string {
+  if (Array.isArray(row)) return row[index] ?? "";
+  return row[key] ?? row[index] ?? "";
+}
 
 export async function POST() {
   const session = await getServerSession(authOptions);
@@ -62,24 +66,25 @@ export async function POST() {
   // [0]=aluraId [1]=slug [2]=nome [3]=dataPublicacao [4]=statusPub
   // [5]=statusCriacao [6]=tipoContrato [7]=isExclusive [8]=catalogos [9]=subcategorias
   const parsed = rows.flatMap((row) => {
-    const slug = row[1];
+    const slug = col(row, 1, "slug");
     if (!slug) return [];
-    const catalogos = (row[8] ?? "")
+    const catalogos = (col(row, 8, "catalogos") ?? "")
       .split(", ")
       .map((c) => c.trim())
       .filter((c) => c && !c.toLowerCase().includes("teste") && !c.toLowerCase().includes("trial"));
+    const subcategorias = col(row, 9, "subcategorias") || null;
     return [{
       slug,
       data: {
-        nome: row[2] || slug,
-        aluraId: row[0] ? Number(row[0]) : null,
-        statusPub: row[4] || null,
-        statusCriacao: row[5] || null,
-        tipoContrato: row[6] || null,
+        nome: col(row, 2, "nome") || slug,
+        aluraId: col(row, 0, "aluraId") ? Number(col(row, 0, "aluraId")) : null,
+        statusPub: col(row, 4, "statusPub") || null,
+        statusCriacao: col(row, 5, "statusCriacao") || null,
+        tipoContrato: col(row, 6, "tipoContrato") || null,
         catalogos,
-        isExclusive: row[7] === "1" || row[7] === "true",
-        dataPublicacao: row[3] ? new Date(row[3]) : null,
-        subcategorias: row[9] || null,
+        isExclusive: col(row, 7, "isExclusive") === "1" || col(row, 7, "isExclusive") === "true",
+        dataPublicacao: col(row, 3, "dataPublicacao") ? new Date(col(row, 3, "dataPublicacao")) : null,
+        subcategorias,
       },
     }];
   });
