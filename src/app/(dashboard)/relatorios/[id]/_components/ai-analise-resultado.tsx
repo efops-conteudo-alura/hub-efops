@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { marked } from "marked";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Printer, Presentation, ExternalLink, Loader2, Link2 } from "lucide-react";
+import { ChevronLeft, Printer, Presentation, ExternalLink, Loader2, Link2, Pencil, Check, X } from "lucide-react";
 
 interface AiResultado {
   id: string;
@@ -25,11 +25,15 @@ interface AiAnaliseResultadoProps {
 
 export function AiAnaliseResultado({ resultado, reportId, outputFormat, onBack }: AiAnaliseResultadoProps) {
   const router = useRouter();
-  const html = useMemo(() => marked(resultado.resultado) as string, [resultado.resultado]);
+  const [currentResultado, setCurrentResultado] = useState(resultado.resultado);
+  const html = useMemo(() => marked(currentResultado) as string, [currentResultado]);
   const [gammaUrl, setGammaUrl] = useState<string | null>(resultado.gammaUrl);
   const [gammaLoading, setGammaLoading] = useState(false);
   const [gammaError, setGammaError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(resultado.resultado);
+  const [saving, setSaving] = useState(false);
 
   function handleBack() {
     if (onBack) {
@@ -44,6 +48,29 @@ export function AiAnaliseResultado({ resultado, reportId, outputFormat, onBack }
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  function handleStartEdit() {
+    setEditText(currentResultado);
+    setEditing(true);
+  }
+
+  function handleCancelEdit() {
+    setEditing(false);
+  }
+
+  async function handleSaveEdit() {
+    setSaving(true);
+    const res = await fetch(`/api/relatorios/${reportId}/resultados/${resultado.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resultado: editText }),
+    });
+    if (res.ok) {
+      setCurrentResultado(editText);
+      setEditing(false);
+    }
+    setSaving(false);
   }
 
   async function handleExportGamma() {
@@ -134,11 +161,28 @@ export function AiAnaliseResultado({ resultado, reportId, outputFormat, onBack }
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={handleCopyLink}>
-            <Link2 size={13} className="mr-1.5" />
-            {copied ? "Copiado!" : "Copiar link"}
-          </Button>
-          {resultado.resultadoApresentacao && (
+          {editing ? (
+            <>
+              <Button variant="ghost" size="sm" onClick={handleCancelEdit} disabled={saving}>
+                <X size={13} className="mr-1.5" /> Cancelar
+              </Button>
+              <Button size="sm" onClick={handleSaveEdit} disabled={saving}>
+                {saving ? <Loader2 size={13} className="animate-spin mr-1.5" /> : <Check size={13} className="mr-1.5" />}
+                Salvar
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" onClick={handleStartEdit}>
+                <Pencil size={13} className="mr-1.5" /> Editar
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleCopyLink}>
+                <Link2 size={13} className="mr-1.5" />
+                {copied ? "Copiado!" : "Copiar link"}
+              </Button>
+            </>
+          )}
+          {!editing && resultado.resultadoApresentacao && (
             gammaUrl ? (
               <Button variant="outline" size="sm" asChild>
                 <a href={gammaUrl} target="_blank" rel="noopener noreferrer">
@@ -155,7 +199,7 @@ export function AiAnaliseResultado({ resultado, reportId, outputFormat, onBack }
               </Button>
             )
           )}
-          {(outputFormat === "pdf" || true) && (
+          {!editing && (
             <Button variant="outline" size="sm" onClick={handlePrint}>
               <Printer size={13} className="mr-1.5" />
               Exportar PDF
@@ -165,12 +209,20 @@ export function AiAnaliseResultado({ resultado, reportId, outputFormat, onBack }
         {gammaError && <p className="text-xs text-destructive">{gammaError}</p>}
       </div>
 
-      <div className="border rounded-lg p-6 bg-card">
-        <div
-          className="prose prose-sm dark:prose-invert max-w-none"
-          dangerouslySetInnerHTML={{ __html: html }}
+      {editing ? (
+        <textarea
+          className="w-full min-h-[60vh] border rounded-lg p-6 bg-card font-mono text-sm resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
         />
-      </div>
+      ) : (
+        <div className="border rounded-lg p-6 bg-card">
+          <div
+            className="prose prose-sm dark:prose-invert max-w-none"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        </div>
+      )}
     </div>
   );
 }

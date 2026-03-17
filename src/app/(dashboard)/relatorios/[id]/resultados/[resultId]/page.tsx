@@ -2,8 +2,6 @@ import { redirect, notFound } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { ChevronLeft } from "lucide-react";
-import Link from "next/link";
 import { AiAnaliseResultado } from "../../_components/ai-analise-resultado";
 
 export default async function ResultadoPage({
@@ -28,11 +26,6 @@ export default async function ResultadoPage({
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-2">
-      <div className="flex items-center gap-2 mb-4">
-        <Link href={`/relatorios/${id}`} className="text-muted-foreground hover:text-foreground transition-colors">
-          <ChevronLeft size={20} />
-        </Link>
-      </div>
       <AiAnaliseResultado
         resultado={{
           id: resultado.id,

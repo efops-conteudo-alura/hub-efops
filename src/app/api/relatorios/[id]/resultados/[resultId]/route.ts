@@ -25,6 +25,28 @@ export async function GET(
   });
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; resultId: string }> }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { resultId } = await params;
+  const { resultado } = await request.json();
+
+  if (typeof resultado !== "string" || !resultado.trim()) {
+    return NextResponse.json({ error: "Conteúdo inválido" }, { status: 400 });
+  }
+
+  const updated = await prisma.aiAnaliseResult.update({
+    where: { id: resultId },
+    data: { resultado },
+  });
+
+  return NextResponse.json({ resultado: updated.resultado });
+}
+
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string; resultId: string }> }
