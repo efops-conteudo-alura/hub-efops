@@ -63,8 +63,14 @@ export async function POST() {
   }
 
   // DEBUG TEMPORÁRIO — remover após diagnóstico
-  console.log("[sync-admin] Primeira row:", JSON.stringify(rows[0]));
   console.log("[sync-admin] Total rows:", rows.length);
+  const r0 = rows[0];
+  if (Array.isArray(r0)) {
+    r0.forEach((v, i) => console.log(`[sync-admin] col[${i}]:`, JSON.stringify(v)?.slice(0, 80)));
+  } else {
+    console.log("[sync-admin] row0 keys:", Object.keys(r0 as object));
+    console.log("[sync-admin] row0:", JSON.stringify(r0)?.slice(0, 500));
+  }
 
   // 1. Parse tudo em memória (zero DB)
   // [0]=aluraId  [1]=slug  [2]=nome  [3]=dataPublicacao  [4]=statusPub
