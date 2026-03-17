@@ -27,14 +27,14 @@ interface SidebarProps {
 // Itens principais — Dashboard e Usuários ficam sempre no final via bottomItems
 const mainNavItems = [
   { href: "/home", label: "Home", icon: House },
-  { href: "/licencas", label: "Licenças", icon: Key },
-  { href: "/automacoes", label: "Automações & Agentes", icon: Bot },
-  { href: "/processos", label: "Processos & Fluxos", icon: GitBranch },
-  { href: "/publicacoes", label: "Publicações", icon: BookMarked },
-  { href: "/documentacoes", label: "Documentações", icon: BookOpen },
-  { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
-  { href: "/gastos", label: "Gastos Externos", icon: Receipt },
   { href: "/kpis", label: "KPIs", icon: TrendingUp },
+  { href: "/publicacoes", label: "Publicações", icon: BookMarked },
+  { href: "/gastos", label: "Gastos Externos", icon: Receipt },
+  { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
+  { href: "/processos", label: "Processos & Fluxos", icon: GitBranch },
+  { href: "/documentacoes", label: "Documentações", icon: BookOpen },
+  { href: "/automacoes", label: "Automações & Agentes", icon: Bot },
+  { href: "/licencas", label: "Licenças", icon: Key },
 ];
 
 const bottomNavItems = [
