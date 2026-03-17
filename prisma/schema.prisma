@@ -254,28 +254,33 @@ model SystemConfig {
 }
 
 model AluraCourse {
-  id              String    @id @default(cuid())
-  slug            String    @unique
-  nome            String
-  metadescription String?
-  categoria       String?
-  subcategoria    String?
-  instrutores     String[]
-  cargaHoraria    Int?
-  dataPublicacao  DateTime?
+  id                   String    @id @default(cuid())
+  slug                 String    @unique
+  nome                 String
+  metadescription      String?
+  categoria            String?
+  subcategoria         String?
+  instrutores          String[]
+  cargaHoraria         Int?
+  dataPublicacao       DateTime?
   // Campos do admin
-  aluraId         Int?
-  instrutor       String?
-  nivel           String?
-  statusPub       String?
-  statusCriacao   String?
-  tipoContrato    String?
-  tipo            String?
-  catalogos       String[]
-  subcategorias   String?
-  isExclusive     Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  aluraId              Int?
+  instrutor            String?
+  nivel                String?
+  statusPub            String?
+  statusCriacao        String?
+  tipoContrato         String?
+  tipo                 String?
+  catalogos            String[]
+  subcategorias        String?
+  isExclusive          Boolean   @default(false)
+  // Campos enriquecidos (módulo futuro)
+  ementa               String?
+  finishingAction      String?
+  targetPublic         String?
+  highlightedInformation String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 }
 
 model AluraArtigo {

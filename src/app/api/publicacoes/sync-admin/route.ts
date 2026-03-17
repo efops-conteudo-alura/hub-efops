@@ -63,18 +63,21 @@ export async function POST() {
   }
 
   // 1. Parse tudo em memória (zero DB)
-  // [0]=aluraId [1]=slug [2]=nome [3]=dataPublicacao [4]=statusPub
-  // [5]=statusCriacao [6]=tipoContrato [7]=isExclusive [8]=catalogos [9]=subcategorias [10]=categoria [11]=instrutores
+  // [0]=aluraId  [1]=slug  [2]=nome  [3]=dataPublicacao  [4]=statusPub
+  // [5]=statusCriacao  [6]=tipoContrato  [7]=isExclusive
+  // [8]=metadescricao  [9]=ementa  [10]=cargaHoraria
+  // [11]=facaEsseCursoE  [12]=publicoAlvo  [13]=informacaoDestaque
+  // [14]=catalogos  [15]=subcategorias  [16]=categoria  [17]=instrutores
   const parsed = rows.flatMap((row) => {
     const slug = col(row, 1, "slug");
     if (!slug) return [];
-    const catalogos = (col(row, 8, "catalogos") ?? "")
+    const catalogos = (col(row, 14, "catalogos") ?? "")
       .split(", ")
       .map((c) => c.trim())
       .filter((c) => c && !c.toLowerCase().includes("teste") && !c.toLowerCase().includes("trial"));
-    const subcategorias = col(row, 9, "subcategorias") || null;
-    const categoria = col(row, 10, "categoria") || null;
-    const instrutores = (col(row, 11, "instrutores") || "")
+    const subcategorias = col(row, 15, "subcategorias") || null;
+    const categoria = col(row, 16, "categoria") || null;
+    const instrutores = (col(row, 17, "instrutores") || "")
       .split(", ")
       .map((i) => i.trim())
       .filter(Boolean);
@@ -86,9 +89,15 @@ export async function POST() {
         statusPub: col(row, 4, "statusPub") || null,
         statusCriacao: col(row, 5, "statusCriacao") || null,
         tipoContrato: col(row, 6, "tipoContrato") || null,
-        catalogos,
         isExclusive: col(row, 7, "isExclusive") === "1" || col(row, 7, "isExclusive") === "true",
         dataPublicacao: col(row, 3, "dataPublicacao") ? new Date(col(row, 3, "dataPublicacao")) : null,
+        metadescription: col(row, 8, "metadescricao") || null,
+        ementa: col(row, 9, "ementa") || null,
+        cargaHoraria: col(row, 10, "cargaHoraria") ? Number(col(row, 10, "cargaHoraria")) : null,
+        finishingAction: col(row, 11, "facaEsseCursoE") || null,
+        targetPublic: col(row, 12, "publicoAlvo") || null,
+        highlightedInformation: col(row, 13, "informacaoDestaque") || null,
+        catalogos,
         subcategorias,
         categoria,
         instrutores,
