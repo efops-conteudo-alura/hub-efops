@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { marked } from "marked";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Printer, Presentation, ExternalLink, Loader2 } from "lucide-react";
+import { ChevronLeft, Printer, Presentation, ExternalLink, Loader2, Link2 } from "lucide-react";
 
 interface AiResultado {
   id: string;
@@ -19,14 +20,31 @@ interface AiAnaliseResultadoProps {
   resultado: AiResultado;
   reportId: string;
   outputFormat: string;
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export function AiAnaliseResultado({ resultado, reportId, outputFormat, onBack }: AiAnaliseResultadoProps) {
+  const router = useRouter();
   const html = useMemo(() => marked(resultado.resultado) as string, [resultado.resultado]);
   const [gammaUrl, setGammaUrl] = useState<string | null>(resultado.gammaUrl);
   const [gammaLoading, setGammaLoading] = useState(false);
   const [gammaError, setGammaError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  function handleBack() {
+    if (onBack) {
+      onBack();
+    } else {
+      router.push(`/relatorios/${reportId}`);
+    }
+  }
+
+  function handleCopyLink() {
+    const url = `${window.location.origin}/relatorios/${reportId}/resultados/${resultado.id}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   async function handleExportGamma() {
     setGammaLoading(true);
@@ -101,7 +119,7 @@ export function AiAnaliseResultado({ resultado, reportId, outputFormat, onBack }
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <button onClick={onBack} className="text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={handleBack} className="text-muted-foreground hover:text-foreground transition-colors">
             <ChevronLeft size={20} />
           </button>
           <div>
@@ -116,6 +134,10 @@ export function AiAnaliseResultado({ resultado, reportId, outputFormat, onBack }
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={handleCopyLink}>
+            <Link2 size={13} className="mr-1.5" />
+            {copied ? "Copiado!" : "Copiar link"}
+          </Button>
           {resultado.resultadoApresentacao && (
             gammaUrl ? (
               <Button variant="outline" size="sm" asChild>

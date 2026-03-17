@@ -4,10 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BrainCircuit, Play, Trash2, Eye, FileText, Pencil } from "lucide-react";
+import { BrainCircuit, Play, Trash2, FileText, Pencil } from "lucide-react";
 import Link from "next/link";
 import { AiAnaliseDialog } from "./ai-analise-dialog";
-import { AiAnaliseResultado } from "./ai-analise-resultado";
 
 interface AiAnaliseReport {
   id: string;
@@ -37,7 +36,6 @@ export function AiAnaliseView({ report, resultados: initialResultados }: AiAnali
   const router = useRouter();
   const [resultados, setResultados] = useState<AiResultado[]>(initialResultados);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [viewResultado, setViewResultado] = useState<AiResultado | null>(null);
   const [deletingReport, setDeletingReport] = useState(false);
 
   async function handleDeleteReport() {
@@ -49,15 +47,14 @@ export function AiAnaliseView({ report, resultados: initialResultados }: AiAnali
 
   function handleNewResultado(resultado: AiResultado) {
     setResultados((prev) => [resultado, ...prev]);
-    setViewResultado(resultado);
     setDialogOpen(false);
+    router.push(`/relatorios/${report.id}/resultados/${resultado.id}`);
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Excluir esta análise?")) return;
     await fetch(`/api/relatorios/${report.id}/resultados/${id}`, { method: "DELETE" });
     setResultados((prev) => prev.filter((r) => r.id !== id));
-    if (viewResultado?.id === id) setViewResultado(null);
   }
 
   function formatPeriod(params: Record<string, string>) {
@@ -67,17 +64,6 @@ export function AiAnaliseView({ report, resultados: initialResultados }: AiAnali
       return `${ini} – ${fim}`;
     }
     return params.arquivoNome ?? "—";
-  }
-
-  if (viewResultado) {
-    return (
-      <AiAnaliseResultado
-        resultado={viewResultado}
-        reportId={report.id}
-        outputFormat={report.aiOutputFormat}
-        onBack={() => setViewResultado(null)}
-      />
-    );
   }
 
   return (
@@ -143,9 +129,10 @@ export function AiAnaliseView({ report, resultados: initialResultados }: AiAnali
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Button variant="outline" size="sm" onClick={() => setViewResultado(r)}>
-                  <Eye size={13} className="mr-1.5" />
-                  Ver
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/relatorios/${report.id}/resultados/${r.id}`}>
+                    Ver
+                  </Link>
                 </Button>
                 <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDelete(r.id)}>
                   <Trash2 size={13} />
