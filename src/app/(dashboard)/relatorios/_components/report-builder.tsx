@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Lock } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 type FieldType = "text" | "number" | "date" | "textarea" | "select";
 
@@ -36,6 +37,7 @@ interface ReportBuilderProps {
   initialTitle?: string;
   initialObjective?: string;
   initialFields?: ReportField[];
+  initialIsAdminOnly?: boolean;
 }
 
 export function ReportBuilder({
@@ -43,6 +45,7 @@ export function ReportBuilder({
   initialTitle = "",
   initialObjective = "",
   initialFields,
+  initialIsAdminOnly = false,
 }: ReportBuilderProps) {
   const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
@@ -50,6 +53,7 @@ export function ReportBuilder({
   const [fields, setFields] = useState<ReportField[]>(
     initialFields ?? [{ id: generateId(), label: "", type: "text", required: false }]
   );
+  const [isAdminOnly, setIsAdminOnly] = useState(initialIsAdminOnly);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isEdit = !!reportId;
@@ -81,7 +85,7 @@ export function ReportBuilder({
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, objective, fields: validFields }),
+        body: JSON.stringify({ title, objective, fields: validFields, isAdminOnly }),
       });
       const json = await res.json();
       if (!res.ok) { setError(json.error ?? "Erro ao salvar relatório."); return; }
@@ -219,6 +223,21 @@ export function ReportBuilder({
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+        <h3 className="text-sm font-medium flex items-center gap-1.5"><Lock size={14} />Visibilidade</h3>
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="is-admin-only" className="cursor-pointer">Restrito a admins</Label>
+            <p className="text-xs text-muted-foreground">Se ativado, usuários comuns não verão este relatório na lista</p>
+          </div>
+          <Switch
+            id="is-admin-only"
+            checked={isAdminOnly}
+            onCheckedChange={setIsAdminOnly}
+          />
+        </div>
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}

@@ -9,9 +9,12 @@ import { ReportCard } from "./_components/report-card";
 
 export default async function RelatoriosPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") redirect("/home");
+  if (!session) redirect("/home");
+
+  const isAdmin = session.user.role === "ADMIN";
 
   const reports = await prisma.report.findMany({
+    where: isAdmin ? undefined : { isAdminOnly: false },
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { responses: true, aiResultados: true } } },
   });
@@ -28,18 +31,19 @@ export default async function RelatoriosPage() {
             </p>
           </div>
         </div>
-        <Link href="/relatorios/novo">
-          <Button>
-            <Plus size={16} className="mr-2" /> Novo Relatório
-          </Button>
-        </Link>
+        {isAdmin && (
+          <Link href="/relatorios/novo">
+            <Button>
+              <Plus size={16} className="mr-2" /> Novo Relatório
+            </Button>
+          </Link>
+        )}
       </div>
 
       {reports.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
           <FileBarChart size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">Nenhum relatório criado ainda.</p>
-          <p className="text-xs mt-1">Clique em "Novo Relatório" para começar.</p>
+          <p className="text-sm">Nenhum relatório disponível.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -50,6 +54,7 @@ export default async function RelatoriosPage() {
                 ...r,
                 createdAt: r.createdAt.toISOString(),
               }}
+              isAdmin={isAdmin}
             />
           ))}
         </div>

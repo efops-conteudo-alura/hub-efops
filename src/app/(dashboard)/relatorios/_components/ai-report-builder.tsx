@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
 
 interface AiReportBuilderProps {
   reportId?: string;
@@ -20,6 +20,7 @@ interface AiReportBuilderProps {
   initialNeedsClickup?: boolean;
   initialClickupListIds?: string;
   initialHasPresentation?: boolean;
+  initialIsAdminOnly?: boolean;
 }
 
 export function AiReportBuilder({
@@ -33,6 +34,7 @@ export function AiReportBuilder({
   initialNeedsClickup = false,
   initialClickupListIds = "",
   initialHasPresentation = false,
+  initialIsAdminOnly = false,
 }: AiReportBuilderProps) {
   const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
@@ -44,6 +46,7 @@ export function AiReportBuilder({
   const [needsClickup, setNeedsClickup] = useState(initialNeedsClickup);
   const [clickupListIds, setClickupListIds] = useState(initialClickupListIds);
   const [hasPresentation, setHasPresentation] = useState(initialHasPresentation);
+  const [isAdminOnly, setIsAdminOnly] = useState(initialIsAdminOnly);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isEdit = !!reportId;
@@ -73,6 +76,7 @@ export function AiReportBuilder({
           aiNeedsClickup: needsClickup,
           aiClickupListIds: needsClickup ? clickupListIds.trim() || null : null,
           aiHasPresentation: hasPresentation,
+          isAdminOnly,
         }),
       });
       const json = await res.json();
@@ -210,6 +214,21 @@ export function AiReportBuilder({
               </label>
             ))}
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+        <h3 className="text-sm font-medium flex items-center gap-1.5"><Lock size={14} />Visibilidade</h3>
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="is-admin-only" className="cursor-pointer">Restrito a admins</Label>
+            <p className="text-xs text-muted-foreground">Se ativado, usuários comuns não verão este relatório na lista</p>
+          </div>
+          <Switch
+            id="is-admin-only"
+            checked={isAdminOnly}
+            onCheckedChange={setIsAdminOnly}
+          />
         </div>
       </div>
 

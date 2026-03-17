@@ -21,7 +21,9 @@ export default async function ReportPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") redirect("/home");
+  if (!session) redirect("/home");
+
+  const isAdmin = session.user.role === "ADMIN";
 
   const { id } = await params;
   const report = await prisma.report.findUnique({
@@ -33,6 +35,7 @@ export default async function ReportPage({
   });
 
   if (!report) notFound();
+  if (report.isAdminOnly && !isAdmin) redirect("/relatorios");
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-2">

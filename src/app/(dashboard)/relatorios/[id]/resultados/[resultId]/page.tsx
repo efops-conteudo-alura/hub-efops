@@ -12,16 +12,19 @@ export default async function ResultadoPage({
   params: Promise<{ id: string; resultId: string }>;
 }) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") redirect("/home");
+  if (!session) redirect("/home");
+
+  const isAdmin = session.user.role === "ADMIN";
 
   const { id, resultId } = await params;
 
   const [report, resultado] = await Promise.all([
-    prisma.report.findUnique({ where: { id }, select: { id: true, aiOutputFormat: true } }),
+    prisma.report.findUnique({ where: { id }, select: { id: true, aiOutputFormat: true, isAdminOnly: true } }),
     prisma.aiAnaliseResult.findUnique({ where: { id: resultId } }),
   ]);
 
   if (!report || !resultado || resultado.reportId !== id) notFound();
+  if (report.isAdminOnly && !isAdmin) redirect("/relatorios");
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-2">

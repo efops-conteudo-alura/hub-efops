@@ -175,6 +175,7 @@ model Report {
   aiClickupListIds String?          // IDs de listas separados por vírgula
   aiHasPresentation Boolean         @default(false) // injeta marcador <!-- GAMMA_SLIDES --> no prompt
   aiResultados     AiAnaliseResult[]
+  isAdminOnly      Boolean          @default(false) // se true, só admins veem este relatório
 }
 
 model ReportResponse {
