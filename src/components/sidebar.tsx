@@ -29,7 +29,6 @@ const mainNavItems = [
   { href: "/home", label: "Home", icon: House },
   { href: "/kpis", label: "KPIs", icon: TrendingUp },
   { href: "/publicacoes", label: "Publicações", icon: BookMarked },
-  { href: "/gastos", label: "Gastos Externos", icon: Receipt },
   { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
   { href: "/processos", label: "Processos & Fluxos", icon: GitBranch },
   { href: "/documentacoes", label: "Documentações", icon: BookOpen },
@@ -71,6 +70,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
     ...bottomNavItems,
     ...(isAdmin
       ? [
+          { href: "/gastos", label: "Gastos Externos", icon: Receipt },
           { href: "/imobilizacao", label: "Imobilização", icon: ClipboardList },
           { href: "/admin/usuarios", label: "Usuários", icon: Users },
           { href: "/admin/configuracoes", label: "Configurações", icon: Settings },
