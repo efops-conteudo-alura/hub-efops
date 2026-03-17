@@ -160,7 +160,7 @@ export function AiReportBuilder({
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
             <Label htmlFor="needs-clickup" className="cursor-pointer">Integrar com ClickUp</Label>
-            <p className="text-xs text-muted-foreground">Busca cursos em produção no ClickUp e injeta no prompt da IA</p>
+            <p className="text-xs text-muted-foreground">Busca tarefas em listas específicas no ClickUp e injeta no prompt da IA. Você encontra a ID da lista na URL. Ex: https://app.clickup.com/3148001/v/l/6-<em>901311315105</em>-1</p>
           </div>
           <Switch
             id="needs-clickup"
