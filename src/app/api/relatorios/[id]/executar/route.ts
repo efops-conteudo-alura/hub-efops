@@ -7,6 +7,36 @@ import * as XLSX from "xlsx";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+interface ClickUpCustomField {
+  name: string;
+  type: string;
+  value?: unknown;
+}
+
+interface ClickUpTask {
+  name: string;
+  date_created: string;
+  status: { status: string };
+  custom_fields: ClickUpCustomField[];
+}
+
+function extractFieldValue(field: ClickUpCustomField): string {
+  if (field.value == null || field.value === "") return "";
+  if (typeof field.value === "string") return field.value;
+  if (typeof field.value === "number") return String(field.value);
+  if (Array.isArray(field.value)) {
+    return (field.value as Array<Record<string, unknown>>)
+      .map((v) => v.label ?? v.name ?? v.value ?? "")
+      .filter(Boolean)
+      .join(", ");
+  }
+  if (typeof field.value === "object") {
+    const obj = field.value as Record<string, unknown>;
+    return String(obj.name ?? obj.label ?? obj.value ?? "");
+  }
+  return String(field.value);
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -71,13 +101,15 @@ export async function POST(
     return NextResponse.json({ error: "Nenhuma linha encontrada no período selecionado." }, { status: 400 });
   }
 
-  // Buscar cursos do ClickUp se necessário
+  // Buscar registros do ClickUp se necessário
   let clickupInfo = "";
+  let clickupTotalRows = 0;
+
   if (report.aiNeedsClickup && report.aiClickupListIds) {
     const apiKey = process.env.CLICKUP_API_KEY;
     if (apiKey) {
       const listIds = report.aiClickupListIds.split(",").map((s) => s.trim()).filter(Boolean);
-      const allTaskNames: string[] = [];
+      const allTasks: ClickUpTask[] = [];
 
       for (const listId of listIds) {
         let page = 0;
@@ -85,16 +117,42 @@ export async function POST(
           const url = `https://api.clickup.com/api/v2/list/${listId}/task?include_closed=true&page=${page}`;
           const res = await fetch(url, { headers: { Authorization: apiKey } });
           if (!res.ok) break;
-          const data = await res.json() as { tasks?: { name: string }[]; last_page?: boolean };
-          const names = (data.tasks ?? []).map((t) => t.name.trim()).filter(Boolean);
-          allTaskNames.push(...names);
+          const data = await res.json() as { tasks?: ClickUpTask[]; last_page?: boolean };
+          allTasks.push(...(data.tasks ?? []));
           if (data.last_page === true || !data.tasks?.length) break;
           page++;
         }
       }
 
-      if (allTaskNames.length > 0) {
-        clickupInfo = `\nCURSOS EM PRODUÇÃO (ClickUp):\n${allTaskNames.map((n, i) => `${i + 1}. ${n}`).join("\n")}\n`;
+      // Filtrar por período se indicado
+      let filteredTasks = allTasks;
+      if (periodoInicio && periodoFim) {
+        const inicioTs = new Date(periodoInicio).getTime();
+        const fimDate = new Date(periodoFim);
+        fimDate.setHours(23, 59, 59, 999);
+        const fimTs = fimDate.getTime();
+        filteredTasks = allTasks.filter((t) => {
+          const ts = Number(t.date_created);
+          return ts >= inicioTs && ts <= fimTs;
+        });
+      }
+
+      if (filteredTasks.length > 0) {
+        clickupTotalRows = filteredTasks.length;
+        const records = filteredTasks.map((task, i) => {
+          const date = new Date(Number(task.date_created)).toLocaleDateString("pt-BR");
+          const parts: string[] = [
+            `tarefa: ${task.name}`,
+            `data: ${date}`,
+            `status: ${task.status.status}`,
+          ];
+          for (const field of task.custom_fields) {
+            const value = extractFieldValue(field);
+            if (value) parts.push(`${field.name}: ${value}`);
+          }
+          return `${i + 1}. ${parts.join(" | ")}`;
+        });
+        clickupInfo = `\nREGISTROS DO CLICKUP — ${filteredTasks.length} tarefas:\n${records.join("\n")}\n`;
       }
     }
   }
@@ -152,10 +210,11 @@ export async function POST(
         ...(periodoInicio ? { periodoInicio } : {}),
         ...(periodoFim ? { periodoFim } : {}),
         ...(arquivoNome ? { arquivoNome } : {}),
+        ...(clickupTotalRows > 0 ? { clickupTasks: clickupTotalRows } : {}),
       },
       resultado,
       resultadoApresentacao,
-      totalRows: rows.length > 0 ? rows.length : null,
+      totalRows: rows.length > 0 ? rows.length : clickupTotalRows > 0 ? clickupTotalRows : null,
     },
   });
 
