@@ -3,26 +3,34 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, MessageSquare } from "lucide-react";
+import { FileSpreadsheet, MessageSquare, BrainCircuit, BarChart2 } from "lucide-react";
 
 interface Props {
   report: {
     id: string;
+    type: string;
     title: string;
     objective: string | null;
     createdAt: string;
-    _count: { responses: number };
+    _count: { responses: number; aiResultados: number };
   };
 }
 
 export function ReportCard({ report }: Props) {
   const date = new Date(report.createdAt).toLocaleDateString("pt-BR");
+  const isAi = report.type === "AI_ANALYSIS";
+  const count = isAi ? report._count.aiResultados : report._count.responses;
+  const countLabel = isAi
+    ? `${count} ${count === 1 ? "análise" : "análises"}`
+    : `${count} ${count === 1 ? "resposta" : "respostas"}`;
+  const Icon = isAi ? BrainCircuit : FileSpreadsheet;
+  const CountIcon = isAi ? BarChart2 : MessageSquare;
 
   return (
     <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex items-start gap-2">
-          <FileSpreadsheet size={18} className="text-primary shrink-0 mt-0.5" />
+          <Icon size={18} className="text-primary shrink-0 mt-0.5" />
           <CardTitle className="text-base leading-snug">{report.title}</CardTitle>
         </div>
       </CardHeader>
@@ -32,8 +40,8 @@ export function ReportCard({ report }: Props) {
         )}
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
-            <MessageSquare size={12} />
-            {report._count.responses} {report._count.responses === 1 ? "resposta" : "respostas"}
+            <CountIcon size={12} />
+            {countLabel}
           </span>
           <span>{date}</span>
         </div>

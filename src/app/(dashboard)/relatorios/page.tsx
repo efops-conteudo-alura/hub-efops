@@ -13,7 +13,7 @@ export default async function RelatoriosPage() {
 
   const reports = await prisma.report.findMany({
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { responses: true } } },
+    include: { _count: { select: { responses: true, aiResultados: true } } },
   });
 
   return (
