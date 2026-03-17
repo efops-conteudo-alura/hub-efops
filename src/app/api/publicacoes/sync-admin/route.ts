@@ -68,8 +68,6 @@ export async function POST() {
   // [8]=metadescricao  [9]=ementa  [10]=cargaHoraria
   // [11]=facaEsseCursoE  [12]=publicoAlvo  [13]=informacaoDestaque
   // [14]=catalogos  [15]=subcategorias  [16]=categoria  [17]=instrutores
-  const EXCLUDED_CATALOGS = new Set(["aovs", "exclusivo-escolas"]);
-
   const parsed = rows.flatMap((row) => {
     const aluraId = col(row, 0, "aluraId") ? Number(col(row, 0, "aluraId")) : null;
     if (!aluraId) return [];
@@ -81,10 +79,7 @@ export async function POST() {
       .filter((c) => c
         && !c.toLowerCase().includes("teste")
         && !c.toLowerCase().includes("trial")
-        && !EXCLUDED_CATALOGS.has(c.toLowerCase())
       );
-    // Exclui curso se não tiver nenhum catálogo válido após filtro
-    if (catalogos.length === 0) return [];
     const subcategorias = col(row, 15, "subcategorias") || null;
     const categoria = col(row, 16, "categoria") || null;
     const instrutores = (col(row, 17, "instrutores") || "")
