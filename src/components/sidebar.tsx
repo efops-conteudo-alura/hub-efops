@@ -32,6 +32,9 @@ const mainNavItems = [
   { href: "/processos", label: "Processos & Fluxos", icon: GitBranch },
   { href: "/publicacoes", label: "Publicações", icon: BookMarked },
   { href: "/documentacoes", label: "Documentações", icon: BookOpen },
+  { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
+  { href: "/gastos", label: "Gastos Externos", icon: Receipt },
+  { href: "/kpis", label: "KPIs", icon: TrendingUp },
 ];
 
 const bottomNavItems = [
@@ -66,9 +69,6 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
 
   const allBottomNav = [
     ...bottomNavItems,
-    { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
-    { href: "/gastos", label: "Gastos Externos", icon: Receipt },
-    { href: "/kpis", label: "KPIs", icon: TrendingUp },
     ...(isAdmin
       ? [
           { href: "/imobilizacao", label: "Imobilização", icon: ClipboardList },

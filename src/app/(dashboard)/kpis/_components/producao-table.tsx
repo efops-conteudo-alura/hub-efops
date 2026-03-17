@@ -190,31 +190,33 @@ export function ProducaoTable({ year, data, pesos, isAdmin, onChange }: Producao
               })}
               <td className={tdTotal + " text-muted-foreground"}>—</td>
             </tr>
-            <tr>
-              {isAdmin && <td className="px-3 py-1" />}
-              {isAdmin && allMonths.map((m) => {
-                const r = dataByMonth.get(m);
-                return (
-                  <td key={m} className="px-3 py-1 text-center">
-                    {r ? (
-                      <div className="flex items-center justify-center gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(r)}>
-                          <Pencil size={11} />
+            {isAdmin && (
+              <tr>
+                <td className="px-3 py-1" />
+                {allMonths.map((m) => {
+                  const r = dataByMonth.get(m);
+                  return (
+                    <td key={m} className="px-3 py-1 text-center">
+                      {r ? (
+                        <div className="flex items-center justify-center gap-0.5">
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(r)}>
+                            <Pencil size={11} />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDelete(r.id)}>
+                            <Trash2 size={11} />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => openAdd(m)}>
+                          <Plus size={11} />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDelete(r.id)}>
-                          <Trash2 size={11} />
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => openAdd(m)}>
-                        <Plus size={11} />
-                      </Button>
-                    )}
-                  </td>
-                );
-              })}
-              <td className="px-3 py-1 border-l" />
-            </tr>
+                      )}
+                    </td>
+                  );
+                })}
+                <td className="px-3 py-1 border-l" />
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
