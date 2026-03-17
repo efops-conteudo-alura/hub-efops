@@ -11,6 +11,13 @@ export async function GET(
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+
+  const report = await prisma.report.findUnique({ where: { id }, select: { isAdminOnly: true } });
+  if (!report) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+  if (report.isAdminOnly && session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const resultados = await prisma.aiAnaliseResult.findMany({
     where: { reportId: id },
     orderBy: { createdAt: "desc" },

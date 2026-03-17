@@ -207,7 +207,7 @@ export async function POST(
   const ano = parseInt(anoStr);
   const mes = parseInt(mesStr);
 
-  if (isNaN(ano) || isNaN(mes) || mes < 1 || mes > 12) {
+  if (isNaN(ano) || isNaN(mes) || mes < 1 || mes > 12 || ano < 2000 || ano > 2100) {
     return NextResponse.json({ error: "Ano ou mês inválidos" }, { status: 400 });
   }
 

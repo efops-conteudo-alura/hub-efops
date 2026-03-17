@@ -10,9 +10,14 @@ export async function GET(
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { resultId } = await params;
+  const { id, resultId } = await params;
   const resultado = await prisma.aiAnaliseResult.findUnique({ where: { id: resultId } });
-  if (!resultado) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+  if (!resultado || resultado.reportId !== id) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+
+  const report = await prisma.report.findUnique({ where: { id }, select: { isAdminOnly: true } });
+  if (report?.isAdminOnly && session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   return NextResponse.json({
     id: resultado.id,
@@ -32,7 +37,16 @@ export async function PATCH(
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { resultId } = await params;
+  const { id, resultId } = await params;
+
+  const existente = await prisma.aiAnaliseResult.findUnique({ where: { id: resultId }, select: { reportId: true } });
+  if (!existente || existente.reportId !== id) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+
+  const report = await prisma.report.findUnique({ where: { id }, select: { isAdminOnly: true } });
+  if (report?.isAdminOnly && session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { resultado } = await request.json();
 
   if (typeof resultado !== "string" || !resultado.trim()) {
