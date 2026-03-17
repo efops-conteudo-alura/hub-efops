@@ -62,8 +62,8 @@ export function AiAnaliseView({ report, resultados: initialResultados }: AiAnali
 
   function formatPeriod(params: Record<string, string>) {
     if (params.periodoInicio && params.periodoFim) {
-      const ini = new Date(params.periodoInicio).toLocaleDateString("pt-BR");
-      const fim = new Date(params.periodoFim).toLocaleDateString("pt-BR");
+      const ini = new Date(params.periodoInicio + "T12:00:00").toLocaleDateString("pt-BR");
+      const fim = new Date(params.periodoFim + "T12:00:00").toLocaleDateString("pt-BR");
       return `${ini} – ${fim}`;
     }
     return params.arquivoNome ?? "—";

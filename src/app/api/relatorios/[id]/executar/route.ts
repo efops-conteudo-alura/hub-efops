@@ -159,7 +159,7 @@ export async function POST(
 
   // Montar mensagem para Claude
   const periodInfo = periodoInicio && periodoFim
-    ? `Período de análise: ${new Date(periodoInicio).toLocaleDateString("pt-BR")} a ${new Date(periodoFim).toLocaleDateString("pt-BR")}\nTotal de respostas no período: ${rows.length}\n\n`
+    ? `Período de análise: ${new Date(periodoInicio + "T12:00:00").toLocaleDateString("pt-BR")} a ${new Date(periodoFim + "T12:00:00").toLocaleDateString("pt-BR")}\nTotal de respostas no período: ${rows.length}\n\n`
     : "";
 
   const dadosFormatados = rows.length > 0

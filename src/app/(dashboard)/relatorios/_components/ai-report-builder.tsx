@@ -184,7 +184,7 @@ export function AiReportBuilder({
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
             <Label htmlFor="has-presentation" className="cursor-pointer">Exportar para Gamma</Label>
-            <p className="text-xs text-muted-foreground">Gera roteiro de apresentação separável e exportável para o Gamma.app</p>
+            <p className="text-xs text-muted-foreground">Inclua uma seção de roteiro de apresentação nas instruções — o sistema detecta automaticamente pelo contexto e a envia para o Gamma.app. O nome ou letra da seção não importa.</p>
           </div>
           <Switch
             id="has-presentation"
