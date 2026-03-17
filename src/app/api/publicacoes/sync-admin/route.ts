@@ -68,13 +68,23 @@ export async function POST() {
   // [8]=metadescricao  [9]=ementa  [10]=cargaHoraria
   // [11]=facaEsseCursoE  [12]=publicoAlvo  [13]=informacaoDestaque
   // [14]=catalogos  [15]=subcategorias  [16]=categoria  [17]=instrutores
+  const EXCLUDED_CATALOGS = new Set(["aovs", "exclusivo-escolas"]);
+
   const parsed = rows.flatMap((row) => {
+    const aluraId = col(row, 0, "aluraId") ? Number(col(row, 0, "aluraId")) : null;
+    if (!aluraId) return [];
     const slug = col(row, 1, "slug");
     if (!slug) return [];
     const catalogos = (col(row, 14, "catalogos") ?? "")
       .split(", ")
       .map((c) => c.trim())
-      .filter((c) => c && !c.toLowerCase().includes("teste") && !c.toLowerCase().includes("trial"));
+      .filter((c) => c
+        && !c.toLowerCase().includes("teste")
+        && !c.toLowerCase().includes("trial")
+        && !EXCLUDED_CATALOGS.has(c.toLowerCase())
+      );
+    // Exclui curso se não tiver nenhum catálogo válido após filtro
+    if (catalogos.length === 0) return [];
     const subcategorias = col(row, 15, "subcategorias") || null;
     const categoria = col(row, 16, "categoria") || null;
     const instrutores = (col(row, 17, "instrutores") || "")
@@ -82,10 +92,11 @@ export async function POST() {
       .map((i) => i.trim())
       .filter(Boolean);
     return [{
-      slug,
+      aluraId,
       data: {
+        slug,
         nome: col(row, 2, "nome") || slug,
-        aluraId: col(row, 0, "aluraId") ? Number(col(row, 0, "aluraId")) : null,
+        aluraId,
         statusPub: col(row, 4, "statusPub") || null,
         statusCriacao: col(row, 5, "statusCriacao") || null,
         tipoContrato: col(row, 6, "tipoContrato") || null,
@@ -105,12 +116,12 @@ export async function POST() {
     }];
   });
 
-  // 2. Uma query para saber quais slugs já existem
-  const existingSlugs = new Set(
+  // 2. Uma query para saber quais aluraIds já existem
+  const existingAluraIds = new Set(
     (await prisma.aluraCourse.findMany({
-      where: { slug: { in: parsed.map((p) => p.slug) } },
-      select: { slug: true },
-    })).map((c) => c.slug)
+      where: { aluraId: { in: parsed.map((p) => p.aluraId) } },
+      select: { aluraId: true },
+    })).map((c) => c.aluraId)
   );
 
   // 3. Upserts em batches de 20 em paralelo
@@ -121,17 +132,17 @@ export async function POST() {
   for (let i = 0; i < parsed.length; i += BATCH) {
     const batch = parsed.slice(i, i + BATCH);
     const results = await Promise.allSettled(
-      batch.map(({ slug, data }) =>
+      batch.map(({ aluraId, data }) =>
         prisma.aluraCourse.upsert({
-          where: { slug },
-          create: { slug, ...data },
+          where: { aluraId },
+          create: data,
           update: data,
-        }).then(() => slug)
+        }).then(() => aluraId)
       )
     );
     for (const r of results) {
       if (r.status === "fulfilled") {
-        if (existingSlugs.has(r.value)) updated++;
+        if (existingAluraIds.has(r.value)) updated++;
         else created++;
       }
     }

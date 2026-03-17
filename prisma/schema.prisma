@@ -264,7 +264,7 @@ model AluraCourse {
   cargaHoraria         Int?
   dataPublicacao       DateTime?
   // Campos do admin
-  aluraId              Int?
+  aluraId              Int?      @unique
   instrutor            String?
   nivel                String?
   statusPub            String?
