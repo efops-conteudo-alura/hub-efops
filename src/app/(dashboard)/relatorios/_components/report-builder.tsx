@@ -38,6 +38,7 @@ interface ReportBuilderProps {
   initialObjective?: string;
   initialFields?: ReportField[];
   initialIsAdminOnly?: boolean;
+  isAdmin?: boolean;
 }
 
 export function ReportBuilder({
@@ -46,6 +47,7 @@ export function ReportBuilder({
   initialObjective = "",
   initialFields,
   initialIsAdminOnly = false,
+  isAdmin = false,
 }: ReportBuilderProps) {
   const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
@@ -225,20 +227,22 @@ export function ReportBuilder({
         ))}
       </div>
 
-      <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
-        <h3 className="text-sm font-medium flex items-center gap-1.5"><Lock size={14} />Visibilidade</h3>
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label htmlFor="is-admin-only" className="cursor-pointer">Restrito a admins</Label>
-            <p className="text-xs text-muted-foreground">Se ativado, usuários comuns não verão este relatório na lista</p>
+      {isAdmin && (
+        <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+          <h3 className="text-sm font-medium flex items-center gap-1.5"><Lock size={14} />Visibilidade</h3>
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="is-admin-only" className="cursor-pointer">Restrito a admins</Label>
+              <p className="text-xs text-muted-foreground">Se ativado, usuários comuns não verão este relatório na lista</p>
+            </div>
+            <Switch
+              id="is-admin-only"
+              checked={isAdminOnly}
+              onCheckedChange={setIsAdminOnly}
+            />
           </div>
-          <Switch
-            id="is-admin-only"
-            checked={isAdminOnly}
-            onCheckedChange={setIsAdminOnly}
-          />
         </div>
-      </div>
+      )}
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 

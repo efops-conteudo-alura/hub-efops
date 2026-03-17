@@ -7,7 +7,9 @@ import { ReportBuilder } from "../../_components/report-builder";
 
 export default async function NovaPlanilhaPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") redirect("/home");
+  if (!session) redirect("/home");
+
+  const isAdmin = session.user.role === "ADMIN";
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
@@ -20,7 +22,7 @@ export default async function NovaPlanilhaPage() {
           <p className="text-muted-foreground text-sm">Defina os campos e o objetivo do relatório</p>
         </div>
       </div>
-      <ReportBuilder />
+      <ReportBuilder isAdmin={isAdmin} />
     </div>
   );
 }

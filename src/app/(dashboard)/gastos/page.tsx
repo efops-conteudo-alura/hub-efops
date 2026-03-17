@@ -5,7 +5,9 @@ import { ExpensesOverview } from "./_components/expenses-overview";
 
 export default async function GastosPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") redirect("/home");
+  if (!session) redirect("/home");
 
-  return <ExpensesOverview isAdmin={true} />;
+  const isAdmin = session.user.role === "ADMIN";
+
+  return <ExpensesOverview isAdmin={isAdmin} />;
 }

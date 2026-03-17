@@ -17,6 +17,7 @@ interface ProducaoTableProps {
   year: number;
   data: KpiProducao[];
   pesos: Pesos;
+  isAdmin: boolean;
   onChange: (data: KpiProducao[]) => void;
 }
 
@@ -66,7 +67,7 @@ function allMonthsOfYear(year: number): string[] {
   return Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
 }
 
-export function ProducaoTable({ year, data, pesos, onChange }: ProducaoTableProps) {
+export function ProducaoTable({ year, data, pesos, isAdmin, onChange }: ProducaoTableProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMonth, setDialogMonth] = useState("");
   const [editing, setEditing] = useState<KpiProducao | null>(null);
@@ -190,8 +191,8 @@ export function ProducaoTable({ year, data, pesos, onChange }: ProducaoTableProp
               <td className={tdTotal + " text-muted-foreground"}>—</td>
             </tr>
             <tr>
-              <td className="px-3 py-1" />
-              {allMonths.map((m) => {
+              {isAdmin && <td className="px-3 py-1" />}
+              {isAdmin && allMonths.map((m) => {
                 const r = dataByMonth.get(m);
                 return (
                   <td key={m} className="px-3 py-1 text-center">

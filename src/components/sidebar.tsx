@@ -66,11 +66,11 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
 
   const allBottomNav = [
     ...bottomNavItems,
+    { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
+    { href: "/gastos", label: "Gastos Externos", icon: Receipt },
+    { href: "/kpis", label: "KPIs", icon: TrendingUp },
     ...(isAdmin
       ? [
-          { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
-          { href: "/gastos", label: "Gastos Externos", icon: Receipt },
-          { href: "/kpis", label: "KPIs", icon: TrendingUp },
           { href: "/imobilizacao", label: "Imobilização", icon: ClipboardList },
           { href: "/admin/usuarios", label: "Usuários", icon: Users },
           { href: "/admin/configuracoes", label: "Configurações", icon: Settings },

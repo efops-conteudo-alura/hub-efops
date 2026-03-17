@@ -9,6 +9,7 @@ import { fmtMonthShort, fmtMonthLong } from "./producao-table";
 interface EdicaoTableProps {
   year: number;
   data: KpiEdicao[];
+  isAdmin: boolean;
   onChange: (data: KpiEdicao[]) => void;
 }
 
@@ -56,7 +57,7 @@ function allMonthsOfYear(year: number): string[] {
   return Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
 }
 
-export function EdicaoTable({ year, data, onChange }: EdicaoTableProps) {
+export function EdicaoTable({ year, data, isAdmin, onChange }: EdicaoTableProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMonth, setDialogMonth] = useState("");
   const [editing, setEditing] = useState<KpiEdicao | null>(null);
@@ -153,31 +154,33 @@ export function EdicaoTable({ year, data, onChange }: EdicaoTableProps) {
                 })}
                 <td className={tdTotal + " font-bold text-primary"}>{hasData ? totalScoreEdicaoAno : <span className="text-muted-foreground">—</span>}</td>
               </tr>
-              <tr>
-                <td className="px-3 py-1" />
-                {allMonths.map((m) => {
-                  const r = dataByMonth.get(m);
-                  return (
-                    <td key={m} className="px-3 py-1 text-center">
-                      {r ? (
-                        <div className="flex items-center justify-center gap-0.5">
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(r)}>
-                            <Pencil size={11} />
+              {isAdmin && (
+                <tr>
+                  <td className="px-3 py-1" />
+                  {allMonths.map((m) => {
+                    const r = dataByMonth.get(m);
+                    return (
+                      <td key={m} className="px-3 py-1 text-center">
+                        {r ? (
+                          <div className="flex items-center justify-center gap-0.5">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(r)}>
+                              <Pencil size={11} />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDelete(r.id)}>
+                              <Trash2 size={11} />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => openAdd(m)}>
+                            <Plus size={11} />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => handleDelete(r.id)}>
-                            <Trash2 size={11} />
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => openAdd(m)}>
-                          <Plus size={11} />
-                        </Button>
-                      )}
-                    </td>
-                  );
-                })}
-                <td className="px-3 py-1 border-l" />
-              </tr>
+                        )}
+                      </td>
+                    );
+                  })}
+                  <td className="px-3 py-1 border-l" />
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

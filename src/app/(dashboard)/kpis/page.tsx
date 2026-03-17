@@ -25,8 +25,9 @@ async function getAnos() {
 
 export default async function KpisPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") redirect("/home");
+  if (!session) redirect("/home");
 
+  const isAdmin = session.user.role === "ADMIN";
   const currentYear = new Date().getFullYear();
 
   const [producao, edicao, pesos, anos] = await Promise.all([
@@ -43,6 +44,7 @@ export default async function KpisPage() {
       initialPesos={pesos}
       initialAnos={anos}
       currentYear={currentYear}
+      isAdmin={isAdmin}
     />
   );
 }

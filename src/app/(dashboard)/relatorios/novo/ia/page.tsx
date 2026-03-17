@@ -7,7 +7,9 @@ import { AiReportBuilder } from "../../_components/ai-report-builder";
 
 export default async function NovaAnaliseIaPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") redirect("/home");
+  if (!session) redirect("/home");
+
+  const isAdmin = session.user.role === "ADMIN";
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
@@ -20,7 +22,7 @@ export default async function NovaAnaliseIaPage() {
           <p className="text-muted-foreground text-sm">Configure as instruções e parâmetros para o Claude analisar seus dados</p>
         </div>
       </div>
-      <AiReportBuilder />
+      <AiReportBuilder isAdmin={isAdmin} />
     </div>
   );
 }

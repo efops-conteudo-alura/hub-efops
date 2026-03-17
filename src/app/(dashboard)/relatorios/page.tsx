@@ -31,13 +31,11 @@ export default async function RelatoriosPage() {
             </p>
           </div>
         </div>
-        {isAdmin && (
-          <Link href="/relatorios/novo">
-            <Button>
-              <Plus size={16} className="mr-2" /> Novo Relatório
-            </Button>
-          </Link>
-        )}
+        <Link href="/relatorios/novo">
+          <Button>
+            <Plus size={16} className="mr-2" /> Novo Relatório
+          </Button>
+        </Link>
       </div>
 
       {reports.length === 0 ? (

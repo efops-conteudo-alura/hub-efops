@@ -56,6 +56,7 @@ export default async function EditarRelatorioPage({
           initialClickupListIds={report.aiClickupListIds ?? ""}
           initialHasPresentation={report.aiHasPresentation}
           initialIsAdminOnly={report.isAdminOnly}
+          isAdmin={true}
         />
       ) : (
         <ReportBuilder
@@ -64,6 +65,7 @@ export default async function EditarRelatorioPage({
           initialObjective={report.objective ?? ""}
           initialFields={report.fields as unknown as ReportField[]}
           initialIsAdminOnly={report.isAdminOnly}
+          isAdmin={true}
         />
       )}
     </div>

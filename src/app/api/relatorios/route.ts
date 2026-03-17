@@ -5,11 +5,14 @@ import { prisma } from "@/lib/db";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const isAdmin = session.user.role === "ADMIN";
+
   const reports = await prisma.report.findMany({
+    where: isAdmin ? undefined : { isAdminOnly: false },
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { responses: true } } },
   });
@@ -19,12 +22,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const isAdmin = session.user.role === "ADMIN";
+
   const body = await request.json();
-  const { type, title, objective, fields, aiInstructions, aiNeedsFile, aiNeedsDate, aiOutputFormat, aiNeedsClickup, aiClickupListIds, aiHasPresentation, isAdminOnly } = body as {
+  const { type, title, objective, fields, aiInstructions, aiNeedsFile, aiNeedsDate, aiOutputFormat, aiNeedsClickup, aiClickupListIds, aiHasPresentation, isAdminOnly: requestedIsAdminOnly } = body as {
     type?: string;
     title?: string;
     objective?: string;
@@ -43,6 +48,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Título obrigatório" }, { status: 400 });
   }
 
+  const isAdminOnly = isAdmin ? (requestedIsAdminOnly ?? false) : false;
+
   if (type === "AI_ANALYSIS") {
     if (!aiInstructions?.trim()) {
       return NextResponse.json({ error: "Instruções para a IA são obrigatórias" }, { status: 400 });
@@ -60,7 +67,7 @@ export async function POST(request: NextRequest) {
         aiNeedsClickup: aiNeedsClickup ?? false,
         aiClickupListIds: aiClickupListIds ?? null,
         aiHasPresentation: aiHasPresentation ?? false,
-        isAdminOnly: isAdminOnly ?? false,
+        isAdminOnly,
       },
     });
     return NextResponse.json(report, { status: 201 });
@@ -75,7 +82,7 @@ export async function POST(request: NextRequest) {
       title: title.trim(),
       objective: objective?.trim() || null,
       fields: fields as object[],
-      isAdminOnly: isAdminOnly ?? false,
+      isAdminOnly,
     },
   });
 

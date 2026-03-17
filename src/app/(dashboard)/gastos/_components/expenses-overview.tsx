@@ -150,9 +150,9 @@ export function ExpensesOverview({ isAdmin }: Props) {
           <>
             <SyncClickUpButton onSynced={load} />
             <UploadDialog onUploaded={load} />
+            <ExpenseFormDialog onSaved={load} />
           </>
         )}
-        <ExpenseFormDialog onSaved={load} />
       </div>
 
       {/* Filtros */}
@@ -265,7 +265,7 @@ export function ExpensesOverview({ isAdmin }: Props) {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className="text-sm font-semibold">{formatBRL(e.value)}</span>
-                      <ExpenseFormDialog expense={e} onSaved={load} />
+                      {isAdmin && <ExpenseFormDialog expense={e} onSaved={load} />}
                       {isAdmin && (
                         <button
                           onClick={() => handleDelete(e.id)}

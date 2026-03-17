@@ -7,7 +7,7 @@ import { ReportTypePicker } from "../_components/report-type-picker";
 
 export default async function NovoRelatorioPage() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") redirect("/home");
+  if (!session) redirect("/home");
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">

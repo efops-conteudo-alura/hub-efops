@@ -36,12 +36,13 @@ interface KpisOverviewProps {
   initialPesos: Pesos;
   initialAnos: KpiAno[];
   currentYear: number;
+  isAdmin: boolean;
 }
 
 type Tab = "publicacao" | "graficos";
 
 export function KpisOverview({
-  initialProducao, initialEdicao, initialPesos, initialAnos, currentYear,
+  initialProducao, initialEdicao, initialPesos, initialAnos, currentYear, isAdmin,
 }: KpisOverviewProps) {
   const [producao, setProducao] = useState(initialProducao);
   const [edicao, setEdicao] = useState(initialEdicao);
@@ -128,8 +129,8 @@ export function KpisOverview({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Adicionar ano */}
-          {suggestedYears.length > 0 && (
+          {/* Adicionar ano — apenas admin */}
+          {isAdmin && suggestedYears.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" disabled={addingYear}>
@@ -152,9 +153,11 @@ export function KpisOverview({
                 {copied ? <Check size={14} className="mr-2 text-green-500" /> : <ClipboardCopy size={14} className="mr-2" />}
                 {copied ? "Copiado!" : "Copiar dados"}
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setPesosOpen(true)}>
-                <Settings2 size={14} className="mr-2" /> Pesos
-              </Button>
+              {isAdmin && (
+                <Button variant="outline" size="sm" onClick={() => setPesosOpen(true)}>
+                  <Settings2 size={14} className="mr-2" /> Pesos
+                </Button>
+              )}
             </>
           )}
         </div>
@@ -188,6 +191,7 @@ export function KpisOverview({
               year={selectedYear}
               data={yearProducao}
               pesos={pesos}
+              isAdmin={isAdmin}
               onChange={(updated) =>
                 setProducao([...producao.filter((r) => !r.month.startsWith(`${yearStr}-`)), ...updated])
               }
@@ -196,6 +200,7 @@ export function KpisOverview({
           <EdicaoTable
             year={selectedYear}
             data={yearEdicao}
+            isAdmin={isAdmin}
             onChange={(updated) =>
               setEdicao([...edicao.filter((r) => !r.month.startsWith(`${yearStr}-`)), ...updated])
             }
