@@ -63,6 +63,9 @@ export async function POST() {
     return NextResponse.json({ error: "Nenhum curso retornado pelo Caelum BI" }, { status: 500 });
   }
 
+  // DEBUG — remover após diagnóstico
+  const row5905 = (rows as BiRow[]).find(r => Array.isArray(r) && r[0] == 5905);
+  console.log("[sync-admin] row 5905:", JSON.stringify(row5905));
 
   // 1. Parse tudo em memória (zero DB)
   // [0]=aluraId  [1]=slug  [2]=nome  [3]=dataPublicacao  [4]=statusPub
