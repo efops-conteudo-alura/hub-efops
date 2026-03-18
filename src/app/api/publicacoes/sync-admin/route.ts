@@ -64,7 +64,7 @@ export async function POST() {
   }
 
   // DEBUG — remover após diagnóstico
-  const row5905 = (rows as BiRow[]).find(r => Array.isArray(r) && r[0] == 5905);
+  const row5905 = (rows as BiRow[]).find(r => Array.isArray(r) && String(r[0]) === "5905");
   console.log("[sync-admin] row 5905:", JSON.stringify(row5905));
 
   // 1. Parse tudo em memória (zero DB)
