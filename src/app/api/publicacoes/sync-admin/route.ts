@@ -63,27 +63,15 @@ export async function POST() {
 
   // 1. Parse tudo em memória (zero DB)
   // [0]=aluraId  [1]=slug  [2]=nome  [3]=dataPublicacao  [4]=statusPub
-  // [5]=statusCriacao  [6]=tipoContrato  [7]=isExclusive
-  // [8]=metadescricao  [9]=ementa  [10]=cargaHoraria
-  // [11]=facaEsseCursoE  [12]=publicoAlvo  [13]=informacaoDestaque
-  // [14]=catalogos  [15]=subcategorias  [16]=categoria  [17]=instrutores
+  // [5]=statusCriacao  [6]=tipoContrato  [7]=isExclusive  [8]=catalogos
   const parsed = rows.flatMap((row) => {
     const aluraId = col(row, 0, "aluraId") ? Number(col(row, 0, "aluraId")) : null;
     if (!aluraId) return [];
     const slug = col(row, 1, "slug");
     if (!slug) return [];
-    const catalogos = (col(row, 14, "catalogos") ?? "")
+    const catalogos = (col(row, 8, "catalogos") ?? "")
       .split(", ")
       .map((c) => c.trim())
-      .filter((c) => c
-        && !c.toLowerCase().includes("teste")
-        && !c.toLowerCase().includes("trial")
-      );
-    const subcategorias = col(row, 15, "subcategorias") || null;
-    const categoria = col(row, 16, "categoria") || null;
-    const instrutores = (col(row, 17, "instrutores") || "")
-      .split(", ")
-      .map((i) => i.trim())
       .filter(Boolean);
     return [{
       aluraId,
@@ -96,16 +84,7 @@ export async function POST() {
         tipoContrato: col(row, 6, "tipoContrato") || null,
         isExclusive: col(row, 7, "isExclusive") === "1" || col(row, 7, "isExclusive") === "true",
         dataPublicacao: col(row, 3, "dataPublicacao") ? new Date(col(row, 3, "dataPublicacao")) : null,
-        metadescription: col(row, 8, "metadescricao") || null,
-        ementa: col(row, 9, "ementa") || null,
-        cargaHoraria: col(row, 10, "cargaHoraria") ? Number(col(row, 10, "cargaHoraria")) : null,
-        finishingAction: col(row, 11, "facaEsseCursoE") || null,
-        targetPublic: col(row, 12, "publicoAlvo") || null,
-        highlightedInformation: col(row, 13, "informacaoDestaque") || null,
         catalogos,
-        subcategorias,
-        categoria,
-        instrutores,
       },
     }];
   });
