@@ -69,10 +69,11 @@ export async function POST() {
     if (!aluraId) return [];
     const slug = col(row, 1, "slug");
     if (!slug) return [];
+    const CATALOGOS_IGNORADOS = new Set(["exclusivo-escolas", "aovs", "alura--dho"]);
     const catalogos = (col(row, 5, "catalogos") ?? "")
       .split(", ")
       .map((c) => c.trim())
-      .filter(Boolean);
+      .filter((c) => c && !CATALOGOS_IGNORADOS.has(c));
     const subcategorias = col(row, 6, "subcategorias") || null;
     const categoria = col(row, 7, "categoria") || null;
     const instrutores = (col(row, 8, "instrutores") ?? "")

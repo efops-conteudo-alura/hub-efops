@@ -67,7 +67,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   const [syncResult, setSyncResult] = useState<string>("");
   const [copied, setCopied] = useState(false);
 
-  const [monthFrom, setMonthFrom] = useState(() => searchParams.get("c_mf") ?? "2025-01");
+  const [monthFrom, setMonthFrom] = useState(() => searchParams.get("c_mf") ?? "");
   const [monthTo, setMonthTo] = useState(() => searchParams.get("c_mt") ?? "");
   const [showEmBreve, setShowEmBreve] = useState(() => searchParams.get("c_eb") !== "0");
   const [showCheckpoint, setShowCheckpoint] = useState(() => searchParams.get("c_cp") !== "0");
@@ -92,7 +92,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   // Sincroniza estado → URL
   useEffect(() => {
     const params = new URLSearchParams(searchParamsRef.current.toString());
-    monthFrom && monthFrom !== "2025-01" ? params.set("c_mf", monthFrom) : params.delete("c_mf");
+    monthFrom ? params.set("c_mf", monthFrom) : params.delete("c_mf");
     monthTo ? params.set("c_mt", monthTo) : params.delete("c_mt");
     showEmBreve ? params.delete("c_eb") : params.set("c_eb", "0");
     showCheckpoint ? params.delete("c_cp") : params.set("c_cp", "0");
@@ -202,7 +202,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
 
   const hasSubcatFilters = activeSubcatFilters.length > 0 || filterSemSubcat !== null;
 
-  const hasFilters = (monthFrom && monthFrom !== "2025-01") || monthTo || !showEmBreve || !showCheckpoint || activeCatalogFilters.length > 0 || hasSubcatFilters;
+  const hasFilters = monthFrom || monthTo || !showEmBreve || !showCheckpoint || activeCatalogFilters.length > 0 || hasSubcatFilters;
 
   const sortedCourses = useMemo(() => {
     let filtered = courses;

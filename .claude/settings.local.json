@@ -6,7 +6,16 @@
       "mcp__vercel__list_projects",
       "mcp__vercel__list_deployments",
       "Bash(npx prisma:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "mcp__vercel__get_deployment",
+      "Bash(cd:*)",
+      "WebSearch",
+      "WebFetch(domain:developers.gamma.app)",
+      "WebFetch(domain:github.com)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "mcp__vercel__get_runtime_logs"
     ]
   },
   "enabledMcpjsonServers": [
