@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   House, BarChart2, Key, LogOut, Gauge, Users, Bot,
-  GitBranch, BookOpen, ChevronLeft, ChevronRight, Menu, X, Receipt, FileBarChart, TrendingUp, BookMarked, Sun, Moon, ClipboardList, Settings,
+  GitBranch, BookOpen, ChevronLeft, ChevronRight, Menu, X, Receipt, FileBarChart, TrendingUp, BookMarked, Sun, Moon, ClipboardList, Settings, Pencil, ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,19 +24,36 @@ interface SidebarProps {
   isAdmin: boolean;
 }
 
+type NavChild = { href: string; label: string };
+
+type NavItem =
+  | { href: string; label: string; icon: React.ElementType; children?: never }
+  | { href?: never; label: string; icon: React.ElementType; children: NavChild[] };
+
 // Itens principais — Dashboard e Usuários ficam sempre no final via bottomItems
-const mainNavItems = [
+const mainNavItems: NavItem[] = [
   { href: "/home", label: "Home", icon: House },
   { href: "/kpis", label: "KPIs", icon: TrendingUp },
   { href: "/publicacoes", label: "Publicações", icon: BookMarked },
   { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
+  {
+    label: "Produção de Conteúdo",
+    icon: Pencil,
+    children: [
+      { href: "/producao-conteudo/briefing", label: "Briefing para Marketing" },
+      { href: "/producao-conteudo/validacao-ementa", label: "Validação de Ementa" },
+      { href: "/producao-conteudo/revisao-didatica", label: "Revisão Didática" },
+      { href: "/producao-conteudo/pesquisa-mercado", label: "Pesquisa de Mercado" },
+      { href: "/producao-conteudo/plano-estudos", label: "Plano de Estudos" },
+    ],
+  },
   { href: "/processos", label: "Processos & Fluxos", icon: GitBranch },
   { href: "/documentacoes", label: "Documentações", icon: BookOpen },
   { href: "/automacoes", label: "Automações & Agentes", icon: Bot },
   { href: "/licencas", label: "Licenças", icon: Key },
 ];
 
-const bottomNavItems = [
+const bottomNavItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: BarChart2 },
 ];
 
@@ -46,6 +63,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [openSubmenus, setOpenSubmenus] = useState<Set<string>>(new Set());
 
   // Colapsa por padrão no mobile
   useEffect(() => {
@@ -66,6 +84,25 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
     setMobileOpen(false);
   }, [pathname]);
 
+  // Abre automaticamente o submenu que contém a rota ativa
+  useEffect(() => {
+    mainNavItems.forEach((item) => {
+      if (item.children?.some((child) => pathname.startsWith(child.href))) {
+        setOpenSubmenus((prev) => new Set(prev).add(item.label));
+      }
+    });
+  }, [pathname]);
+
+  const toggleSubmenu = (label: string) => {
+    // Se a sidebar estiver colapsada, expande primeiro
+    if (collapsed) setCollapsed(false);
+    setOpenSubmenus((prev) => {
+      const next = new Set(prev);
+      next.has(label) ? next.delete(label) : next.add(label);
+      return next;
+    });
+  };
+
   const allBottomNav = [
     ...bottomNavItems,
     ...(isAdmin
@@ -78,8 +115,65 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
       : []),
   ];
 
-  const navLink = (item: { href: string; label: string; icon: React.ElementType }) => {
+  const navLink = (item: NavItem) => {
     const Icon = item.icon;
+
+    // Item com submenu
+    if (item.children) {
+      const isOpen = openSubmenus.has(item.label);
+      const isAnyChildActive = item.children.some((child) => pathname.startsWith(child.href));
+
+      return (
+        <div key={item.label}>
+          <button
+            onClick={() => toggleSubmenu(item.label)}
+            title={collapsed ? item.label : undefined}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+              collapsed && "justify-center px-2",
+              isAnyChildActive
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            <Icon size={18} className="shrink-0" />
+            {!collapsed && (
+              <>
+                <span className="truncate flex-1 text-left">{item.label}</span>
+                <ChevronDown
+                  size={14}
+                  className={cn("shrink-0 transition-transform duration-200", isOpen && "rotate-180")}
+                />
+              </>
+            )}
+          </button>
+
+          {!collapsed && isOpen && (
+            <div className="ml-3 mt-1 mb-1 space-y-0.5 border-l pl-3">
+              {item.children.map((child) => {
+                const isActive = pathname.startsWith(child.href);
+                return (
+                  <Link
+                    key={child.href}
+                    href={child.href}
+                    className={cn(
+                      "flex items-center px-3 py-1.5 rounded-md text-sm transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    {child.label}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Item simples
     const isActive = pathname.startsWith(item.href);
     return (
       <Link
@@ -96,6 +190,76 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
       >
         <Icon size={18} className="shrink-0" />
         {!collapsed && <span className="truncate">{item.label}</span>}
+      </Link>
+    );
+  };
+
+  // Versão do navLink para o drawer mobile (sempre expandido, suporta submenu)
+  const mobileNavLink = (item: NavItem) => {
+    const Icon = item.icon;
+
+    if (item.children) {
+      const isOpen = openSubmenus.has(item.label);
+      const isAnyChildActive = item.children.some((child) => pathname.startsWith(child.href));
+
+      return (
+        <div key={item.label}>
+          <button
+            onClick={() => toggleSubmenu(item.label)}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+              isAnyChildActive
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            <Icon size={18} className="shrink-0" />
+            <span className="truncate flex-1 text-left">{item.label}</span>
+            <ChevronDown
+              size={14}
+              className={cn("shrink-0 transition-transform duration-200", isOpen && "rotate-180")}
+            />
+          </button>
+
+          {isOpen && (
+            <div className="ml-3 mt-1 mb-1 space-y-0.5 border-l pl-3">
+              {item.children.map((child) => {
+                const isActive = pathname.startsWith(child.href);
+                return (
+                  <Link
+                    key={child.href}
+                    href={child.href}
+                    className={cn(
+                      "flex items-center px-3 py-1.5 rounded-md text-sm transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    {child.label}
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const isActive = pathname.startsWith(item.href);
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={cn(
+          "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+          isActive
+            ? "bg-primary text-primary-foreground"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+        )}
+      >
+        <Icon size={18} className="shrink-0" />
+        <span className="truncate">{item.label}</span>
       </Link>
     );
   };
@@ -220,7 +384,6 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
             onClick={() => setMobileOpen(false)}
           />
           <div className="md:hidden fixed inset-y-0 left-0 z-50 flex">
-            {/* força expanded no drawer mobile */}
             <div className="flex flex-col h-full bg-card border-r w-64">
               <div className="p-4 border-b flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -235,46 +398,10 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
                 </button>
               </div>
               <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-                {mainNavItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = pathname.startsWith(item.href);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                        isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      )}
-                    >
-                      <Icon size={18} className="shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </Link>
-                  );
-                })}
+                {mainNavItems.map(mobileNavLink)}
               </nav>
               <div className="p-2 space-y-1 border-t">
-                {allBottomNav.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = pathname.startsWith(item.href);
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                        isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      )}
-                    >
-                      <Icon size={18} className="shrink-0" />
-                      <span className="truncate">{item.label}</span>
-                    </Link>
-                  );
-                })}
+                {allBottomNav.map(mobileNavLink)}
               </div>
               <div className="p-3 border-t">
                 <button
