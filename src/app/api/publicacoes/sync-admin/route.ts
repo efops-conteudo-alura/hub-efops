@@ -63,15 +63,21 @@ export async function POST() {
 
   // 1. Parse tudo em memória (zero DB)
   // [0]=aluraId  [1]=slug  [2]=nome  [3]=dataPublicacao  [4]=statusPub
-  // [5]=statusCriacao  [6]=catalogos
+  // [5]=catalogos  [6]=subcategorias  [7]=categoria  [8]=instrutores
   const parsed = rows.flatMap((row) => {
     const aluraId = col(row, 0, "aluraId") ? Number(col(row, 0, "aluraId")) : null;
     if (!aluraId) return [];
     const slug = col(row, 1, "slug");
     if (!slug) return [];
-    const catalogos = (col(row, 6, "catalogos") ?? "")
+    const catalogos = (col(row, 5, "catalogos") ?? "")
       .split(", ")
       .map((c) => c.trim())
+      .filter(Boolean);
+    const subcategorias = col(row, 6, "subcategorias") || null;
+    const categoria = col(row, 7, "categoria") || null;
+    const instrutores = (col(row, 8, "instrutores") ?? "")
+      .split(", ")
+      .map((i) => i.trim())
       .filter(Boolean);
     return [{
       aluraId,
@@ -80,9 +86,11 @@ export async function POST() {
         nome: col(row, 2, "nome") || slug,
         aluraId,
         statusPub: col(row, 4, "statusPub") || null,
-        statusCriacao: col(row, 5, "statusCriacao") || null,
         dataPublicacao: col(row, 3, "dataPublicacao") ? new Date(col(row, 3, "dataPublicacao")) : null,
         catalogos,
+        subcategorias,
+        categoria,
+        instrutores,
       },
     }];
   });
