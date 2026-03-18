@@ -25,6 +25,7 @@ export async function POST() {
   }
 
   const biUrl = await getConfigValue("CAELUM_BI_URL");
+  console.log("[sync-admin] biUrl:", biUrl);
   if (!biUrl) {
     return NextResponse.json(
       { error: "URL do Caelum BI não configurada. Acesse Admin → Configurações." },
