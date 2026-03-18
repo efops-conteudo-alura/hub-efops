@@ -64,14 +64,16 @@ export async function POST() {
 
   // DEBUG TEMPORÁRIO — remover após diagnóstico
   console.log("[sync-admin] Total rows:", rows.length);
-  const r0 = rows[0];
-  if (Array.isArray(r0)) {
-    console.log("[sync-admin] total cols:", r0.length);
-    console.log("[sync-admin] col[14] catalogos:", JSON.stringify(r0[14]));
-    console.log("[sync-admin] col[15] subcategorias:", JSON.stringify(r0[15]));
-    console.log("[sync-admin] col[16] categoria:", JSON.stringify(r0[16]));
-    console.log("[sync-admin] col[17] instrutores:", JSON.stringify(r0[17]));
+  // Verifica se alguma row tem mais de 14 colunas (ou col[14] preenchida)
+  const rowComCatalogo = (rows as BiRow[]).find(r => Array.isArray(r) && r.length > 14);
+  if (rowComCatalogo && Array.isArray(rowComCatalogo)) {
+    console.log("[sync-admin] row com catalogo (len=" + rowComCatalogo.length + "):", JSON.stringify(rowComCatalogo).slice(0, 300));
+  } else {
+    console.log("[sync-admin] NENHUMA row tem mais de 14 colunas — catalogo/instrutores ausentes na query");
   }
+  // Tamanhos das 5 primeiras rows
+  const primeiras = (rows as BiRow[]).slice(0, 5).map(r => Array.isArray(r) ? r.length : "obj");
+  console.log("[sync-admin] lens[0-4]:", JSON.stringify(primeiras));
 
   // 1. Parse tudo em memória (zero DB)
   // [0]=aluraId  [1]=slug  [2]=nome  [3]=dataPublicacao  [4]=statusPub
