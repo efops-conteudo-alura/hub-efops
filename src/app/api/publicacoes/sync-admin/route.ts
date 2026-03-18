@@ -66,10 +66,11 @@ export async function POST() {
   console.log("[sync-admin] Total rows:", rows.length);
   const r0 = rows[0];
   if (Array.isArray(r0)) {
-    r0.forEach((v, i) => console.log(`[sync-admin] col[${i}]:`, JSON.stringify(v)?.slice(0, 80)));
-  } else {
-    console.log("[sync-admin] row0 keys:", Object.keys(r0 as object));
-    console.log("[sync-admin] row0:", JSON.stringify(r0)?.slice(0, 500));
+    console.log("[sync-admin] total cols:", r0.length);
+    console.log("[sync-admin] col[14] catalogos:", JSON.stringify(r0[14]));
+    console.log("[sync-admin] col[15] subcategorias:", JSON.stringify(r0[15]));
+    console.log("[sync-admin] col[16] categoria:", JSON.stringify(r0[16]));
+    console.log("[sync-admin] col[17] instrutores:", JSON.stringify(r0[17]));
   }
 
   // 1. Parse tudo em memória (zero DB)
