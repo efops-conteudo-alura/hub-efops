@@ -25,7 +25,6 @@ export async function POST() {
   }
 
   const biUrl = await getConfigValue("CAELUM_BI_URL");
-  console.log("[sync-admin] biUrl:", biUrl);
   if (!biUrl) {
     return NextResponse.json(
       { error: "URL do Caelum BI não configurada. Acesse Admin → Configurações." },
@@ -39,7 +38,6 @@ export async function POST() {
     const res = await fetch(fetchUrl, { headers: { "Cache-Control": "no-cache" } });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const raw = await res.json();
-    console.log("[sync-admin] Caelum BI raw type:", typeof raw, Array.isArray(raw) ? `array[${raw.length}]` : JSON.stringify(raw).slice(0, 200));
     // Suporta array direto ou wrapped em { data, rows, results }
     if (Array.isArray(raw)) {
       rows = raw;
@@ -62,10 +60,6 @@ export async function POST() {
   if (rows.length === 0) {
     return NextResponse.json({ error: "Nenhum curso retornado pelo Caelum BI" }, { status: 500 });
   }
-
-  // DEBUG — remover após diagnóstico
-  const row5905 = (rows as BiRow[]).find(r => Array.isArray(r) && String(r[0]) === "5905");
-  console.log("[sync-admin] row 5905:", JSON.stringify(row5905));
 
   // 1. Parse tudo em memória (zero DB)
   // [0]=aluraId  [1]=slug  [2]=nome  [3]=dataPublicacao  [4]=statusPub
