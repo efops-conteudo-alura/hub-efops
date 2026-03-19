@@ -123,7 +123,7 @@ export function HistoricoPesquisas({ pesquisas }: Props) {
       </div>
 
       <Dialog open={!!selecionada} onOpenChange={(open) => !open && setSelecionada(null)}>
-        <DialogContent className="max-w-[92vw] sm:max-w-[92vw] w-full max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[69vw] sm:max-w-[69vw] w-full max-h-[68vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selecionada?.assunto}</DialogTitle>
             {selecionada && (
