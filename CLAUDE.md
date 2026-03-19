@@ -4,17 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Hub de Eficiência Operacional — Alura (EfOps)
 
-Hub interno do departamento de conteúdo da Alura. Centraliza KPIs de produção, publicações, gastos, automações, processos, documentações, licenças e relatórios.
+Hub interno do departamento de conteúdo da Alura. Centraliza KPIs de produção, publicações, gastos, automações, processos, documentações, licenças, relatórios e ferramentas de produção de conteúdo com IA.
 
 ---
 
 ## Stack
 
 - **Framework:** Next.js 16 (App Router) + TypeScript + React 19
-- **Banco de dados:** PostgreSQL via Prisma ORM
+- **Banco de dados:** PostgreSQL via Prisma ORM (Neon)
 - **Autenticação:** NextAuth v4 (credentials provider, roles: ADMIN | USER)
 - **UI:** shadcn/ui + Tailwind CSS v4 + lucide-react
 - **Formulários:** react-hook-form + zod
+- **IA:** Anthropic Claude SDK (`@anthropic-ai/sdk`) — streaming + web search tool
 - **Editor de texto rico:** TipTap (starter-kit, link, placeholder, table, suggestion)
 - **Flow/diagramas:** @xyflow/react
 - **Gráficos:** Recharts
@@ -54,7 +55,7 @@ src/
         route.ts              → GET, POST
         [id]/route.ts         → GET, PUT, DELETE
     setup/                    → setup inicial do sistema
-    cadastro-instrutor/       → página pública de cadastro
+    cadastro-instrutor/       → página pública de cadastro de instrutor
     relatorios/responder/     → página pública para responder formulários
   components/                 → componentes globais (sidebar, profile, theme)
   components/ui/              → componentes shadcn (nunca editar manualmente)
@@ -78,7 +79,7 @@ scripts/                      → scripts utilitários (ex: create-admin.ts)
 - Nunca editar arquivos em `src/components/ui/` — usar `npx shadcn add <componente>`
 
 ### API Routes (App Router)
-Padrão para todas as rotas:
+Padrão para todas as rotas protegidas:
 
 ```ts
 // src/app/api/<modulo>/route.ts
@@ -93,8 +94,21 @@ export async function GET() {
 }
 ```
 
+Para rotas que exigem ADMIN:
+
+```ts
+const session = await getServerSession(authOptions)
+if (!session || session.user.role !== "ADMIN") {
+  return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+}
+```
+
+**Distinção importante:**
+- `401 Unauthorized` — usuário não autenticado (sem sessão)
+- `403 Forbidden` — autenticado mas sem permissão (role insuficiente)
+
 - Sempre verificar sessão em rotas protegidas
-- Rotas de admin verificam `session.user.role === "ADMIN"`
+- Sempre validar o body do request antes de usar no Prisma — nunca passar dados do usuário diretamente
 - Retornar `NextResponse.json(data)` ou `new Response("mensagem", { status: xxx })`
 
 ### Prisma
@@ -117,7 +131,7 @@ export async function GET() {
 ## Autenticação e permissões
 
 - Middleware (`src/middleware.ts`) protege todas as rotas exceto:
-  `api/auth`, `api/setup`, `api/relatorios/form`, `login`, `setup`, `relatorios/responder`, `primeiro-acesso`
+  `api/auth`, `api/setup`, `api/relatorios/form`, `api/linte/cadastro`, `login`, `setup`, `relatorios/responder`, `primeiro-acesso`
 - Rotas `/api/admin/**` exigem `role === "ADMIN"`
 - Super admins hardcoded em `src/lib/super-admins.ts`
 - Primeiro acesso: usuário recebe e-mail, define senha via `/criar-senha`
@@ -134,11 +148,13 @@ export async function GET() {
 | KPIs | `/kpis` | Produção mensal, edição, pesos e níveis de carreiras | API Alura (carreiras) |
 | Publicações | `/publicacoes` | Catálogo de cursos, trilhas, artigos e carreiras | Caelum BI (cursos), API Alura (trilhas/artigos) |
 | Gastos | `/gastos` e `/gastos/categorias` | Controle de despesas do departamento | ClickUp (tasks) |
-| Relatórios | `/relatorios` | Builder de formulários + coleta de respostas via link público | — |
+| Relatórios | `/relatorios` | Builder de formulários + coleta de respostas via link público + análise de IA com Gamma | — |
 | Processos | `/processos` | Documentação de processos com flow (@xyflow) e rich text (TipTap) | — |
 | Documentações | `/documentacoes` | Wiki interna com editor TipTap + import DOCX | — |
 | Automações | `/automacoes` | Catálogo de automações e agentes do time | — |
 | Licenças | `/licencas` | Gestão de licenças/assinaturas com audit trail | — |
+| Produção de Conteúdo | `/producao-conteudo` | Ferramentas de IA para produção: validação de ementa e pesquisa de mercado | Claude API (Anthropic) |
+| Imobilização | `/imobilizacao` | Controle de imobilização de horas por colaborador/produto por período | ClickUp (tasks) |
 | Admin | `/admin/usuarios` | Gestão de usuários e e-mails permitidos | — |
 | Analytics | `/dashboard` | Visão consolidada (sempre por último na sidebar) | — |
 
@@ -148,16 +164,23 @@ export async function GET() {
 
 - `User` — usuários do sistema (ADMIN | USER), senha em bcrypt
 - `AllowedEmail` — whitelist de e-mails autorizados a criar conta
+- `SystemConfig` — configurações do sistema (ex: URL do Caelum BI), armazenadas por chave
 - `Subscription` — licenças; `loginPass` armazenado cifrado via `src/lib/crypto.ts` (AES-256-GCM)
 - `SubscriptionAudit` — histórico de alterações de licenças (`{ field: { from, to } }`)
 - `Automation` — automações/agentes (ACTIVE | INACTIVE | TESTING)
 - `Expense` — gastos; `month` em formato `"YYYY-MM"`, `externalId` único para deduplicação ClickUp
 - `Process` — `flowData` e `richText` armazenados como `JSON.stringify(...)` (strings, não JSON nativo)
 - `Documentation` — `content` como JSON (TipTap) ou HTML string (import .docx)
-- `Report` + `ReportResponse` — formulários dinâmicos com `token` público único
+- `Report` + `ReportResponse` — formulários dinâmicos com `token` público único; `isAdminOnly` controla visibilidade
+- `AiAnaliseResult` — resultados de análise de IA dos relatórios; `gammaUrl` guarda link de apresentação gerada no Gamma
+- `EmentaAnalise` — análises de validação de ementa geradas pelo Claude
+- `PesquisaMercado` — pesquisas de mercado geradas pelo Claude com web search
 - `KpiProducao`, `KpiEdicao`, `KpiPesos`, `KpiAno` — dados de produção e edição
 - `KpiCarreiraLevel` — níveis de carreiras sincronizados do site Alura
 - `AluraCourse`, `AluraArtigo`, `AluraTrilha` — catálogo sincronizado da Alura
+- `ImobilizacaoPeriodo` — período de imobilização (ano + mês); contém `ImobilizacaoEntry`
+- `ImobilizacaoEntry` — linha de imobilização: colaborador, produto, horas, percentual
+- `ImobilizacaoTime` + `ImobilizacaoColaborador` — configuração de times e colaboradores
 
 ---
 
@@ -192,6 +215,26 @@ O sync de cursos (`/api/publicacoes/sync-admin`) usa o **Caelum BI** (`bi.caelum
 - `Catalog_Content` — join entre cursos e catálogos (`content_id` → `Course.id`, `catalog_id` → `Catalog.id`)
 - `Catalog` — catálogos (`id`, `code`, `name`)
 
+### Integração com Claude API (Anthropic)
+
+Rotas que usam IA seguem o padrão de streaming com fallback:
+
+```ts
+import Anthropic from "@anthropic-ai/sdk"
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+// Streaming com web search (preferencial)
+const stream = anthropic.messages.stream({ ..., tools: [{ type: "web_search_20250305", name: "web_search" }] })
+
+// Fallback sem web search — usar messages.create() (não stream), nunca stream() novamente
+// pois chunks já enviados ao cliente não podem ser desfeitos
+const response = await anthropic.messages.create({ ... })
+```
+
+- Modelo padrão: `claude-sonnet-4-6`
+- `max_tokens: 8000` com streaming resolve timeouts de respostas longas
+- Sempre validar os inputs do usuário antes de compor o prompt (previne prompt injection)
+
 ---
 
 ## O que NÃO fazer
@@ -202,3 +245,6 @@ O sync de cursos (`/api/publicacoes/sync-admin`) usa o **Caelum BI** (`bi.caelum
 - Não expor senhas ou dados sensíveis nas respostas de API
 - Não alterar `src/generated/prisma/` manualmente — é gerado pelo Prisma
 - Não importar `{ db }` de `@/lib/db` — o export correto é `{ prisma }`
+- Não passar dados do body do request diretamente para o Prisma sem validação prévia
+- Não retornar 401 quando o usuário está autenticado mas sem permissão — usar 403
+- Não usar `anthropic.messages.stream()` como fallback quando chunks já foram enviados ao cliente — usar `messages.create()` no fallback
