@@ -1,22 +1,26 @@
-import { BookText, Sparkles } from "lucide-react"
+import { prisma } from "@/lib/db"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { PromptsClient } from "./_components/prompts-client"
 
-export default function BibliotecaDePromptsPage() {
+export default async function BibliotecaDePromptsPage() {
+  const session = await getServerSession(authOptions)
+  const isAdmin = session?.user?.role === "ADMIN"
+  const userId = session?.user?.id ?? ""
+
+  const prompts = await prisma.prompt.findMany({
+    orderBy: { createdAt: "desc" },
+  })
+
+  const serialized = prompts.map((p) => ({
+    ...p,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+  }))
+
   return (
-    <div className="p-6 flex flex-col items-center justify-center min-h-[60vh] text-center gap-6">
-      <div className="p-4 rounded-2xl bg-primary/10">
-        <BookText size={48} className="text-primary" />
-      </div>
-      <div className="space-y-2">
-        <h1 className="text-2xl font-bold">Biblioteca de Prompts</h1>
-        <p className="text-muted-foreground max-w-md">
-          Um espaço colaborativo para catalogar, melhorar e compartilhar os prompts usados pelo time.
-          As pessoas poderão sugerir melhorias, votar e contribuir com versões aprimoradas.
-        </p>
-      </div>
-      <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-4 py-2 rounded-full">
-        <Sparkles size={14} />
-        Em construção
-      </div>
+    <div className="p-6">
+      <PromptsClient prompts={serialized} userId={userId} isAdmin={isAdmin} />
     </div>
   )
 }

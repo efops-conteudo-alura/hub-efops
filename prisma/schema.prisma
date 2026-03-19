@@ -57,6 +57,18 @@ enum LoginType {
   CODE
 }
 
+model Prompt {
+  id        String   @id @default(cuid())
+  titulo    String
+  descricao String?
+  conteudo  String
+  categoria String?
+  autorId   String
+  autorNome String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Project {
   id          String   @id @default(cuid())
   name        String
