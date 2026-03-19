@@ -17,7 +17,6 @@ export default async function PesquisaMercadoPage() {
             tipoPesquisa: true,
             autorNome: true,
             createdAt: true,
-            resultado: true,
           },
         })
       ).map((p) => ({ ...p, createdAt: p.createdAt.toISOString() }))

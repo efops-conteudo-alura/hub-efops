@@ -11,7 +11,6 @@ interface PesquisaResumo {
   tipoPesquisa: string;
   autorNome: string;
   createdAt: string;
-  resultado: string;
 }
 
 interface Props {

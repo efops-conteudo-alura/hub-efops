@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Trash2, History, ChevronRight } from "lucide-react";
 import { MarkdownRenderer } from "./markdown-renderer";
+import { extrairResumo } from "../_utils";
 
 interface AnaliseResumo {
   id: string;
@@ -24,28 +25,23 @@ interface Props {
   analyses: AnaliseResumo[];
 }
 
-function extrairResumo(avaliacao: string): { resumo: string; avaliacaoSemResumo: string } {
-  const marcador = "## Resumo para o instrutor";
-  const idx = avaliacao.indexOf(marcador);
-  if (idx === -1) return { resumo: "", avaliacaoSemResumo: avaliacao };
-  return {
-    resumo: avaliacao.slice(idx + marcador.length).trim(),
-    avaliacaoSemResumo: avaliacao.slice(0, idx).trim(),
-  };
-}
-
 export function HistoricoList({ analyses }: Props) {
   const [lista, setLista] = useState<AnaliseResumo[]>(analyses);
   const [selecionada, setSelecionada] = useState<AnaliseFull | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
 
   async function abrirAnalise(id: string) {
     setLoadingId(id);
+    setErro(null);
     try {
       const res = await fetch(`/api/producao-conteudo/ementas/${id}`);
+      if (!res.ok) throw new Error("Erro ao carregar análise");
       const data = await res.json();
       setSelecionada(data);
+    } catch {
+      setErro("Não foi possível carregar a análise. Tente novamente.");
     } finally {
       setLoadingId(null);
     }
@@ -55,10 +51,14 @@ export function HistoricoList({ analyses }: Props) {
     e.stopPropagation();
     if (!confirm("Excluir esta análise?")) return;
     setDeletandoId(id);
+    setErro(null);
     try {
-      await fetch(`/api/producao-conteudo/ementas/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/producao-conteudo/ementas/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Erro ao excluir");
       setLista((prev) => prev.filter((a) => a.id !== id));
       if (selecionada?.id === id) setSelecionada(null);
+    } catch {
+      setErro("Não foi possível excluir a análise. Tente novamente.");
     } finally {
       setDeletandoId(null);
     }
@@ -68,6 +68,11 @@ export function HistoricoList({ analyses }: Props) {
 
   return (
     <>
+      {erro && (
+        <div className="max-w-3xl rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive mt-4">
+          {erro}
+        </div>
+      )}
       <div className="mt-10">
         <div className="flex items-center gap-2 mb-4">
           <History size={16} className="text-muted-foreground" />

@@ -9,20 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Loader2, Copy, Check, ClipboardCheck, Save } from "lucide-react";
 import { MarkdownRenderer } from "./markdown-renderer";
+import { extrairResumo } from "../_utils";
 
 interface Resultado {
   avaliacao: string;
   sugestaoEmenta: string;
-}
-
-function extrairResumo(avaliacao: string): { resumo: string; avaliacaoSemResumo: string } {
-  const marcador = "## Resumo para o instrutor";
-  const idx = avaliacao.indexOf(marcador);
-  if (idx === -1) return { resumo: "", avaliacaoSemResumo: avaliacao };
-  return {
-    resumo: avaliacao.slice(idx + marcador.length).trim(),
-    avaliacaoSemResumo: avaliacao.slice(0, idx).trim(),
-  };
 }
 
 export function ValidadorForm() {
@@ -68,9 +59,13 @@ export function ValidadorForm() {
 
   async function copiarSugestao() {
     if (!resultado?.sugestaoEmenta) return;
-    await navigator.clipboard.writeText(resultado.sugestaoEmenta);
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 2000);
+    try {
+      await navigator.clipboard.writeText(resultado.sugestaoEmenta);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      setErro("Não foi possível copiar para a área de transferência.");
+    }
   }
 
   async function salvarAnalise() {

@@ -91,28 +91,33 @@ export async function POST(request: NextRequest) {
     ? `Título/assunto do curso informado pelo coordenador: "${nomeCurso}"\n\n`
     : "";
 
-  const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 4000,
-    system: SYSTEM_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content: `${contexto}Analise a seguinte ementa de curso:\n\n${ementa}`,
-      },
-    ],
-  });
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 4000,
+      system: SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content: `${contexto}Analise a seguinte ementa de curso:\n\n${ementa}`,
+        },
+      ],
+    });
 
-  const content = message.content[0].type === "text" ? message.content[0].text : "";
-  const separator = "---SUGESTAO_EMENTA---";
-  const sepIndex = content.indexOf(separator);
+    const content = message.content[0]?.type === "text" ? message.content[0].text : "";
+    const separator = "---SUGESTAO_EMENTA---";
+    const sepIndex = content.indexOf(separator);
 
-  if (sepIndex === -1) {
-    return NextResponse.json({ avaliacao: content, sugestaoEmenta: "" });
+    if (sepIndex === -1) {
+      return NextResponse.json({ avaliacao: content, sugestaoEmenta: "" });
+    }
+
+    const avaliacao = content.slice(0, sepIndex).trim();
+    const sugestaoEmenta = content.slice(sepIndex + separator.length).trim();
+
+    return NextResponse.json({ avaliacao, sugestaoEmenta });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Erro ao processar ementa";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-
-  const avaliacao = content.slice(0, sepIndex).trim();
-  const sugestaoEmenta = content.slice(sepIndex + separator.length).trim();
-
-  return NextResponse.json({ avaliacao, sugestaoEmenta });
 }

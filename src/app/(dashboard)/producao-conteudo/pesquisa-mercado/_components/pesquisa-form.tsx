@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -24,7 +25,16 @@ interface Resultado {
   usouWebSearch?: boolean;
 }
 
-export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: { id: string; assunto: string; tipoConteudo: string; tipoPesquisa: string; autorNome: string; createdAt: string; resultado: string }) => void }) {
+interface NovaPesquisa {
+  id: string;
+  assunto: string;
+  tipoConteudo: string;
+  tipoPesquisa: string;
+  autorNome: string;
+  createdAt: string;
+}
+
+export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: NovaPesquisa) => void }) {
   const [assunto, setAssunto] = useState("");
   const [tipoConteudo, setTipoConteudo] = useState("");
   const [tipoPesquisa, setTipoPesquisa] = useState("");
@@ -33,6 +43,7 @@ export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: { id: str
   const [eixos, setEixos] = useState<string[]>([]);
   const [plataformas, setPlataformas] = useState("");
   const [loading, setLoading] = useState(false);
+  const { data: session } = useSession();
   const [textoStreaming, setTextoStreaming] = useState("");
   const [resultado, setResultado] = useState<Resultado | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -52,6 +63,8 @@ export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: { id: str
     setResultado(null);
     setTextoStreaming("");
 
+    let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+
     try {
       const res = await fetch("/api/pesquisa-mercado", {
         method: "POST",
@@ -64,7 +77,7 @@ export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: { id: str
         throw new Error(data.error || "Erro ao realizar a pesquisa");
       }
 
-      const reader = res.body.getReader();
+      reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullText = "";
 
@@ -88,9 +101,8 @@ export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: { id: str
               assunto,
               tipoConteudo,
               tipoPesquisa,
-              autorNome: "Você",
+              autorNome: session?.user?.name ?? session?.user?.email ?? "Usuário",
               createdAt: new Date().toISOString(),
-              resultado: texto,
             });
           }
           break;
@@ -101,11 +113,13 @@ export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: { id: str
         setTextoStreaming(textoDisplay);
       }
     } catch (err) {
+      reader?.cancel().catch(() => {});
       setErro(err instanceof Error ? err.message : "Erro inesperado");
     } finally {
       setLoading(false);
     }
   }
+
 
   const podeSalvar = assunto.trim() && tipoConteudo && tipoPesquisa && nivel && focoGeo && eixos.length > 0;
   const textoExibido = resultado ? resultado.resultado : textoStreaming;

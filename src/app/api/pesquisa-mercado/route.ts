@@ -66,19 +66,17 @@ Priorize dados atuais (2025-2026). Foque em plataformas relevantes para o públi
           }
           usouWebSearch = true;
         } catch {
-          // Fallback sem web search
+          // Fallback sem web search — usa create() (não streaming) para evitar
+          // enviar texto duplicado ao cliente caso o stream anterior já tenha enviado chunks.
           fullText = "";
-          const anthropicStream = anthropic.messages.stream({
+          const response = await anthropic.messages.create({
             model: "claude-sonnet-4-6",
             max_tokens: 8000,
             messages: [{ role: "user", content: prompt }],
           });
-
-          for await (const event of anthropicStream) {
-            if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-              enqueue(event.delta.text);
-            }
-          }
+          const text = response.content[0]?.type === "text" ? response.content[0].text : "";
+          fullText = text;
+          enqueue(text);
         }
 
         const pesquisa = await prisma.pesquisaMercado.create({
