@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   House, BarChart2, Key, LogOut, Gauge, Users, Bot,
-  GitBranch, BookOpen, ChevronLeft, ChevronRight, Menu, X, Receipt, FileBarChart, TrendingUp, BookMarked, Sun, Moon, ClipboardList, Settings, Pencil, ChevronDown,
+  GitBranch, BookOpen, ChevronLeft, ChevronRight, Menu, X, Receipt, FileBarChart, TrendingUp, BookMarked, Sun, Moon, ClipboardList, Settings, Pencil, ChevronDown, Archive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,9 +47,17 @@ const mainNavItems: NavItem[] = [
       { href: "/producao-conteudo/plano-estudos", label: "Plano de Estudos" },
     ],
   },
-  { href: "/processos", label: "Processos & Fluxos", icon: GitBranch },
-  { href: "/documentacoes", label: "Documentações", icon: BookOpen },
-  { href: "/automacoes", label: "Automações & Agentes", icon: Bot },
+  {
+    label: "Acervo",
+    icon: Archive,
+    children: [
+      { href: "/projetos", label: "Projetos" },
+      { href: "/automacoes", label: "Automações & Agentes" },
+      { href: "/processos", label: "Processos & Fluxos" },
+      { href: "/documentacoes", label: "Documentações" },
+      { href: "/biblioteca-de-prompts", label: "Biblioteca de Prompts" },
+    ],
+  },
   { href: "/licencas", label: "Licenças", icon: Key },
 ];
 
