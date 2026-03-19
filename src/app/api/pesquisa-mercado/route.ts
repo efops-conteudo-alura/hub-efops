@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import Anthropic from "@anthropic-ai/sdk";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -37,33 +37,16 @@ Estruture o resultado em markdown com:
 
 Priorize dados atuais (2025-2026). Foque em plataformas relevantes para o público brasileiro.`;
 
-    let resultado: string;
-    let usouWebSearch = false;
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 4000,
+      messages: [{ role: "user", content: prompt }],
+    });
 
-    try {
-      const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-6",
-        max_tokens: 4000,
-        tools: [{ type: "web_search_20250305" as "web_search_20250305", name: "web_search" }],
-        messages: [{ role: "user", content: prompt }],
-      });
-      resultado = response.content
-        .filter((b) => b.type === "text")
-        .map((b) => (b as { type: "text"; text: string }).text)
-        .join("\n");
-      usouWebSearch = true;
-    } catch {
-      // Fallback sem web search (ex: recurso não habilitado na conta)
-      const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-6",
-        max_tokens: 4000,
-        messages: [{ role: "user", content: prompt }],
-      });
-      resultado = response.content
-        .filter((b) => b.type === "text")
-        .map((b) => (b as { type: "text"; text: string }).text)
-        .join("\n");
-    }
+    const resultado = response.content
+      .filter((b) => b.type === "text")
+      .map((b) => (b as { type: "text"; text: string }).text)
+      .join("\n");
 
     const pesquisa = await prisma.pesquisaMercado.create({
       data: {
@@ -80,7 +63,7 @@ Priorize dados atuais (2025-2026). Foque em plataformas relevantes para o públi
       },
     });
 
-    return NextResponse.json({ id: pesquisa.id, resultado, usouWebSearch });
+    return NextResponse.json({ id: pesquisa.id, resultado });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: msg }, { status: 500 });
