@@ -99,6 +99,11 @@ function buildTemplate(): Buffer {
 }
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session || session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const buffer = buildTemplate();
   return new Response(new Uint8Array(buffer), {
     headers: {

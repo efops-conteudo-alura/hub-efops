@@ -12,8 +12,30 @@ export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { assunto, tipoConteudo, tipoPesquisa, nivel, eixos, focoGeo, plataformas } =
-    await request.json();
+  const body = await request.json();
+  const { assunto, tipoConteudo, tipoPesquisa, nivel, eixos, focoGeo, plataformas } = body;
+
+  const TIPOS_CONTEUDO = ["Curso", "Carreira", "Outro"];
+  const TIPOS_PESQUISA = ["Benchmark", "Tendencias", "Ambos"];
+  const NIVEIS = ["Iniciante", "Intermediario", "Avancado", "Todos"];
+  const FOCOS_GEO = ["Brasil", "AmericaLatina", "Global"];
+  const EIXOS_VALIDOS = ["ementa", "precificacao", "publico", "formato", "cargaHoraria", "diferenciais"];
+
+  if (
+    typeof assunto !== "string" || assunto.trim().length < 3 || assunto.length > 200 ||
+    !TIPOS_CONTEUDO.includes(tipoConteudo) ||
+    !TIPOS_PESQUISA.includes(tipoPesquisa) ||
+    !NIVEIS.includes(nivel) ||
+    !FOCOS_GEO.includes(focoGeo) ||
+    !Array.isArray(eixos) || eixos.length === 0 ||
+    !(eixos as string[]).every((e) => EIXOS_VALIDOS.includes(e))
+  ) {
+    return NextResponse.json({ error: "Parâmetros inválidos" }, { status: 400 });
+  }
+
+  if (plataformas !== undefined && plataformas !== null && (typeof plataformas !== "string" || plataformas.length > 300)) {
+    return NextResponse.json({ error: "Parâmetros inválidos" }, { status: 400 });
+  }
 
   const prompt = `Você é um analista de mercado especializado em edtech (educação em tecnologia).
 

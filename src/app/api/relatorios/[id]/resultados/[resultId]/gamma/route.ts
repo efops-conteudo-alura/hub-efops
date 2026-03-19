@@ -46,9 +46,17 @@ export async function POST(
     return NextResponse.json({ error: "GAMMA_API_KEY não configurada" }, { status: 500 });
   }
 
-  const { resultId } = await params;
-  const resultado = await prisma.aiAnaliseResult.findUnique({ where: { id: resultId } });
-  if (!resultado) return NextResponse.json({ error: "Resultado não encontrado" }, { status: 404 });
+  const { id, resultId } = await params;
+  const resultado = await prisma.aiAnaliseResult.findUnique({
+    where: { id: resultId },
+    include: { report: { select: { isAdminOnly: true } } },
+  });
+  if (!resultado || resultado.reportId !== id) {
+    return NextResponse.json({ error: "Resultado não encontrado" }, { status: 404 });
+  }
+  if (resultado.report.isAdminOnly && session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   if (!resultado.resultadoApresentacao) {
     return NextResponse.json(
