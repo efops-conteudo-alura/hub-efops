@@ -324,6 +324,21 @@ model EmentaAnalise {
   createdAt      DateTime @default(now())
 }
 
+model PesquisaMercado {
+  id            String   @id @default(cuid())
+  assunto       String
+  tipoConteudo  String
+  tipoPesquisa  String
+  nivel         String
+  eixos         String[]
+  focoGeo       String
+  plataformas   String?
+  resultado     String
+  autorNome     String
+  autorEmail    String
+  createdAt     DateTime @default(now())
+}
+
 model SubscriptionAudit {
   id               String   @id @default(cuid())
   subscriptionId   String
