@@ -133,7 +133,7 @@ export function HistoricoList({ analyses }: Props) {
                   {resumo && (
                     <Card>
                       <CardHeader className="pb-2 border-b">
-                        <CardTitle className="text-sm">Resumo para o instrutor</CardTitle>
+                        <CardTitle className="text-sm">Resumo</CardTitle>
                       </CardHeader>
                       <CardContent className="pt-4">
                         <MarkdownRenderer content={resumo} />

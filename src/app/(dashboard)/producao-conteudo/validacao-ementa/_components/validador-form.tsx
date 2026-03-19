@@ -191,7 +191,7 @@ export function ValidadorForm() {
                     {resumo && (
                       <Card>
                         <CardHeader className="pb-3 border-b">
-                          <CardTitle className="text-base">Resumo para o instrutor</CardTitle>
+                          <CardTitle className="text-base">Resumo</CardTitle>
                         </CardHeader>
                         <CardContent className="pt-4">
                           <MarkdownRenderer content={resumo} />
