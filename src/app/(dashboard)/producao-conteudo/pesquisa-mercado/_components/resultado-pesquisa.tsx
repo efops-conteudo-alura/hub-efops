@@ -6,11 +6,12 @@ import remarkGfm from "remark-gfm";
 interface Props {
   resultado: string;
   usouWebSearch?: boolean;
+  printId?: string;
 }
 
-export function ResultadoPesquisa({ resultado, usouWebSearch }: Props) {
+export function ResultadoPesquisa({ resultado, usouWebSearch, printId }: Props) {
   return (
-    <div className="rounded-lg border bg-card p-6">
+    <div id={printId} className="rounded-lg border bg-card p-6">
       {usouWebSearch !== undefined && (
         <div className="mb-4">
           <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full font-medium ${usouWebSearch ? "bg-blue-500/10 text-blue-600 dark:text-blue-400" : "bg-muted text-muted-foreground"}`}>

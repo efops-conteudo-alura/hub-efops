@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Search } from "lucide-react";
 import { ResultadoPesquisa } from "./resultado-pesquisa";
+import { ExportarPDFButton } from "./export-pdf-button";
 
 const EIXOS_OPCOES = [
   { id: "ementa", label: "Ementa e conteúdo" },
@@ -240,10 +241,26 @@ export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: NovaPesqu
       )}
 
       {textoExibido && (
-        <ResultadoPesquisa
-          resultado={textoExibido}
-          usouWebSearch={resultado?.usouWebSearch}
-        />
+        <div className="space-y-2">
+          {resultado && (
+            <div className="flex justify-end max-w-3xl">
+              <ExportarPDFButton
+                assunto={assunto}
+                tipoConteudo={tipoConteudo}
+                tipoPesquisa={tipoPesquisa}
+                nivel={nivel}
+                focoGeo={focoGeo}
+                autorNome={session?.user?.name ?? session?.user?.email ?? undefined}
+                printId="resultado-form-print"
+              />
+            </div>
+          )}
+          <ResultadoPesquisa
+            resultado={textoExibido}
+            usouWebSearch={resultado?.usouWebSearch}
+            printId={resultado ? "resultado-form-print" : undefined}
+          />
+        </div>
       )}
     </div>
   );

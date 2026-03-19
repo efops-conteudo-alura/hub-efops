@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, History, ChevronRight, Trash2 } from "lucide-react";
 import { ResultadoPesquisa } from "./resultado-pesquisa";
+import { ExportarPDFButton } from "./export-pdf-button";
 
 interface PesquisaResumo {
   id: string;
@@ -16,6 +17,8 @@ interface PesquisaResumo {
 
 interface PesquisaFull extends PesquisaResumo {
   resultado: string;
+  nivel?: string;
+  focoGeo?: string;
 }
 
 interface Props {
@@ -125,24 +128,40 @@ export function HistoricoPesquisas({ pesquisas }: Props) {
       <Dialog open={!!selecionada} onOpenChange={(open) => !open && setSelecionada(null)}>
         <DialogContent className="max-w-[69vw] sm:max-w-[69vw] w-full max-h-[68vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{selecionada?.assunto}</DialogTitle>
-            {selecionada && (
-              <p className="text-xs text-muted-foreground">
-                {selecionada.tipoConteudo} · {selecionada.tipoPesquisa} · {selecionada.autorNome} ·{" "}
-                {new Date(selecionada.createdAt).toLocaleDateString("pt-BR", {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            )}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <DialogTitle>{selecionada?.assunto}</DialogTitle>
+                {selecionada && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {selecionada.tipoConteudo} · {selecionada.tipoPesquisa} · {selecionada.autorNome} ·{" "}
+                    {new Date(selecionada.createdAt).toLocaleDateString("pt-BR", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                )}
+              </div>
+              {selecionada && (
+                <ExportarPDFButton
+                  assunto={selecionada.assunto}
+                  tipoConteudo={selecionada.tipoConteudo}
+                  tipoPesquisa={selecionada.tipoPesquisa}
+                  nivel={selecionada.nivel}
+                  focoGeo={selecionada.focoGeo}
+                  autorNome={selecionada.autorNome}
+                  createdAt={selecionada.createdAt}
+                  printId="resultado-dialog-print"
+                />
+              )}
+            </div>
           </DialogHeader>
 
           {selecionada && (
             <div className="mt-2">
-              <ResultadoPesquisa resultado={selecionada.resultado} />
+              <ResultadoPesquisa resultado={selecionada.resultado} printId="resultado-dialog-print" />
             </div>
           )}
         </DialogContent>
