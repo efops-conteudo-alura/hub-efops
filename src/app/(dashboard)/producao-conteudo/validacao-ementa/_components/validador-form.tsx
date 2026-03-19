@@ -15,6 +15,16 @@ interface Resultado {
   sugestaoEmenta: string;
 }
 
+function extrairResumo(avaliacao: string): { resumo: string; avaliacaoSemResumo: string } {
+  const marcador = "## Resumo para o instrutor";
+  const idx = avaliacao.indexOf(marcador);
+  if (idx === -1) return { resumo: "", avaliacaoSemResumo: avaliacao };
+  return {
+    resumo: avaliacao.slice(idx + marcador.length).trim(),
+    avaliacaoSemResumo: avaliacao.slice(0, idx).trim(),
+  };
+}
+
 export function ValidadorForm() {
   const router = useRouter();
   const [nomeCurso, setNomeCurso] = useState("");
@@ -171,16 +181,35 @@ export function ValidadorForm() {
           </div>
 
           {/* Grid de dois painéis */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            {/* Avaliação */}
-            <Card>
-              <CardHeader className="pb-3 border-b">
-                <CardTitle className="text-base">Avaliação</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <MarkdownRenderer content={resultado.avaliacao} />
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
+            {/* Coluna 1: Resumo + Avaliação */}
+            <div className="space-y-4">
+              {(() => {
+                const { resumo, avaliacaoSemResumo } = extrairResumo(resultado.avaliacao);
+                return (
+                  <>
+                    {resumo && (
+                      <Card>
+                        <CardHeader className="pb-3 border-b">
+                          <CardTitle className="text-base">Resumo para o instrutor</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4">
+                          <MarkdownRenderer content={resumo} />
+                        </CardContent>
+                      </Card>
+                    )}
+                    <Card>
+                      <CardHeader className="pb-3 border-b">
+                        <CardTitle className="text-base">Avaliação detalhada</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-4">
+                        <MarkdownRenderer content={avaliacaoSemResumo || resultado.avaliacao} />
+                      </CardContent>
+                    </Card>
+                  </>
+                );
+              })()}
+            </div>
 
             {/* Sugestão de Ementa */}
             <Card>
@@ -223,3 +252,5 @@ export function ValidadorForm() {
     </div>
   );
 }
+
+

@@ -24,6 +24,16 @@ interface Props {
   analyses: AnaliseResumo[];
 }
 
+function extrairResumo(avaliacao: string): { resumo: string; avaliacaoSemResumo: string } {
+  const marcador = "## Resumo para o instrutor";
+  const idx = avaliacao.indexOf(marcador);
+  if (idx === -1) return { resumo: "", avaliacaoSemResumo: avaliacao };
+  return {
+    resumo: avaliacao.slice(idx + marcador.length).trim(),
+    avaliacaoSemResumo: avaliacao.slice(0, idx).trim(),
+  };
+}
+
 export function HistoricoList({ analyses }: Props) {
   const [lista, setLista] = useState<AnaliseResumo[]>(analyses);
   const [selecionada, setSelecionada] = useState<AnaliseFull | null>(null);
@@ -115,26 +125,41 @@ export function HistoricoList({ analyses }: Props) {
             )}
           </DialogHeader>
 
-          {selecionada && (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-2">
-              <Card>
-                <CardHeader className="pb-2 border-b">
-                  <CardTitle className="text-sm">Avaliação</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <MarkdownRenderer content={selecionada.avaliacao} />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2 border-b">
-                  <CardTitle className="text-sm">Sugestão de Ementa</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <MarkdownRenderer content={selecionada.sugestaoEmenta} />
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          {selecionada && (() => {
+            const { resumo, avaliacaoSemResumo } = extrairResumo(selecionada.avaliacao);
+            return (
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-2 items-start">
+                <div className="space-y-4">
+                  {resumo && (
+                    <Card>
+                      <CardHeader className="pb-2 border-b">
+                        <CardTitle className="text-sm">Resumo para o instrutor</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-4">
+                        <MarkdownRenderer content={resumo} />
+                      </CardContent>
+                    </Card>
+                  )}
+                  <Card>
+                    <CardHeader className="pb-2 border-b">
+                      <CardTitle className="text-sm">Avaliação detalhada</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4">
+                      <MarkdownRenderer content={avaliacaoSemResumo || selecionada.avaliacao} />
+                    </CardContent>
+                  </Card>
+                </div>
+                <Card>
+                  <CardHeader className="pb-2 border-b">
+                    <CardTitle className="text-sm">Sugestão de Ementa</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <MarkdownRenderer content={selecionada.sugestaoEmenta} />
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </>
