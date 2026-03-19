@@ -37,23 +37,23 @@ Estruture o resultado em markdown com:
 Priorize dados atuais (2025-2026). Foque em plataformas relevantes para o público brasileiro.`;
 
   let resultado: string;
+  let usouWebSearch = false;
 
   try {
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 8000,
-      tools: [{ type: "web_search_20250305" as "web_search_20250305", name: "web_search" }],
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    resultado = response.content
-      .filter((b) => b.type === "text")
-      .map((b) => (b as { type: "text"; text: string }).text)
-      .join("\n");
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("web_search") || msg.includes("tool")) {
-      // Fallback sem web search
+    try {
+      const response = await anthropic.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 8000,
+        tools: [{ type: "web_search_20250305" as "web_search_20250305", name: "web_search" }],
+        messages: [{ role: "user", content: prompt }],
+      });
+      resultado = response.content
+        .filter((b) => b.type === "text")
+        .map((b) => (b as { type: "text"; text: string }).text)
+        .join("\n");
+      usouWebSearch = true;
+    } catch {
+      // Fallback sem web search (ex: recurso não habilitado na conta)
       const response = await anthropic.messages.create({
         model: "claude-sonnet-4-6",
         max_tokens: 8000,
@@ -63,9 +63,10 @@ Priorize dados atuais (2025-2026). Foque em plataformas relevantes para o públi
         .filter((b) => b.type === "text")
         .map((b) => (b as { type: "text"; text: string }).text)
         .join("\n");
-    } else {
-      throw err;
     }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 
   const pesquisa = await prisma.pesquisaMercado.create({
@@ -83,7 +84,7 @@ Priorize dados atuais (2025-2026). Foque em plataformas relevantes para o públi
     },
   });
 
-  return NextResponse.json({ id: pesquisa.id, resultado });
+  return NextResponse.json({ id: pesquisa.id, resultado, usouWebSearch });
 }
 
 export async function GET() {

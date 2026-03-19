@@ -5,11 +5,19 @@ import remarkGfm from "remark-gfm";
 
 interface Props {
   resultado: string;
+  usouWebSearch?: boolean;
 }
 
-export function ResultadoPesquisa({ resultado }: Props) {
+export function ResultadoPesquisa({ resultado, usouWebSearch }: Props) {
   return (
     <div className="rounded-lg border bg-card p-6">
+      {usouWebSearch !== undefined && (
+        <div className="mb-4">
+          <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full font-medium ${usouWebSearch ? "bg-blue-500/10 text-blue-600 dark:text-blue-400" : "bg-muted text-muted-foreground"}`}>
+            {usouWebSearch ? "🌐 Com pesquisa web" : "📚 Baseado em conhecimento de treinamento"}
+          </span>
+        </div>
+      )}
       <div className="prose prose-sm dark:prose-invert max-w-none
         prose-headings:font-semibold prose-headings:text-foreground
         prose-h1:text-xl prose-h2:text-base prose-h3:text-sm

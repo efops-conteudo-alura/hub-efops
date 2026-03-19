@@ -21,6 +21,7 @@ const EIXOS_OPCOES = [
 interface Resultado {
   id: string;
   resultado: string;
+  usouWebSearch?: boolean;
 }
 
 export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: { id: string; assunto: string; tipoConteudo: string; tipoPesquisa: string; autorNome: string; createdAt: string; resultado: string }) => void }) {
@@ -197,7 +198,7 @@ export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: { id: str
       )}
 
       {resultado && (
-        <ResultadoPesquisa resultado={resultado.resultado} />
+        <ResultadoPesquisa resultado={resultado.resultado} usouWebSearch={resultado.usouWebSearch} />
       )}
     </div>
   );
