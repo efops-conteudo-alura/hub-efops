@@ -8,11 +8,11 @@ export default async function ValidacaoEmentaPage() {
   const session = await getServerSession(authOptions);
 
   const analyses = session
-    ? await prisma.ementaAnalise.findMany({
+    ? (await prisma.ementaAnalise.findMany({
         orderBy: { createdAt: "desc" },
         take: 30,
         select: { id: true, titulo: true, autorNome: true, createdAt: true },
-      })
+      })).map((a) => ({ ...a, createdAt: a.createdAt.toISOString() }))
     : [];
 
   return (
