@@ -43,7 +43,7 @@ Priorize dados atuais (2025-2026). Foque em plataformas relevantes para o públi
     try {
       const response = await anthropic.messages.create({
         model: "claude-sonnet-4-6",
-        max_tokens: 8000,
+        max_tokens: 4000,
         tools: [{ type: "web_search_20250305" as "web_search_20250305", name: "web_search" }],
         messages: [{ role: "user", content: prompt }],
       });
@@ -56,7 +56,7 @@ Priorize dados atuais (2025-2026). Foque em plataformas relevantes para o públi
       // Fallback sem web search (ex: recurso não habilitado na conta)
       const response = await anthropic.messages.create({
         model: "claude-sonnet-4-6",
-        max_tokens: 8000,
+        max_tokens: 4000,
         messages: [{ role: "user", content: prompt }],
       });
       resultado = response.content
