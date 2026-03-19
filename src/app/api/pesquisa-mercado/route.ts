@@ -9,13 +9,14 @@ export const maxDuration = 60;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { assunto, tipoConteudo, tipoPesquisa, nivel, eixos, focoGeo, plataformas } =
-    await request.json();
+    const { assunto, tipoConteudo, tipoPesquisa, nivel, eixos, focoGeo, plataformas } =
+      await request.json();
 
-  const prompt = `Você é um analista de mercado especializado em edtech (educação em tecnologia).
+    const prompt = `Você é um analista de mercado especializado em edtech (educação em tecnologia).
 
 Faça uma pesquisa de mercado sobre: "${assunto}"
 
@@ -36,10 +37,9 @@ Estruture o resultado em markdown com:
 
 Priorize dados atuais (2025-2026). Foque em plataformas relevantes para o público brasileiro.`;
 
-  let resultado: string;
-  let usouWebSearch = false;
+    let resultado: string;
+    let usouWebSearch = false;
 
-  try {
     try {
       const response = await anthropic.messages.create({
         model: "claude-sonnet-4-6",
@@ -64,27 +64,27 @@ Priorize dados atuais (2025-2026). Foque em plataformas relevantes para o públi
         .map((b) => (b as { type: "text"; text: string }).text)
         .join("\n");
     }
+
+    const pesquisa = await prisma.pesquisaMercado.create({
+      data: {
+        assunto,
+        tipoConteudo,
+        tipoPesquisa,
+        nivel,
+        eixos,
+        focoGeo,
+        plataformas: plataformas || null,
+        resultado,
+        autorNome: session.user?.name ?? "Desconhecido",
+        autorEmail: session.user?.email ?? "",
+      },
+    });
+
+    return NextResponse.json({ id: pesquisa.id, resultado, usouWebSearch });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
-
-  const pesquisa = await prisma.pesquisaMercado.create({
-    data: {
-      assunto,
-      tipoConteudo,
-      tipoPesquisa,
-      nivel,
-      eixos,
-      focoGeo,
-      plataformas: plataformas || null,
-      resultado,
-      autorNome: session.user?.name ?? "Desconhecido",
-      autorEmail: session.user?.email ?? "",
-    },
-  });
-
-  return NextResponse.json({ id: pesquisa.id, resultado, usouWebSearch });
 }
 
 export async function GET() {
