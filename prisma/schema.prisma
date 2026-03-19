@@ -313,6 +313,17 @@ model AllowedEmail {
   createdAt DateTime @default(now())
 }
 
+model EmentaAnalise {
+  id             String   @id @default(cuid())
+  titulo         String
+  ementaOriginal String
+  avaliacao      String
+  sugestaoEmenta String
+  autorId        String
+  autorNome      String
+  createdAt      DateTime @default(now())
+}
+
 model SubscriptionAudit {
   id               String   @id @default(cuid())
   subscriptionId   String
