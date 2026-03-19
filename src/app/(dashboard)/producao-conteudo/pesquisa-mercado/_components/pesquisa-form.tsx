@@ -33,6 +33,7 @@ export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: { id: str
   const [eixos, setEixos] = useState<string[]>([]);
   const [plataformas, setPlataformas] = useState("");
   const [loading, setLoading] = useState(false);
+  const [textoStreaming, setTextoStreaming] = useState("");
   const [resultado, setResultado] = useState<Resultado | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -49,6 +50,7 @@ export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: { id: str
     setLoading(true);
     setErro(null);
     setResultado(null);
+    setTextoStreaming("");
 
     try {
       const res = await fetch("/api/pesquisa-mercado", {
@@ -57,22 +59,47 @@ export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: { id: str
         body: JSON.stringify({ assunto, tipoConteudo, tipoPesquisa, nivel, eixos, focoGeo, plataformas }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({ error: "Erro desconhecido" }));
         throw new Error(data.error || "Erro ao realizar a pesquisa");
       }
 
-      const data = await res.json();
-      setResultado(data);
-      onNovaPesquisa({
-        id: data.id,
-        assunto,
-        tipoConteudo,
-        tipoPesquisa,
-        autorNome: "Você",
-        createdAt: new Date().toISOString(),
-        resultado: data.resultado,
-      });
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        const chunk = value ? decoder.decode(value, { stream: !done }) : "";
+        fullText += chunk;
+
+        if (done) {
+          const metaMatch = fullText.match(/\n\n<!--META:([\s\S]+?)-->$/);
+          const errorMatch = fullText.match(/\n\n<!--ERROR:([\s\S]+?)-->$/);
+
+          if (errorMatch) {
+            throw new Error(errorMatch[1]);
+          } else if (metaMatch) {
+            const meta = JSON.parse(metaMatch[1]) as { id: string; usouWebSearch: boolean };
+            const texto = fullText.slice(0, fullText.lastIndexOf("\n\n<!--META:"));
+            setResultado({ id: meta.id, resultado: texto, usouWebSearch: meta.usouWebSearch });
+            onNovaPesquisa({
+              id: meta.id,
+              assunto,
+              tipoConteudo,
+              tipoPesquisa,
+              autorNome: "Você",
+              createdAt: new Date().toISOString(),
+              resultado: texto,
+            });
+          }
+          break;
+        }
+
+        // Atualiza display enquanto streama (esconde marcador parcial no final)
+        const textoDisplay = fullText.replace(/\n\n<!--[^>]*$/, "");
+        setTextoStreaming(textoDisplay);
+      }
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Erro inesperado");
     } finally {
@@ -81,6 +108,7 @@ export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: { id: str
   }
 
   const podeSalvar = assunto.trim() && tipoConteudo && tipoPesquisa && nivel && focoGeo && eixos.length > 0;
+  const textoExibido = resultado ? resultado.resultado : textoStreaming;
 
   return (
     <div className="space-y-6">
@@ -179,7 +207,7 @@ export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: { id: str
             {loading ? (
               <>
                 <Loader2 size={16} className="mr-2 animate-spin" />
-                Pesquisando o mercado... isso pode levar até 1 minuto
+                Pesquisando o mercado...
               </>
             ) : (
               <>
@@ -197,8 +225,11 @@ export function PesquisaForm({ onNovaPesquisa }: { onNovaPesquisa: (p: { id: str
         </div>
       )}
 
-      {resultado && (
-        <ResultadoPesquisa resultado={resultado.resultado} usouWebSearch={resultado.usouWebSearch} />
+      {textoExibido && (
+        <ResultadoPesquisa
+          resultado={textoExibido}
+          usouWebSearch={resultado?.usouWebSearch}
+        />
       )}
     </div>
   );

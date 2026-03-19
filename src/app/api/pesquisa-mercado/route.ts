@@ -9,14 +9,13 @@ export const maxDuration = 300;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { assunto, tipoConteudo, tipoPesquisa, nivel, eixos, focoGeo, plataformas } =
-      await request.json();
+  const { assunto, tipoConteudo, tipoPesquisa, nivel, eixos, focoGeo, plataformas } =
+    await request.json();
 
-    const prompt = `Você é um analista de mercado especializado em edtech (educação em tecnologia).
+  const prompt = `Você é um analista de mercado especializado em edtech (educação em tecnologia).
 
 Faça uma pesquisa de mercado sobre: "${assunto}"
 
@@ -37,37 +36,86 @@ Estruture o resultado em markdown com:
 
 Priorize dados atuais (2025-2026). Foque em plataformas relevantes para o público brasileiro.`;
 
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 4000,
-      messages: [{ role: "user", content: prompt }],
-    });
+  const autorNome = session.user?.name ?? "Desconhecido";
+  const autorEmail = session.user?.email ?? "";
+  const encoder = new TextEncoder();
 
-    const resultado = response.content
-      .filter((b) => b.type === "text")
-      .map((b) => (b as { type: "text"; text: string }).text)
-      .join("\n");
+  const stream = new ReadableStream({
+    async start(controller) {
+      let fullText = "";
+      let usouWebSearch = false;
 
-    const pesquisa = await prisma.pesquisaMercado.create({
-      data: {
-        assunto,
-        tipoConteudo,
-        tipoPesquisa,
-        nivel,
-        eixos,
-        focoGeo,
-        plataformas: plataformas || null,
-        resultado,
-        autorNome: session.user?.name ?? "Desconhecido",
-        autorEmail: session.user?.email ?? "",
-      },
-    });
+      const enqueue = (text: string) => {
+        fullText += text;
+        controller.enqueue(encoder.encode(text));
+      };
 
-    return NextResponse.json({ id: pesquisa.id, resultado });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
+      try {
+        try {
+          const anthropicStream = anthropic.messages.stream({
+            model: "claude-sonnet-4-6",
+            max_tokens: 4000,
+            tools: [{ type: "web_search_20250305" as "web_search_20250305", name: "web_search" }],
+            messages: [{ role: "user", content: prompt }],
+          });
+
+          for await (const event of anthropicStream) {
+            if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+              enqueue(event.delta.text);
+            }
+          }
+          usouWebSearch = true;
+        } catch {
+          // Fallback sem web search
+          fullText = "";
+          const anthropicStream = anthropic.messages.stream({
+            model: "claude-sonnet-4-6",
+            max_tokens: 4000,
+            messages: [{ role: "user", content: prompt }],
+          });
+
+          for await (const event of anthropicStream) {
+            if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+              enqueue(event.delta.text);
+            }
+          }
+        }
+
+        const pesquisa = await prisma.pesquisaMercado.create({
+          data: {
+            assunto,
+            tipoConteudo,
+            tipoPesquisa,
+            nivel,
+            eixos,
+            focoGeo,
+            plataformas: plataformas || null,
+            resultado: fullText,
+            autorNome,
+            autorEmail,
+          },
+        });
+
+        controller.enqueue(
+          encoder.encode(
+            `\n\n<!--META:${JSON.stringify({ id: pesquisa.id, usouWebSearch })}-->`
+          )
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        controller.enqueue(encoder.encode(`\n\n<!--ERROR:${msg}-->`));
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
 }
 
 export async function GET() {
