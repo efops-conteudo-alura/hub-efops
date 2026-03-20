@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Trash2, History, ChevronRight } from "lucide-react";
+import { Loader2, Trash2, History, ChevronRight, Copy, Check } from "lucide-react";
 import { MarkdownRenderer } from "./markdown-renderer";
 import { extrairResumo } from "../_utils";
 
@@ -31,6 +31,14 @@ export function HistoricoList({ analyses }: Props) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [copiadoBloco, setCopiadoBloco] = useState<Record<string, boolean>>({});
+
+  function copiarBloco(texto: string, chave: string) {
+    navigator.clipboard.writeText(texto).then(() => {
+      setCopiadoBloco((prev) => ({ ...prev, [chave]: true }));
+      setTimeout(() => setCopiadoBloco((prev) => ({ ...prev, [chave]: false })), 2000);
+    });
+  }
 
   async function abrirAnalise(id: string) {
     setLoadingId(id);
@@ -137,8 +145,20 @@ export function HistoricoList({ analyses }: Props) {
                 <div className="space-y-4">
                   {resumo && (
                     <Card>
-                      <CardHeader className="pb-2 border-b">
+                      <CardHeader className="pb-2 border-b flex flex-row items-center justify-between">
                         <CardTitle className="text-sm">Resumo</CardTitle>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copiarBloco(resumo, "resumo")}
+                          className="shrink-0 gap-1.5 text-muted-foreground h-7 text-xs"
+                        >
+                          {copiadoBloco.resumo ? (
+                            <><Check size={12} className="text-green-500" />Copiado</>
+                          ) : (
+                            <><Copy size={12} />Copiar</>
+                          )}
+                        </Button>
                       </CardHeader>
                       <CardContent className="pt-4">
                         <MarkdownRenderer content={resumo} />
@@ -146,8 +166,20 @@ export function HistoricoList({ analyses }: Props) {
                     </Card>
                   )}
                   <Card>
-                    <CardHeader className="pb-2 border-b">
+                    <CardHeader className="pb-2 border-b flex flex-row items-center justify-between">
                       <CardTitle className="text-sm">Avaliação detalhada</CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copiarBloco(avaliacaoSemResumo || selecionada.avaliacao, "avaliacao")}
+                        className="shrink-0 gap-1.5 text-muted-foreground h-7 text-xs"
+                      >
+                        {copiadoBloco.avaliacao ? (
+                          <><Check size={12} className="text-green-500" />Copiado</>
+                        ) : (
+                          <><Copy size={12} />Copiar</>
+                        )}
+                      </Button>
                     </CardHeader>
                     <CardContent className="pt-4">
                       <MarkdownRenderer content={avaliacaoSemResumo || selecionada.avaliacao} />
@@ -155,8 +187,22 @@ export function HistoricoList({ analyses }: Props) {
                   </Card>
                 </div>
                 <Card>
-                  <CardHeader className="pb-2 border-b">
+                  <CardHeader className="pb-2 border-b flex flex-row items-center justify-between">
                     <CardTitle className="text-sm">Sugestão de Ementa</CardTitle>
+                    {selecionada.sugestaoEmenta && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copiarBloco(selecionada.sugestaoEmenta, "sugestao")}
+                        className="shrink-0 gap-1.5 text-muted-foreground h-7 text-xs"
+                      >
+                        {copiadoBloco.sugestao ? (
+                          <><Check size={12} className="text-green-500" />Copiado</>
+                        ) : (
+                          <><Copy size={12} />Copiar</>
+                        )}
+                      </Button>
+                    )}
                   </CardHeader>
                   <CardContent className="pt-4">
                     <MarkdownRenderer content={selecionada.sugestaoEmenta} />

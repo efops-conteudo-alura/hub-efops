@@ -82,10 +82,13 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const ementa = body?.ementa?.trim();
   const nomeCurso = body?.nomeCurso?.trim();
+  const customPrompt = typeof body?.customPrompt === "string" ? body.customPrompt.trim() : "";
 
   if (!ementa) {
     return NextResponse.json({ error: "Ementa não pode ser vazia" }, { status: 400 });
   }
+
+  const systemPrompt = customPrompt || SYSTEM_PROMPT;
 
   const contexto = nomeCurso
     ? `Título/assunto do curso informado pelo coordenador: "${nomeCurso}"\n\n`
@@ -95,7 +98,7 @@ export async function POST(request: NextRequest) {
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 4000,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: [
         {
           role: "user",
