@@ -69,6 +69,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
     setPassword("");
     setError("");
     const map: Record<string, string> = {};
+    for (const app of Object.keys(APP_CONFIG)) map[app] = "";
     for (const r of user.appRoles) map[r.app] = r.role;
     setRoleMap(map);
   }
@@ -79,7 +80,10 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
     setError("");
     setLoading(true);
 
-    const appRoles = Object.entries(roleMap).map(([app, role]) => ({ app, role }));
+    // Só envia apps com role definido (não "Sem acesso")
+    const appRoles = Object.entries(roleMap)
+      .filter(([, role]) => role !== "")
+      .map(([app, role]) => ({ app, role }));
 
     const res = await fetch(`/api/admin/usuarios/${user.id}`, {
       method: "PATCH",
@@ -98,8 +102,6 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
     onOpenChange(false);
     setPassword("");
   }
-
-  const appsToShow = user?.appRoles.map((r) => r.app) ?? [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -120,37 +122,35 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
             />
           </div>
 
-          {appsToShow.length > 0 && (
-            <div className="space-y-3">
-              <Label>Roles por aplicativo</Label>
-              {appsToShow.map((app) => {
-                const config = APP_CONFIG[app];
-                const currentRole = roleMap[app] ?? "";
-                return (
-                  <div key={app} className="flex items-center gap-3">
-                    <span className="text-sm text-muted-foreground w-32 shrink-0">
-                      {config?.label ?? app}
-                    </span>
-                    <Select
-                      value={currentRole}
-                      onValueChange={(v) => setRoleMap((prev) => ({ ...prev, [app]: v }))}
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(config?.roles ?? [{ value: currentRole, label: currentRole }]).map((r) => (
-                          <SelectItem key={r.value} value={r.value}>
-                            {r.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <div className="space-y-3">
+            <Label>Acesso por aplicativo</Label>
+            {Object.entries(APP_CONFIG).map(([app, config]) => {
+              const currentRole = roleMap[app] ?? "";
+              return (
+                <div key={app} className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground w-32 shrink-0">
+                    {config.label}
+                  </span>
+                  <Select
+                    value={currentRole}
+                    onValueChange={(v) => setRoleMap((prev) => ({ ...prev, [app]: v }))}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Sem acesso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Sem acesso</SelectItem>
+                      {config.roles.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>
+                          {r.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            })}
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="edit-password">
