@@ -66,7 +66,7 @@ export function PromptFormDialog({ prompt, onSuccess, open: openProp, onOpenChan
   }
 
   const dialogContent = (
-    <DialogContent className="max-w-2xl">
+    <DialogContent className="sm:max-w-[60vw]">
       <DialogHeader>
         <DialogTitle>{isEdit ? "Editar Prompt" : "Novo Prompt"}</DialogTitle>
       </DialogHeader>

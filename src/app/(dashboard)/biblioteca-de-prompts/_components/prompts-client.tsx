@@ -109,7 +109,7 @@ function PromptCard({
 
       {/* Dialog: Visualizar */}
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+        <DialogContent className="sm:max-w-[80vw] max-h-[80vh] flex flex-col">
           <DialogHeader className="shrink-0">
             <DialogTitle>{prompt.titulo}</DialogTitle>
             <div className="flex items-center gap-2 flex-wrap pt-1">
