@@ -10,7 +10,13 @@ export default async function UsuariosPage() {
   if (!session || session.user.role !== "ADMIN") redirect("/home");
 
   const users = await prisma.user.findMany({
-    select: { id: true, name: true, email: true, role: true, createdAt: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      createdAt: true,
+      appRoles: { where: { app: "hub-efops" }, select: { role: true } },
+    },
     orderBy: { createdAt: "asc" },
   });
 
@@ -18,7 +24,13 @@ export default async function UsuariosPage() {
 
   return (
     <UsuariosClient
-      initialUsers={users.map((u) => ({ ...u, createdAt: u.createdAt.toISOString() }))}
+      initialUsers={users.map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.appRoles[0]?.role ?? "USER",
+        createdAt: u.createdAt.toISOString(),
+      }))}
       isSuperAdmin={superAdmin}
     />
   );

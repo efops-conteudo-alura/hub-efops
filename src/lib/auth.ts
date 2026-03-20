@@ -28,7 +28,15 @@ export const authOptions: NextAuthOptions = {
         const passwordMatch = await bcrypt.compare(credentials.password, user.password);
         if (!passwordMatch) return null;
 
-        return { id: user.id, email: user.email, name: user.name, role: user.role };
+        const appRole = await prisma.appRole.findUnique({
+          where: { userId_app: { userId: user.id, app: "hub-efops" } },
+        });
+
+        if (!appRole) {
+          throw new Error("NoAccess");
+        }
+
+        return { id: user.id, email: user.email, name: user.name, role: appRole.role };
       },
     }),
   ],

@@ -11,11 +11,25 @@ export async function GET() {
   }
 
   const users = await prisma.user.findMany({
-    select: { id: true, name: true, email: true, role: true, createdAt: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      createdAt: true,
+      appRoles: { where: { app: "hub-efops" }, select: { role: true } },
+    },
     orderBy: { createdAt: "asc" },
   });
 
-  return NextResponse.json(users);
+  const result = users.map((u) => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    createdAt: u.createdAt,
+    role: u.appRoles[0]?.role ?? "USER",
+  }));
+
+  return NextResponse.json(result);
 }
 
 export async function POST(request: NextRequest) {
@@ -45,11 +59,15 @@ export async function POST(request: NextRequest) {
 
   const hashedPassword = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
-    data: { name, email, password: hashedPassword, role: targetRole },
-    select: { id: true, name: true, email: true, role: true },
+    data: { name, email, password: hashedPassword },
+    select: { id: true, name: true, email: true },
   });
 
-  return NextResponse.json(user, { status: 201 });
+  await prisma.appRole.create({
+    data: { userId: user.id, app: "hub-efops", role: targetRole },
+  });
+
+  return NextResponse.json({ ...user, role: targetRole }, { status: 201 });
 }
 
 export async function DELETE(request: NextRequest) {

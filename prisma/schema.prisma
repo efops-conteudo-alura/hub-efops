@@ -8,14 +8,25 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   name      String
-  email     String   @unique
+  email     String    @unique
   password  String?
-  image     String?  // base64 data URL ou URL externa
-  role      Role     @default(USER)
+  image     String?   // base64 data URL ou URL externa
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  appRoles  AppRole[]
+}
+
+model AppRole {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  app       String   // ex: "hub-efops", "select-activity"
+  role      String   // ex: "ADMIN", "USER"
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@unique([userId, app])
 }
 
 model Subscription {
@@ -38,11 +49,6 @@ model Subscription {
   notes        String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
-}
-
-enum Role {
-  ADMIN
-  USER
 }
 
 enum BillingCycle {

@@ -24,7 +24,11 @@ export async function POST(request: NextRequest) {
 
     const hashed = await bcrypt.hash(password, 12);
     const user = await prisma.user.create({
-      data: { name, email, password: hashed, role: "ADMIN" },
+      data: { name, email, password: hashed },
+    });
+
+    await prisma.appRole.create({
+      data: { userId: user.id, app: "hub-efops", role: "ADMIN" },
     });
 
     return NextResponse.json({ success: true, email: user.email });

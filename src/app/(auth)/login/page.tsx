@@ -37,6 +37,8 @@ export default function LoginPage() {
     if (result?.error) {
       if (result.error === "NeedPassword") {
         setError("Sua conta ainda não tem senha. Crie uma em /criar-senha.");
+      } else if (result.error === "NoAccess") {
+        setError("Você não tem acesso a este sistema. Contacte um administrador.");
       } else {
         setError("Email ou senha inválidos.");
       }
