@@ -12,10 +12,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const { id } = await params;
-  const { name, password } = await req.json();
+  const { name, password, role } = await req.json();
 
-  const updateData: { name?: string; password?: string } = {};
+  const updateData: { name?: string; password?: string; role?: "USER" | "ADMIN" } = {};
   if (name?.trim()) updateData.name = name.trim();
+  if (role === "USER" || role === "ADMIN") updateData.role = role;
   if (password) {
     if (password.length < 8) {
       return NextResponse.json({ error: "Senha deve ter ao menos 8 caracteres." }, { status: 400 });
@@ -28,5 +29,5 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const updated = await prisma.user.update({ where: { id }, data: updateData });
-  return NextResponse.json({ id: updated.id, name: updated.name, email: updated.email });
+  return NextResponse.json({ id: updated.id, name: updated.name, email: updated.email, role: updated.role });
 }

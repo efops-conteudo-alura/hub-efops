@@ -57,8 +57,8 @@ export function UsuariosClient({ initialUsers, isSuperAdmin }: UsuariosClientPro
     setEditOpen(true);
   }
 
-  function handleSaved(updated: { id: string; name: string; email: string }) {
-    setUsers((prev) => prev.map((u) => (u.id === updated.id ? { ...u, name: updated.name } : u)));
+  function handleSaved(updated: { id: string; name: string; email: string; role: string }) {
+    setUsers((prev) => prev.map((u) => (u.id === updated.id ? { ...u, name: updated.name, role: updated.role } : u)));
   }
 
   const tabs: { key: Tab; label: string }[] = [

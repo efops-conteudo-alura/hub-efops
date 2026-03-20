@@ -10,11 +10,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface User {
   id: string;
   name: string;
   email: string;
+  role: string;
 }
 
 interface EditUserDialogProps {
@@ -26,13 +34,15 @@ interface EditUserDialogProps {
 
 export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDialogProps) {
   const [name, setName] = useState(user?.name ?? "");
+  const [role, setRole] = useState(user?.role ?? "USER");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Sync name when user changes
+  // Sync fields when user changes
   if (user && name !== user.name && !loading) {
     setName(user.name);
+    setRole(user.role);
     setPassword("");
     setError("");
   }
@@ -46,7 +56,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
     const res = await fetch(`/api/admin/usuarios/${user.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, password: password || undefined }),
+      body: JSON.stringify({ name, role, password: password || undefined }),
     });
     const data = await res.json();
     setLoading(false);
@@ -56,7 +66,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
       return;
     }
 
-    onSaved({ ...user, name: data.name });
+    onSaved({ ...user, name: data.name, role: data.role });
     onOpenChange(false);
     setPassword("");
   }
@@ -79,6 +89,18 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
               onChange={(e) => setName(e.target.value)}
               required
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-role">Nível de Acesso</Label>
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger id="edit-role">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="USER">Usuário (somente leitura)</SelectItem>
+                <SelectItem value="ADMIN">Admin (acesso total)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-password">Nova senha <span className="text-muted-foreground font-normal">(deixe em branco para manter)</span></Label>
