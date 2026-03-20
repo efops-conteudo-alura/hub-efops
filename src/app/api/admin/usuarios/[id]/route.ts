@@ -3,16 +3,15 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
-import { isSuperAdmin } from "@/lib/super-admins";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
-  if (!session || !isSuperAdmin(session.user.email)) {
+  if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { id } = await params;
-  const { name, password, role } = await req.json();
+  const { name, password, appRoles } = await req.json();
 
   const userUpdateData: { name?: string; password?: string } = {};
   if (name?.trim()) userUpdateData.name = name.trim();
@@ -23,25 +22,30 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     userUpdateData.password = await bcrypt.hash(password, 12);
   }
 
-  const hasRoleUpdate = role === "USER" || role === "ADMIN";
-
-  if (Object.keys(userUpdateData).length === 0 && !hasRoleUpdate) {
+  if (Object.keys(userUpdateData).length === 0 && (!appRoles || appRoles.length === 0)) {
     return NextResponse.json({ error: "Nenhum campo para atualizar." }, { status: 400 });
   }
 
   const updated = await prisma.user.update({ where: { id }, data: userUpdateData });
 
-  if (hasRoleUpdate) {
-    await prisma.appRole.upsert({
-      where: { userId_app: { userId: id, app: "hub-efops" } },
-      create: { userId: id, app: "hub-efops", role },
-      update: { role },
-    });
+  if (Array.isArray(appRoles)) {
+    for (const { app, role } of appRoles) {
+      if (app && role) {
+        await prisma.appRole.upsert({
+          where: { userId_app: { userId: id, app } },
+          create: { userId: id, app, role },
+          update: { role },
+        });
+      }
+    }
   }
 
-  const appRole = await prisma.appRole.findUnique({
-    where: { userId_app: { userId: id, app: "hub-efops" } },
-  });
+  const updatedAppRoles = await prisma.appRole.findMany({ where: { userId: id } });
 
-  return NextResponse.json({ id: updated.id, name: updated.name, email: updated.email, role: appRole?.role ?? "USER" });
+  return NextResponse.json({
+    id: updated.id,
+    name: updated.name,
+    email: updated.email,
+    appRoles: updatedAppRoles.map((r) => ({ app: r.app, role: r.role })),
+  });
 }

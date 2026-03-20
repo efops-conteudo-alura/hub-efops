@@ -18,6 +18,18 @@ import { CreateUserDialog } from "./create-user-dialog";
 import { EditUserDialog } from "./edit-user-dialog";
 import { AllowedEmailsTab } from "./allowed-emails-tab";
 
+const APP_LABELS: Record<string, string> = {
+  "hub-efops": "Hub EfOps",
+  "select-activity": "Select Activity",
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  ADMIN: "Admin",
+  USER: "Usuário",
+  COORDINATOR: "Coordenador",
+  INSTRUCTOR: "Instrutor",
+};
+
 interface AppRoleEntry {
   app: string;
   role: string;
@@ -36,15 +48,23 @@ type Tab = "usuarios" | "emails";
 
 interface UsuariosClientProps {
   initialUsers: User[];
-  isSuperAdmin: boolean;
 }
 
-export function UsuariosClient({ initialUsers, isSuperAdmin }: UsuariosClientProps) {
+export function UsuariosClient({ initialUsers }: UsuariosClientProps) {
   const router = useRouter();
   const [users, setUsers] = useState(initialUsers);
   const [activeTab, setActiveTab] = useState<Tab>("usuarios");
   const [editUser, setEditUser] = useState<User | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+
+  // Collect all unique apps, hub-efops first then others sorted
+  const allApps = Array.from(
+    new Set(users.flatMap((u) => u.appRoles.map((r) => r.app)))
+  ).sort((a, b) => {
+    if (a === "hub-efops") return -1;
+    if (b === "hub-efops") return 1;
+    return a.localeCompare(b);
+  });
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Remover usuário "${name}"?`)) return;
@@ -63,17 +83,15 @@ export function UsuariosClient({ initialUsers, isSuperAdmin }: UsuariosClientPro
     setEditOpen(true);
   }
 
-  function handleSaved(updated: { id: string; name: string; email: string; role: string }) {
+  function handleSaved(updated: { id: string; name: string; email: string; appRoles: AppRoleEntry[] }) {
     setUsers((prev) =>
       prev.map((u) =>
         u.id === updated.id
           ? {
               ...u,
               name: updated.name,
-              role: updated.role,
-              appRoles: u.appRoles.map((r) =>
-                r.app === "hub-efops" ? { ...r, role: updated.role } : r
-              ),
+              role: updated.appRoles.find((r) => r.app === "hub-efops")?.role ?? u.role,
+              appRoles: updated.appRoles,
             }
           : u
       )
@@ -86,7 +104,7 @@ export function UsuariosClient({ initialUsers, isSuperAdmin }: UsuariosClientPro
   ];
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-8 max-w-6xl">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Usuários</h1>
@@ -122,56 +140,47 @@ export function UsuariosClient({ initialUsers, isSuperAdmin }: UsuariosClientPro
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Hub EfOps</TableHead>
-                <TableHead>Outros apps</TableHead>
+                {allApps.map((app) => (
+                  <TableHead key={app}>{APP_LABELS[app] ?? app}</TableHead>
+                ))}
                 <TableHead>Criado em</TableHead>
                 <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((u) => {
-                const otherApps = u.appRoles.filter((r) => r.app !== "hub-efops");
-                return (
+              {users.map((u) => (
                 <TableRow key={u.id}>
                   <TableCell className="font-medium">{u.name}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
-                  <TableCell>
-                    {u.appRoles.some((r) => r.app === "hub-efops") ? (
-                      <Badge variant={u.role === "ADMIN" ? "default" : "secondary"}>
-                        {u.role === "ADMIN" ? "Admin" : "Usuário"}
-                      </Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {otherApps.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {otherApps.map((r) => (
-                          <Badge key={r.app} variant="outline" className="text-xs">
-                            {r.app}
+                  {allApps.map((app) => {
+                    const appRole = u.appRoles.find((r) => r.app === app);
+                    return (
+                      <TableCell key={app}>
+                        {appRole ? (
+                          <Badge
+                            variant={appRole.role === "ADMIN" ? "default" : "secondary"}
+                          >
+                            {ROLE_LABELS[appRole.role] ?? appRole.role}
                           </Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    );
+                  })}
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(u.createdAt).toLocaleDateString("pt-BR")}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      {isSuperAdmin && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => handleEdit(u)}
-                        >
-                          <Pencil size={13} />
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => handleEdit(u)}
+                      >
+                        <Pencil size={13} />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -183,8 +192,7 @@ export function UsuariosClient({ initialUsers, isSuperAdmin }: UsuariosClientPro
                     </div>
                   </TableCell>
                 </TableRow>
-              );
-              })}
+              ))}
             </TableBody>
           </Table>
         </div>

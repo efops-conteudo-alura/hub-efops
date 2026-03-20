@@ -18,33 +18,59 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+const APP_CONFIG: Record<string, { label: string; roles: { value: string; label: string }[] }> = {
+  "hub-efops": {
+    label: "Hub EfOps",
+    roles: [
+      { value: "USER", label: "Usuário" },
+      { value: "ADMIN", label: "Admin" },
+    ],
+  },
+  "select-activity": {
+    label: "Select Activity",
+    roles: [
+      { value: "INSTRUCTOR", label: "Instrutor" },
+      { value: "COORDINATOR", label: "Coordenador" },
+      { value: "ADMIN", label: "Admin" },
+    ],
+  },
+};
+
+interface AppRoleEntry {
+  app: string;
+  role: string;
+}
+
 interface User {
   id: string;
   name: string;
   email: string;
   role: string;
+  appRoles: AppRoleEntry[];
 }
 
 interface EditUserDialogProps {
   user: User | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaved: (updated: User) => void;
+  onSaved: (updated: { id: string; name: string; email: string; appRoles: AppRoleEntry[] }) => void;
 }
 
 export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDialogProps) {
   const [name, setName] = useState(user?.name ?? "");
-  const [role, setRole] = useState(user?.role ?? "USER");
   const [password, setPassword] = useState("");
+  const [roleMap, setRoleMap] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Sync fields when user changes
+  // Sync state when user changes
   if (user && name !== user.name && !loading) {
     setName(user.name);
-    setRole(user.role);
     setPassword("");
     setError("");
+    const map: Record<string, string> = {};
+    for (const r of user.appRoles) map[r.app] = r.role;
+    setRoleMap(map);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -53,10 +79,12 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
     setError("");
     setLoading(true);
 
+    const appRoles = Object.entries(roleMap).map(([app, role]) => ({ app, role }));
+
     const res = await fetch(`/api/admin/usuarios/${user.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, role, password: password || undefined }),
+      body: JSON.stringify({ name, password: password || undefined, appRoles }),
     });
     const data = await res.json();
     setLoading(false);
@@ -66,21 +94,22 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
       return;
     }
 
-    onSaved({ ...user, name: data.name, role: data.role });
+    onSaved({ id: user.id, name: data.name, email: data.email, appRoles: data.appRoles });
     onOpenChange(false);
     setPassword("");
   }
 
+  const appsToShow = user?.appRoles.map((r) => r.app) ?? [];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Editar Usuário</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">{user?.email}</p>
-          </div>
+          <p className="text-sm text-muted-foreground">{user?.email}</p>
+
           <div className="space-y-2">
             <Label htmlFor="edit-name">Nome</Label>
             <Input
@@ -90,20 +119,44 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
               required
             />
           </div>
+
+          {appsToShow.length > 0 && (
+            <div className="space-y-3">
+              <Label>Roles por aplicativo</Label>
+              {appsToShow.map((app) => {
+                const config = APP_CONFIG[app];
+                const currentRole = roleMap[app] ?? "";
+                return (
+                  <div key={app} className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground w-32 shrink-0">
+                      {config?.label ?? app}
+                    </span>
+                    <Select
+                      value={currentRole}
+                      onValueChange={(v) => setRoleMap((prev) => ({ ...prev, [app]: v }))}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(config?.roles ?? [{ value: currentRole, label: currentRole }]).map((r) => (
+                          <SelectItem key={r.value} value={r.value}>
+                            {r.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           <div className="space-y-2">
-            <Label htmlFor="edit-role">Nível de Acesso</Label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger id="edit-role">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="USER">Usuário (somente leitura)</SelectItem>
-                <SelectItem value="ADMIN">Admin (acesso total)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="edit-password">Nova senha <span className="text-muted-foreground font-normal">(deixe em branco para manter)</span></Label>
+            <Label htmlFor="edit-password">
+              Nova senha{" "}
+              <span className="text-muted-foreground font-normal">(deixe em branco para manter)</span>
+            </Label>
             <Input
               id="edit-password"
               type="password"
@@ -113,7 +166,9 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
               minLength={password ? 8 : undefined}
             />
           </div>
+
           {error && <p className="text-sm text-destructive">{error}</p>}
+
           <div className="flex gap-3 justify-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar

@@ -2,7 +2,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { isSuperAdmin } from "@/lib/super-admins";
 import { UsuariosClient } from "./usuarios-client";
 
 export default async function UsuariosPage() {
@@ -20,8 +19,6 @@ export default async function UsuariosPage() {
     orderBy: { createdAt: "asc" },
   });
 
-  const superAdmin = isSuperAdmin(session.user.email);
-
   return (
     <UsuariosClient
       initialUsers={users.map((u) => ({
@@ -32,7 +29,6 @@ export default async function UsuariosPage() {
         appRoles: u.appRoles,
         createdAt: u.createdAt.toISOString(),
       }))}
-      isSuperAdmin={superAdmin}
     />
   );
 }
