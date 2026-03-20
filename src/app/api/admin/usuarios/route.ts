@@ -16,7 +16,7 @@ export async function GET() {
       name: true,
       email: true,
       createdAt: true,
-      appRoles: { where: { app: "hub-efops" }, select: { role: true } },
+      appRoles: { select: { app: true, role: true } },
     },
     orderBy: { createdAt: "asc" },
   });
@@ -26,7 +26,8 @@ export async function GET() {
     name: u.name,
     email: u.email,
     createdAt: u.createdAt,
-    role: u.appRoles[0]?.role ?? "USER",
+    role: u.appRoles.find((r) => r.app === "hub-efops")?.role ?? "USER",
+    appRoles: u.appRoles,
   }));
 
   return NextResponse.json(result);

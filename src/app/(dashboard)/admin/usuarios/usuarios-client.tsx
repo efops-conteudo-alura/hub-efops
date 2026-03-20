@@ -18,11 +18,17 @@ import { CreateUserDialog } from "./create-user-dialog";
 import { EditUserDialog } from "./edit-user-dialog";
 import { AllowedEmailsTab } from "./allowed-emails-tab";
 
+interface AppRoleEntry {
+  app: string;
+  role: string;
+}
+
 interface User {
   id: string;
   name: string;
   email: string;
   role: string;
+  appRoles: AppRoleEntry[];
   createdAt: string;
 }
 
@@ -58,7 +64,20 @@ export function UsuariosClient({ initialUsers, isSuperAdmin }: UsuariosClientPro
   }
 
   function handleSaved(updated: { id: string; name: string; email: string; role: string }) {
-    setUsers((prev) => prev.map((u) => (u.id === updated.id ? { ...u, name: updated.name, role: updated.role } : u)));
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === updated.id
+          ? {
+              ...u,
+              name: updated.name,
+              role: updated.role,
+              appRoles: u.appRoles.map((r) =>
+                r.app === "hub-efops" ? { ...r, role: updated.role } : r
+              ),
+            }
+          : u
+      )
+    );
   }
 
   const tabs: { key: Tab; label: string }[] = [
@@ -103,20 +122,40 @@ export function UsuariosClient({ initialUsers, isSuperAdmin }: UsuariosClientPro
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Acesso</TableHead>
+                <TableHead>Hub EfOps</TableHead>
+                <TableHead>Outros apps</TableHead>
                 <TableHead>Criado em</TableHead>
                 <TableHead className="w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((u) => (
+              {users.map((u) => {
+                const otherApps = u.appRoles.filter((r) => r.app !== "hub-efops");
+                return (
                 <TableRow key={u.id}>
                   <TableCell className="font-medium">{u.name}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                   <TableCell>
-                    <Badge variant={u.role === "ADMIN" ? "default" : "secondary"}>
-                      {u.role === "ADMIN" ? "Admin" : "Usuário"}
-                    </Badge>
+                    {u.appRoles.some((r) => r.app === "hub-efops") ? (
+                      <Badge variant={u.role === "ADMIN" ? "default" : "secondary"}>
+                        {u.role === "ADMIN" ? "Admin" : "Usuário"}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {otherApps.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {otherApps.map((r) => (
+                          <Badge key={r.app} variant="outline" className="text-xs">
+                            {r.app}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(u.createdAt).toLocaleDateString("pt-BR")}
@@ -144,7 +183,8 @@ export function UsuariosClient({ initialUsers, isSuperAdmin }: UsuariosClientPro
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              );
+              })}
             </TableBody>
           </Table>
         </div>
