@@ -31,8 +31,11 @@ export async function POST(req: NextRequest) {
     data: { email: normalizedEmail, name: name.trim(), password: hashed },
   });
 
-  await prisma.appRole.create({
-    data: { userId: newUser.id, app: "hub-efops", role: "USER" },
+  await prisma.appRole.createMany({
+    data: [
+      { userId: newUser.id, app: "hub-efops", role: "USER" },
+      { userId: newUser.id, app: "select-activity", role: "COORDINATOR" },
+    ],
   });
 
   return NextResponse.json({ success: true });
