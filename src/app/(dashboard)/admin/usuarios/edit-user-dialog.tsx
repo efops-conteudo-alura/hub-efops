@@ -69,7 +69,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
     setPassword("");
     setError("");
     const map: Record<string, string> = {};
-    for (const app of Object.keys(APP_CONFIG)) map[app] = "";
+    for (const app of Object.keys(APP_CONFIG)) map[app] = "__none__";
     for (const r of user.appRoles) map[r.app] = r.role;
     setRoleMap(map);
   }
@@ -82,7 +82,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
 
     // Só envia apps com role definido (não "Sem acesso")
     const appRoles = Object.entries(roleMap)
-      .filter(([, role]) => role !== "")
+      .filter(([, role]) => role !== "__none__")
       .map(([app, role]) => ({ app, role }));
 
     const res = await fetch(`/api/admin/usuarios/${user.id}`, {
@@ -125,7 +125,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
           <div className="space-y-3">
             <Label>Acesso por aplicativo</Label>
             {Object.entries(APP_CONFIG).map(([app, config]) => {
-              const currentRole = roleMap[app] ?? "";
+              const currentRole = roleMap[app] ?? "__none__";
               return (
                 <div key={app} className="flex items-center gap-3">
                   <span className="text-sm text-muted-foreground w-32 shrink-0">
@@ -139,7 +139,7 @@ export function EditUserDialog({ user, open, onOpenChange, onSaved }: EditUserDi
                       <SelectValue placeholder="Sem acesso" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sem acesso</SelectItem>
+                      <SelectItem value="__none__">Sem acesso</SelectItem>
                       {config.roles.map((r) => (
                         <SelectItem key={r.value} value={r.value}>
                           {r.label}
