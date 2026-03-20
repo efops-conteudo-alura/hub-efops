@@ -6,7 +6,13 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Check, Copy, Trash2, Search, BookText } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Check, Copy, Trash2, Search, BookText, Eye, Pencil, Loader2 } from "lucide-react"
 import { PromptFormDialog } from "./prompt-form-dialog"
 
 interface Prompt {
@@ -26,17 +32,21 @@ interface Props {
   isAdmin: boolean
 }
 
-function PromptCard({ prompt, userId, isAdmin, onDeleted, onUpdated }: {
+function PromptCard({
+  prompt,
+  isAdmin,
+  onDeleted,
+  onUpdated,
+}: {
   prompt: Prompt
-  userId: string
   isAdmin: boolean
   onDeleted: (id: string) => void
   onUpdated: () => void
 }) {
+  const [viewOpen, setViewOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
   const [copiado, setCopiado] = useState(false)
   const [deletando, setDeletando] = useState(false)
-
-  const podeExcluir = isAdmin || prompt.autorId === userId
 
   async function copiar() {
     await navigator.clipboard.writeText(prompt.conteudo)
@@ -49,53 +59,138 @@ function PromptCard({ prompt, userId, isAdmin, onDeleted, onUpdated }: {
     setDeletando(true)
     try {
       const res = await fetch(`/api/biblioteca-de-prompts/${prompt.id}`, { method: "DELETE" })
-      if (res.ok) onDeleted(prompt.id)
+      if (res.ok) {
+        setViewOpen(false)
+        onDeleted(prompt.id)
+      }
     } finally {
       setDeletando(false)
     }
   }
 
+  function abrirEdicao() {
+    setViewOpen(false)
+    // pequeno delay para a animação de fechar o view dialog terminar
+    setTimeout(() => setEditOpen(true), 150)
+  }
+
   return (
-    <Card className="flex flex-col h-full">
-      <CardHeader className="pb-2 space-y-1">
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-semibold leading-tight flex-1">{prompt.titulo}</p>
-          <div className="flex items-center gap-1 shrink-0">
-            <PromptFormDialog prompt={prompt} onSuccess={onUpdated} />
-            {podeExcluir && (
-              <button
-                onClick={excluir}
-                disabled={deletando}
-                className="p-1 rounded text-muted-foreground hover:text-destructive transition-colors"
-                title="Excluir prompt"
-              >
-                <Trash2 size={14} />
-              </button>
-            )}
-          </div>
-        </div>
-        {prompt.categoria && (
-          <Badge variant="secondary" className="text-xs w-fit">{prompt.categoria}</Badge>
-        )}
-        {prompt.descricao && (
-          <p className="text-xs text-muted-foreground line-clamp-2">{prompt.descricao}</p>
-        )}
-      </CardHeader>
-      <CardContent className="flex-1 flex flex-col gap-3 pt-0">
-        <pre className="text-xs bg-muted/60 rounded-md p-3 overflow-hidden line-clamp-5 whitespace-pre-wrap font-mono flex-1">
-          {prompt.conteudo}
-        </pre>
-        <div className="flex items-center justify-between">
+    <>
+      {/* Card */}
+      <Card className="flex flex-col h-full">
+        <CardHeader className="pb-2 space-y-1.5">
+          <p className="text-sm font-semibold leading-tight">{prompt.titulo}</p>
+          {prompt.categoria && (
+            <Badge variant="secondary" className="text-xs w-fit">{prompt.categoria}</Badge>
+          )}
+          {prompt.descricao && (
+            <p className="text-xs text-muted-foreground line-clamp-2">{prompt.descricao}</p>
+          )}
+        </CardHeader>
+        <CardContent className="flex-1 flex flex-col justify-end gap-2 pt-0">
           <p className="text-xs text-muted-foreground">
-            {prompt.autorNome} · {new Date(prompt.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+            {prompt.autorNome} · {new Date(prompt.createdAt).toLocaleDateString("pt-BR", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
           </p>
-          <Button size="sm" variant="outline" onClick={copiar} className="h-7 text-xs gap-1.5">
-            {copiado ? <Check size={13} /> : <Copy size={13} />}
-            {copiado ? "Copiado!" : "Copiar"}
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full h-8 text-xs gap-1.5"
+            onClick={() => setViewOpen(true)}
+          >
+            <Eye size={13} />
+            Visualizar
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Dialog: Visualizar */}
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+          <DialogHeader className="shrink-0">
+            <DialogTitle>{prompt.titulo}</DialogTitle>
+            <div className="flex items-center gap-2 flex-wrap pt-1">
+              {prompt.categoria && (
+                <Badge variant="secondary" className="text-xs">{prompt.categoria}</Badge>
+              )}
+              {prompt.descricao && (
+                <span className="text-xs text-muted-foreground">{prompt.descricao}</span>
+              )}
+            </div>
+          </DialogHeader>
+
+          {/* Conteúdo scrollável */}
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <pre className="text-xs bg-muted/60 rounded-md p-4 whitespace-pre-wrap font-mono leading-relaxed">
+              {prompt.conteudo}
+            </pre>
+          </div>
+
+          {/* Footer com ações */}
+          <div className="shrink-0 flex items-center justify-between pt-3 border-t mt-2">
+            <p className="text-xs text-muted-foreground">
+              {prompt.autorNome} · {new Date(prompt.createdAt).toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs gap-1.5 text-destructive hover:text-destructive"
+                  onClick={excluir}
+                  disabled={deletando}
+                >
+                  {deletando ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={13} />
+                  )}
+                  Excluir
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs gap-1.5"
+                onClick={abrirEdicao}
+              >
+                <Pencil size={13} />
+                Editar
+              </Button>
+              <Button
+                size="sm"
+                className="h-8 text-xs gap-1.5"
+                onClick={copiar}
+              >
+                {copiado ? (
+                  <><Check size={13} />Copiado!</>
+                ) : (
+                  <><Copy size={13} />Copiar</>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Editar (controlado) — ao fechar, reabre visualização */}
+      <PromptFormDialog
+        prompt={prompt}
+        open={editOpen}
+        onOpenChange={(open) => {
+          setEditOpen(open)
+          if (!open) setTimeout(() => setViewOpen(true), 100)
+        }}
+        onSuccess={onUpdated}
+      />
+    </>
   )
 }
 
@@ -140,9 +235,7 @@ export function PromptsClient({ prompts: initial, userId, isAdmin }: Props) {
             {prompts.length} prompt{prompts.length !== 1 ? "s" : ""} · compartilhados pelo time
           </p>
         </div>
-        <PromptFormDialog
-          onSuccess={() => router.refresh()}
-        />
+        <PromptFormDialog onSuccess={() => router.refresh()} />
       </div>
 
       {/* Filtros */}
@@ -197,16 +290,15 @@ export function PromptsClient({ prompts: initial, userId, isAdmin }: Props) {
               <p className="text-sm">Seja o primeiro a adicionar um prompt à biblioteca</p>
             </>
           ) : (
-            <p className="text-lg font-medium">Nenhum prompt encontrado para "{busca}"</p>
+            <p className="text-lg font-medium">Nenhum prompt encontrado para &quot;{busca}&quot;</p>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filtrados.map((prompt) => (
             <PromptCard
               key={prompt.id}
               prompt={prompt}
-              userId={userId}
               isAdmin={isAdmin}
               onDeleted={handleDeleted}
               onUpdated={handleUpdated}
