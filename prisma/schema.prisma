@@ -16,6 +16,8 @@ model User {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   appRoles  AppRole[]
+  submissionsAsInstructor  Submission[] @relation("SubmissionInstructor")
+  submissionsAsCoordinator Submission[] @relation("SubmissionCoordinator")
 }
 
 model AppRole {
@@ -340,6 +342,21 @@ model AllowedEmail {
   id        String   @id @default(cuid())
   email     String   @unique
   createdAt DateTime @default(now())
+}
+
+model Submission {
+  id            String    @id @default(cuid())
+  instructorId  String
+  instructor    User      @relation("SubmissionInstructor", fields: [instructorId], references: [id])
+  coordinatorId String
+  coordinator   User      @relation("SubmissionCoordinator", fields: [coordinatorId], references: [id])
+  courseId      String
+  originalData  Json      // JSON completo original (todos os exercícios, antes das edições)
+  submittedData Json      // JSON com exercícios selecionados + edições + comentários do instrutor
+  status        String    @default("pending") // "pending" | "exported"
+  exportedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model EmentaAnalise {
