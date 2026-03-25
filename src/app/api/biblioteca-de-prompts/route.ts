@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 
 export async function GET() {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const prompts = await prisma.prompt.findMany({
@@ -14,7 +13,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const body = await req.json()

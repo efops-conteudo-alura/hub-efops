@@ -1,11 +1,10 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PublicacoesClient } from "./_components/publicacoes-client";
 import type { CarreiraLevel } from "@/app/(dashboard)/kpis/_components/carreiras-sync-button";
 
 export default async function PublicacoesPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const isAdmin = session?.user?.role === "ADMIN";
 
   const levels = await prisma.kpiCarreiraLevel.findMany({

@@ -1,5 +1,4 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 
@@ -45,7 +44,7 @@ async function fetchFormacaoApi(slug: string): Promise<FormacaoApiResponse | nul
 }
 
 export async function POST() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
   }

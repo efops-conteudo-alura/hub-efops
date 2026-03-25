@@ -1,12 +1,11 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { AiReportBuilder } from "../../_components/ai-report-builder";
 
 export default async function NovaAnaliseIaPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) redirect("/home");
 
   const isAdmin = session.user.role === "ADMIN";

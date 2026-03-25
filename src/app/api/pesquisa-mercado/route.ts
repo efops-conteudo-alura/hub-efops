@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -9,7 +8,7 @@ export const maxDuration = 300;
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
@@ -139,7 +138,7 @@ Priorize dados atuais (2025-2026). Foque em plataformas relevantes para o públi
 }
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const pesquisas = await prisma.pesquisaMercado.findMany({

@@ -1,13 +1,12 @@
 import { prisma } from "@/lib/db"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FolderGit2, ExternalLink, Code2, User } from "lucide-react"
 import { NewProjectDialog } from "./new-project-dialog"
 
 export default async function ProjetosPage() {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   const isAdmin = session?.user?.role === "ADMIN"
 
   const projects = await prisma.project.findMany({

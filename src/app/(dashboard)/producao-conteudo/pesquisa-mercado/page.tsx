@@ -1,10 +1,9 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PesquisaMercadoWrapper } from "./_components/pesquisa-mercado-wrapper";
 
 export default async function PesquisaMercadoPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
   const pesquisas = session
     ? (

@@ -1,10 +1,9 @@
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { DocEditor } from "../_components/doc-editor";
 
 export default async function NovaDocumentacaoPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) redirect("/login");
 
   return (

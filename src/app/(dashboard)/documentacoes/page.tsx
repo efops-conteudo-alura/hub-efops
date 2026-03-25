@@ -1,12 +1,11 @@
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { BookOpen } from "lucide-react";
 import { DocList } from "./_components/doc-list";
 
 export default async function DocumentacoesPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) redirect("/login");
 
   const isAdmin = session.user.role === "ADMIN";

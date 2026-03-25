@@ -1,10 +1,9 @@
 import { prisma } from "@/lib/db"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 import { PromptsClient } from "./_components/prompts-client"
 
 export default async function BibliotecaDePromptsPage() {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   const isAdmin = session?.user?.role === "ADMIN"
   const userId = session?.user?.id ?? ""
 

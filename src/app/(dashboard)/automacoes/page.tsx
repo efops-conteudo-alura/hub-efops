@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Bot, Zap, Clock, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,7 +38,7 @@ function AutomationThumbnail({ url, type }: { url: string | null; type: string }
 }
 
 export default async function AutomacoesPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const isAdmin = session?.user?.role === "ADMIN";
 
   const automations = await prisma.automation.findMany({

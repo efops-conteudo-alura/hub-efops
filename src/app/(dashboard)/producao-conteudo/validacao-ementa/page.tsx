@@ -1,11 +1,10 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ValidadorForm } from "./_components/validador-form";
 import { HistoricoList } from "./_components/historico-list";
 
 export default async function ValidacaoEmentaPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
   const analyses = session
     ? (await prisma.ementaAnalise.findMany({

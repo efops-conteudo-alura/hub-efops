@@ -1,5 +1,4 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { encrypt, decrypt } from "@/lib/crypto";
 import { NextRequest, NextResponse } from "next/server";
@@ -9,7 +8,7 @@ type ConfigKey = (typeof ALLOWED_KEYS)[number];
 
 // GET — retorna os valores mascarados (apenas para saber se estão configurados)
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
   }
@@ -34,7 +33,7 @@ export async function GET() {
 
 // POST — salva/atualiza um valor criptografado
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
   }

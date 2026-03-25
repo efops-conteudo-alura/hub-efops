@@ -1,6 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AiAnaliseResultado } from "../../_components/ai-analise-resultado";
 
@@ -9,7 +8,7 @@ export default async function ResultadoPage({
 }: {
   params: Promise<{ id: string; resultId: string }>;
 }) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) redirect("/home");
 
   const isAdmin = session.user.role === "ADMIN";

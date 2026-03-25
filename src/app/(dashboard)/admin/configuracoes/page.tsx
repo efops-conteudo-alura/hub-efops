@@ -1,10 +1,9 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ConfigClient } from "./_components/config-client";
 
 export default async function ConfiguracoesPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session || session.user.role !== "ADMIN") redirect("/home");
 
   return (

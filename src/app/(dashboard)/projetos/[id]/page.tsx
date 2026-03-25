@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/db"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -14,7 +13,7 @@ export default async function ProjetoDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   const isAdmin = session?.user?.role === "ADMIN"
 
   const { id } = await params

@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth";
 import { redirect, notFound } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft } from "lucide-react";
@@ -13,7 +12,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default async function DocViewPage({ params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) redirect("/login");
 
   const { id } = await params;

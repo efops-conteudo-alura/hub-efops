@@ -1,11 +1,10 @@
-import { getServerSession } from "next-auth";
 import { redirect, notFound } from "next/navigation";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { DocEditor } from "../../_components/doc-editor";
 
 export default async function EditarDocPage({ params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) redirect("/login");
 
   const { id } = await params;

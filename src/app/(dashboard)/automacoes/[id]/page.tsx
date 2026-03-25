@@ -1,5 +1,4 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -15,7 +14,7 @@ const STATUS_LABELS = { ACTIVE: "Ativa", INACTIVE: "Inativa", TESTING: "Em teste
 const STATUS_VARIANTS = { ACTIVE: "default", INACTIVE: "secondary", TESTING: "outline" } as const;
 
 export default async function AutomationDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const isAdmin = session?.user?.role === "ADMIN";
   const { id } = await params;
 

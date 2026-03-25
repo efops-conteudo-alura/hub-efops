@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -10,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AuditTab } from "./_components/audit-tab";
 
 export default async function LicencasPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const isAdmin = session?.user?.role === "ADMIN";
 
   const subscriptions = await prisma.subscription.findMany({

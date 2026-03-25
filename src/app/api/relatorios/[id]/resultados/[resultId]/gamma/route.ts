@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export const maxDuration = 120;
@@ -38,7 +37,7 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string; resultId: string }> }
 ) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const gammaApiKey = process.env.GAMMA_API_KEY;
