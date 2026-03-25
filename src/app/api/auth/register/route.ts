@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
     data: [
       { userId: newUser.id, app: "hub-efops", role: "USER" },
       { userId: newUser.id, app: "select-activity", role: "COORDINATOR" },
+      { userId: newUser.id, app: "hub-producao-conteudo", role: "USER" },
     ],
   });
 

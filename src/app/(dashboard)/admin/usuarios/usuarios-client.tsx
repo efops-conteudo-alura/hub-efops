@@ -21,6 +21,7 @@ import { AllowedEmailsTab } from "./allowed-emails-tab";
 const APP_LABELS: Record<string, string> = {
   "hub-efops": "Hub EfOps",
   "select-activity": "Select Activity",
+  "hub-producao-conteudo": "Hub Produção",
 };
 
 const ROLE_LABELS: Record<string, string> = {

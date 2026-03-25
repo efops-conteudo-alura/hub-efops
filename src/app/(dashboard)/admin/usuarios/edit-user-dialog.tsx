@@ -34,6 +34,13 @@ const APP_CONFIG: Record<string, { label: string; roles: { value: string; label:
       { value: "ADMIN", label: "Admin" },
     ],
   },
+  "hub-producao-conteudo": {
+    label: "Hub Produção",
+    roles: [
+      { value: "USER", label: "Usuário" },
+      { value: "ADMIN", label: "Admin" },
+    ],
+  },
 };
 
 interface AppRoleEntry {
