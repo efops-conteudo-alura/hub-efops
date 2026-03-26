@@ -27,7 +27,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const updated = await prisma.user.update({ where: { id }, data: userUpdateData });
 
+  const KNOWN_APPS = ["hub-efops", "select-activity", "hub-producao-conteudo"];
+
   if (Array.isArray(appRoles)) {
+    // Upsert roles enviados
     for (const { app, role } of appRoles) {
       if (app && role) {
         await prisma.appRole.upsert({
@@ -36,6 +39,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           update: { role },
         });
       }
+    }
+
+    // Remover roles de apps conhecidos que vieram como "Sem acesso"
+    const submittedApps = appRoles.map((r: { app: string }) => r.app);
+    const appsToRemove = KNOWN_APPS.filter((app) => !submittedApps.includes(app));
+    if (appsToRemove.length > 0) {
+      await prisma.appRole.deleteMany({
+        where: { userId: id, app: { in: appsToRemove } },
+      });
     }
   }
 
