@@ -63,6 +63,9 @@ export default function PrimeiroAcessoPage() {
           <CardDescription>
             Preencha os dados para ativar o seu acesso ao Hub
           </CardDescription>
+          <p className="text-xs text-muted-foreground/70 mt-1">
+            Se você já tem conta no Hub de Produção de Conteúdo ou no Seletor de Atividades, use o mesmo email e senha.
+          </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
