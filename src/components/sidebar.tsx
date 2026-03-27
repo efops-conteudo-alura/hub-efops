@@ -7,12 +7,11 @@ import { signOut } from "next-auth/react";
 import {
   House, BarChart2, Key, LogOut, Users,
   Menu, X, Receipt, FileBarChart, TrendingUp, BookMarked,
-  Sun, Moon, ClipboardList, Settings, Pencil, ChevronDown, Archive,
+  ClipboardList, Settings, Pencil, ChevronDown, Archive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProfileDialog } from "@/components/profile-dialog";
-import { useTheme } from "next-themes";
 
 interface SidebarProps {
   user: {
@@ -155,7 +154,6 @@ function NavItemEl({
 
 export function Sidebar({ user, isAdmin }: SidebarProps) {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [openSubmenus, setOpenSubmenus] = useState<Set<string>>(new Set());
@@ -225,16 +223,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
           </Avatar>
         </button>
 
-        <button
-          title={theme === "dark" ? "Modo claro" : "Modo escuro"}
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="p-2 rounded-xl text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground transition-colors"
-        >
-          <Sun size={16} className="dark:hidden" />
-          <Moon size={16} className="hidden dark:block" />
-        </button>
-
-        <button
+<button
           title="Sair"
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="flex flex-col items-center gap-1 w-full py-2 px-2 rounded-xl text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground transition-colors"
