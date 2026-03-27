@@ -124,20 +124,20 @@ export function ProducaoTable({ year, data, pesos, isAdmin, onChange }: Producao
   // Totais do ano (apenas meses com dados)
   const totalScoreAno = sortedWithData.reduce((s, r) => s + calcScoreProducao(r, pesos), 0);
 
-  const thTotal = "px-3 py-2 text-center text-xs font-semibold whitespace-nowrap border-l";
+  const thTotal = "px-3 py-2 hub-table-header text-center whitespace-nowrap border-l";
   const tdTotal = "px-3 py-2 text-sm text-center tabular-nums border-l";
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-semibold text-foreground">Publicação de Conteúdo</p>
+      <p className="hub-card-title">Publicação de Conteúdo</p>
 
       <div className="rounded-md border overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b bg-muted/40">
-              <th className="px-3 py-2 text-left text-xs text-muted-foreground font-medium w-36 whitespace-nowrap" />
+              <th className="px-3 py-2 hub-table-header text-left w-36 whitespace-nowrap" />
               {allMonths.map((m) => (
-                <th key={m} className="px-3 py-2 text-center text-xs font-semibold whitespace-nowrap">
+                <th key={m} className="px-3 py-2 hub-table-header text-center whitespace-nowrap">
                   {fmtMonthShort(m)}
                 </th>
               ))}
@@ -170,11 +170,11 @@ export function ProducaoTable({ year, data, pesos, isAdmin, onChange }: Producao
                 const score = scoresByMonth.get(m);
                 return (
                   <td key={m} className="px-3 py-2 text-sm text-center font-bold tabular-nums">
-                    {score !== undefined ? <span className="text-primary">{score}</span> : <span className="text-muted-foreground">—</span>}
+                    {score !== undefined ? <span className="text-foreground">{score}</span> : <span className="text-muted-foreground">—</span>}
                   </td>
                 );
               })}
-              <td className={tdTotal + " font-bold text-primary"}>
+              <td className={tdTotal + " font-bold text-foreground"}>
                 {sortedWithData.length > 0 ? totalScoreAno : <span className="text-muted-foreground">—</span>}
               </td>
             </tr>

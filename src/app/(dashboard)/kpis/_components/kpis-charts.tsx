@@ -30,7 +30,7 @@ function mm3(scores: number[], idx: number): number | null {
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-lg border bg-card p-4 space-y-3">
-      <p className="text-sm font-semibold">{title}</p>
+      <p className="hub-chart-title">{title}</p>
       {children}
     </div>
   );
@@ -125,7 +125,7 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
 
       {/* Publicação */}
       <div>
-        <p className="text-base font-semibold mb-3">Publicação de Conteúdo</p>
+        <p className="hub-card-title mb-3">Publicação de Conteúdo</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card title="Publicações por tipo de conteúdo">
             {sortedProd.length === 0 ? noDataMsg : (
@@ -166,7 +166,7 @@ export function KpisCharts({ producao, edicao, pesos }: KpisChartsProps) {
 
       {/* Edição */}
       <div>
-        <p className="text-base font-semibold mb-3">Pós-produção</p>
+        <p className="hub-card-title mb-3">Pós-produção</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card title="Entregas por demandante">
             {sortedEd.length === 0 ? noDataMsg : (

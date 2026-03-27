@@ -491,7 +491,7 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
             onClick={() => setMesSelecionado(mes)}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
               mesSelecionado === mes
-                ? "bg-primary text-primary-foreground"
+                ? "bg-sidebar-accent text-foreground"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
           >
@@ -550,15 +550,15 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
 
           {/* Abas por time */}
           {times.length > 0 && (
-            <div className="flex gap-1 border-b">
+            <div className="flex">
               {times.sort((a, b) => a.ordem - b.ordem).map((time) => (
                 <button
                   key={time.id}
                   onClick={() => setTimeSelecionadoId(time.id)}
-                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                  className={`px-5 py-4 text-xs font-mono font-semibold uppercase border border-sidebar-border -ml-px first:ml-0 transition-colors relative ${
                     timeSelecionadoId === time.id
-                      ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
+                      ? "bg-[#0c0d0e] text-foreground border-t-foreground z-10"
+                      : "bg-sidebar text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {time.nome}
@@ -625,15 +625,15 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b bg-muted/50">
-                    <th className="text-left px-2 py-1.5 font-medium text-muted-foreground w-16">Tipo</th>
-                    <th className="text-left px-2 py-1.5 font-medium text-muted-foreground w-20">ID</th>
-                    <th className="text-left px-2 py-1.5 font-medium text-muted-foreground min-w-40">Produto</th>
+                    <th className="hub-table-header text-left px-2 py-1.5 w-16">Tipo</th>
+                    <th className="hub-table-header text-left px-2 py-1.5 w-20">ID</th>
+                    <th className="hub-table-header text-left px-2 py-1.5 min-w-40">Produto</th>
                     {colaboradoresGerais.map((c) => (
-                      <th key={c} className="text-center px-1 py-1.5 font-medium text-muted-foreground whitespace-nowrap w-14">
+                      <th key={c} className="hub-table-header text-center px-1 py-1.5 whitespace-nowrap w-14">
                         {c}
                       </th>
                     ))}
-                    <th className="text-center px-2 py-1.5 font-medium text-muted-foreground w-14">TOTAL</th>
+                    <th className="hub-table-header text-center px-2 py-1.5 w-14">TOTAL</th>
                   </tr>
                 </thead>
                 <tbody>

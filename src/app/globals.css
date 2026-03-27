@@ -8,8 +8,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-roboto-flex);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-title: var(--font-encode-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,72 +50,72 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --radius: 0.5rem;
+  --background: #f2f2f3;
+  --foreground: #0c0d0e;
+  --card: #ffffff;
+  --card-foreground: #0c0d0e;
+  --popover: #ffffff;
+  --popover-foreground: #0c0d0e;
+  --primary: #052fd3;
+  --primary-foreground: #ffffff;
+  --secondary: #e1e2e5;
+  --secondary-foreground: #0c0d0e;
+  --muted: #e1e2e5;
+  --muted-foreground: #46474e;
+  --accent: #e1e2e5;
+  --accent-foreground: #0c0d0e;
+  --destructive: #b8001f;
+  --border: #e1e2e5;
+  --input: #e1e2e5;
+  --ring: #052fd3;
+  --chart-1: #052fd3;
+  --chart-2: #01cb29;
+  --chart-3: #42cbe7;
+  --chart-4: #ffd500;
+  --chart-5: #fc6008;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0c0d0e;
+  --sidebar-primary: #052fd3;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f2f2f3;
+  --sidebar-accent-foreground: #0c0d0e;
+  --sidebar-border: #e1e2e5;
+  --sidebar-ring: #052fd3;
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --background: #1b1c1e;
+  --foreground: #f4f5f6;
+  --card: #0c0d0e;
+  --card-foreground: #f4f5f6;
+  --popover: #0c0d0e;
+  --popover-foreground: #f4f5f6;
+  --primary: #052fd3;
+  --primary-foreground: #ffffff;
+  --secondary: #37393f;
+  --secondary-foreground: #f4f5f6;
+  --muted: #292b2e;
+  --muted-foreground: #888d96;
+  --accent: #37393f;
+  --accent-foreground: #f4f5f6;
+  --destructive: #b8001f;
+  --border: #54565f;
+  --input: #3d3f45;
+  --ring: #303136;
+  --chart-1: #052fd3;
+  --chart-2: #01cb29;
+  --chart-3: #42cbe7;
+  --chart-4: #ffd500;
+  --chart-5: #fc6008;
+  --sidebar: #131416;
+  --sidebar-foreground: #b1b2b9;
+  --sidebar-primary: #37393f;
+  --sidebar-primary-foreground: #f4f5f6;
+  --sidebar-accent: #37393f;
+  --sidebar-accent-foreground: #f4f5f6;
+  --sidebar-border: #222326;
+  --sidebar-ring: #303136;
 }
 
 @layer base {
@@ -124,6 +125,94 @@
   body {
     @apply bg-background text-foreground;
   }
+  .dark [data-slot="card"] {
+    border-color: transparent;
+  }
+}
+
+/*
+  Sistema de tipografia do Hub EfOps
+  ─────────────────────────────────────────────────────────────
+  Encode Sans  → títulos de módulo, card, tabela, gráfico
+  Roboto Flex  → corpo, subtítulos, labels, dropdowns, botões
+  JetBrains    → abas, tags, números, IDs, datas, código
+
+  Para alterar globalmente: edite apenas este bloco.
+  Para aplicar: use as classes .hub-* nos componentes.
+  ─────────────────────────────────────────────────────────────
+*/
+@layer components {
+  /* Título principal da página / módulo — Encode Sans, leve, grande */
+  .hub-page-title {
+    font-family: var(--font-encode-sans);
+    @apply text-4xl font-light tracking-tight text-foreground;
+  }
+
+  /* Subtítulo / descrição abaixo do título — Roboto Flex */
+  .hub-section-title {
+    font-family: var(--font-roboto-flex);
+    @apply text-base font-normal text-muted-foreground;
+  }
+
+  /* Título de card, painel ou widget — Encode Sans, regular */
+  .hub-card-title {
+    font-family: var(--font-encode-sans);
+    @apply text-xl font-normal text-foreground;
+  }
+
+  /* Título de gráfico — Encode Sans, regular */
+  .hub-chart-title {
+    font-family: var(--font-encode-sans);
+    @apply text-lg font-normal text-foreground;
+  }
+
+  /* Cabeçalho de coluna de tabela — Encode Sans, sem bold */
+  .hub-table-header {
+    font-family: var(--font-encode-sans);
+    @apply text-xs font-normal uppercase tracking-wider text-muted-foreground;
+  }
+
+  /* Label de aba — JetBrains Mono, uppercase */
+  .hub-tab-label {
+    font-family: var(--font-jetbrains-mono);
+    @apply text-xs font-medium uppercase tracking-wide;
+  }
+
+  /* Tag / badge de status ou filtro — JetBrains Mono, pill com borda */
+  .hub-tag {
+    font-family: var(--font-jetbrains-mono);
+    @apply text-xs uppercase tracking-wider rounded-full border px-3 py-1 inline-flex items-center gap-1.5;
+  }
+
+  /* Números, IDs, quantidades, datas — JetBrains Mono */
+  .hub-number {
+    font-family: var(--font-jetbrains-mono);
+  }
+}
+
+/* ── Overrides de identidade visual ─────────────────────────────────────────
+   Regras fora de @layer têm prioridade máxima — ganham de todas as utilities
+   do Tailwind. Edite AQUI para ajustar globalmente, sem tocar nos componentes.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Roboto Flex como fonte padrão do body — todas as tabelas, parágrafos e
+   elementos sem classe explícita herdam daqui. */
+body {
+  font-family: var(--font-roboto-flex, sans-serif);
+}
+
+/* CardTitle do shadcn vem com font-semibold hardcoded. Sobrescrevemos aqui
+   para garantir Encode Sans + sem bold em TODOS os títulos de card. */
+[data-slot="card-title"] {
+  font-family: var(--font-encode-sans);
+  font-weight: 400;
+}
+
+/* Badges e tags: JetBrains Mono + caixa alta em todos os [data-slot="badge"]. */
+[data-slot="badge"] {
+  font-family: var(--font-jetbrains-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* TipTap editor content styles */

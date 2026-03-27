@@ -33,7 +33,7 @@ export default async function EditarRelatorioPage({
           <ChevronLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">
+          <h1 className="hub-page-title">
             {report.type === "AI_ANALYSIS" ? "Editar análise de IA" : "Editar formulário"}
           </h1>
           {report.type !== "AI_ANALYSIS" && (

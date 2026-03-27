@@ -34,7 +34,7 @@ export default async function ImobilizacaoPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Imobilização</h1>
+        <h1 className="hub-page-title">Imobilização</h1>
         <p className="text-muted-foreground text-sm mt-1">
           Registro de horas por colaborador e produto por período.
         </p>

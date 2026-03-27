@@ -52,12 +52,12 @@ export default async function HomePage() {
   return (
     <div className="p-8 max-w-6xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold">Bem-vindo, {session?.user?.name?.split(" ")[0]}!</h1>
-        <p className="text-muted-foreground mt-1">Hub de Eficiência Operacional — Conteúdo</p>
+        <h1 className="hub-page-title">Bem-vindo, {session?.user?.name?.split(" ")[0]}!</h1>
+        <p className="hub-section-title">Hub de Eficiência Operacional — Conteúdo</p>
       </div>
 
       {/* Feature cards */}
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Módulos</h2>
+      <h2 className="text-sm text-muted-foreground uppercase tracking-wide mb-4">Módulos</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
 
         {/* Licenças */}
@@ -71,19 +71,19 @@ export default async function HomePage() {
                     <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-950">
                       <Key size={18} className="text-blue-600" />
                     </div>
-                    <h3 className="font-semibold text-base">Licenças</h3>
+                    <h3 className="text-base">Licenças</h3>
                   </div>
                   <p className="text-sm text-muted-foreground mb-4">
                     Gestão de assinaturas e ferramentas do departamento.
                   </p>
                   <div className="flex items-center gap-4">
                     <div>
-                      <p className="text-2xl font-bold text-blue-600">{activeSubCount}</p>
+                      <p className="text-2xl hub-number text-blue-600">{activeSubCount}</p>
                       <p className="text-xs text-muted-foreground">licenças ativas</p>
                     </div>
                     {totalMonthly > 0 && (
                       <div>
-                        <p className="text-2xl font-bold">
+                        <p className="text-2xl hub-number">
                           R$ {totalMonthly.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </p>
                         <p className="text-xs text-muted-foreground">custo mensal est.</p>
@@ -108,19 +108,19 @@ export default async function HomePage() {
                     <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-950">
                       <Bot size={18} className="text-purple-600" />
                     </div>
-                    <h3 className="font-semibold text-base">Automações & Agentes</h3>
+                    <h3 className="text-base">Automações & Agentes</h3>
                   </div>
                   <p className="text-sm text-muted-foreground mb-4">
                     Portfólio de automações, agentes de IA e calculadora de ROI.
                   </p>
                   <div className="flex items-center gap-4">
                     <div>
-                      <p className="text-2xl font-bold text-purple-600">{activeAutomations}</p>
+                      <p className="text-2xl hub-number text-purple-600">{activeAutomations}</p>
                       <p className="text-xs text-muted-foreground">ativas</p>
                     </div>
                     {totalHours > 0 && (
                       <div>
-                        <p className="text-2xl font-bold">{totalHours}h</p>
+                        <p className="text-2xl hub-number">{totalHours}h</p>
                         <p className="text-xs text-muted-foreground">economizadas/semana</p>
                       </div>
                     )}
@@ -146,7 +146,7 @@ export default async function HomePage() {
                     <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-950">
                       <GitBranch size={18} className="text-orange-600" />
                     </div>
-                    <h3 className="font-semibold text-base">Processos & Fluxos</h3>
+                    <h3 className="text-base">Processos & Fluxos</h3>
                   </div>
                   <p className="text-sm text-muted-foreground mb-4">
                     Mapeamento e documentação de processos operacionais.
@@ -170,7 +170,7 @@ export default async function HomePage() {
                     <div className="p-2 rounded-lg bg-green-100 dark:bg-green-950">
                       <BookOpen size={18} className="text-green-600" />
                     </div>
-                    <h3 className="font-semibold text-base">Documentações</h3>
+                    <h3 className="text-base">Documentações</h3>
                   </div>
                   <p className="text-sm text-muted-foreground mb-4">
                     Base de conhecimento e referências do time.
@@ -185,14 +185,14 @@ export default async function HomePage() {
       </div>
 
       {/* Últimas atualizações */}
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">Últimas atualizações</h2>
+      <h2 className="text-sm text-muted-foreground uppercase tracking-wide mb-4">Últimas atualizações</h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Últimas automações */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Bot size={15} className="text-purple-500" />
+            <CardTitle className="hub-card-title flex items-center gap-2">
+              <Bot size={15} className="text-muted-foreground" />
               Automações & Agentes recentes
             </CardTitle>
           </CardHeader>
@@ -214,7 +214,7 @@ export default async function HomePage() {
                 ))}
               </div>
             )}
-            <Link href="/automacoes" className="flex items-center gap-1 mt-4 text-xs text-primary hover:underline">
+            <Link href="/automacoes" className="flex items-center gap-1 mt-4 text-xs text-muted-foreground hover:underline">
               Ver todas <ArrowRight size={11} />
             </Link>
           </CardContent>
@@ -223,8 +223,8 @@ export default async function HomePage() {
         {/* Licenças recentes */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Key size={15} className="text-blue-500" />
+            <CardTitle className="hub-card-title flex items-center gap-2">
+              <Key size={15} className="text-muted-foreground" />
               Licenças recentes
             </CardTitle>
           </CardHeader>
@@ -253,7 +253,7 @@ export default async function HomePage() {
                 ))}
               </div>
             )}
-            <Link href="/licencas" className="flex items-center gap-1 mt-4 text-xs text-primary hover:underline">
+            <Link href="/licencas" className="flex items-center gap-1 mt-4 text-xs text-muted-foreground hover:underline">
               Ver todas <ArrowRight size={11} />
             </Link>
           </CardContent>
@@ -262,7 +262,7 @@ export default async function HomePage() {
         {/* Processos - placeholder */}
         <Card className="border-dashed">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+            <CardTitle className="hub-card-title flex items-center gap-2 text-muted-foreground">
               <GitBranch size={15} />
               Processos & Fluxos recentes
             </CardTitle>
@@ -275,7 +275,7 @@ export default async function HomePage() {
         {/* Documentações - placeholder */}
         <Card className="border-dashed">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+            <CardTitle className="hub-card-title flex items-center gap-2 text-muted-foreground">
               <BookOpen size={15} />
               Documentações recentes
             </CardTitle>

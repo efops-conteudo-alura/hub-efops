@@ -17,7 +17,7 @@ export default async function NovaAnaliseIaPage() {
           <ChevronLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">Análise de IA</h1>
+          <h1 className="hub-page-title">Análise de IA</h1>
           <p className="text-muted-foreground text-sm">Configure as instruções e parâmetros para o Claude analisar seus dados</p>
         </div>
       </div>

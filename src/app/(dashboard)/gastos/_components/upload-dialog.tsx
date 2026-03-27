@@ -66,7 +66,7 @@ export function UploadDialog({ onUploaded }: Props) {
               <p><span className="font-medium text-foreground">categoria:</span> editor_freelancer, editor_externo ou suporte_educacional</p>
               <p><span className="font-medium text-foreground">descricao:</span> nome do prestador (opcional)</p>
             </div>
-            <a href="/api/gastos/upload" className="flex items-center gap-1 text-xs text-primary hover:underline mt-1">
+            <a href="/api/gastos/upload" className="flex items-center gap-1 text-xs text-muted-foreground hover:underline mt-1">
               <Download size={12} /> Baixar template (.xlsx)
             </a>
           </div>

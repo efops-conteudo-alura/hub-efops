@@ -17,7 +17,7 @@ export default async function ProjetosPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Projetos</h1>
+          <h1 className="hub-page-title">Projetos</h1>
           <p className="text-muted-foreground text-sm">
             {projects.length} projeto{projects.length !== 1 ? "s" : ""} cadastrado{projects.length !== 1 ? "s" : ""}
           </p>
@@ -38,8 +38,8 @@ export default async function ProjetosPage() {
               <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
                 <CardHeader className="pb-2">
                   <div className="flex items-start gap-2">
-                    <FolderGit2 size={18} className="text-primary mt-0.5 shrink-0" />
-                    <CardTitle className="text-base leading-tight">{project.name}</CardTitle>
+                    <FolderGit2 size={18} className="text-muted-foreground mt-0.5 shrink-0" />
+                    <CardTitle className="hub-card-title leading-tight">{project.name}</CardTitle>
                   </div>
                   {project.description && (
                     <CardDescription className="line-clamp-2">{project.description}</CardDescription>

@@ -13,7 +13,7 @@ export default function NovaAssinaturaPage() {
           <ChevronLeft size={16} />
           Voltar para Licenças
         </Link>
-        <h1 className="text-2xl font-bold">Nova Assinatura</h1>
+        <h1 className="hub-page-title">Nova Assinatura</h1>
         <p className="text-muted-foreground">
           Preencha os dados da assinatura ou licença
         </p>

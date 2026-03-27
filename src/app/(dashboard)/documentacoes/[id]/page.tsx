@@ -45,7 +45,7 @@ export default async function DocViewPage({ params }: { params: Promise<{ id: st
             <Badge key={tag} variant="outline" className="text-xs">{tag}</Badge>
           ))}
         </div>
-        <h1 className="text-2xl font-bold">{doc.title}</h1>
+        <h1 className="hub-page-title">{doc.title}</h1>
         {doc.description && (
           <p className="text-muted-foreground text-sm">{doc.description}</p>
         )}

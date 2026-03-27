@@ -53,7 +53,7 @@ export function ReportTypePicker() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-md bg-primary/10">
-                    <Icon size={18} className="text-primary" />
+                    <Icon size={18} className="text-muted-foreground" />
                   </div>
                   <CardTitle className="text-sm">{type.label}</CardTitle>
                 </div>

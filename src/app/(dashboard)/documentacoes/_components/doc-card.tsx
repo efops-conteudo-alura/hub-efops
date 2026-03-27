@@ -45,7 +45,7 @@ export function DocCard({ doc }: DocCardProps) {
         </div>
         <Badge
           variant={doc.status === "PUBLISHED" ? "default" : "secondary"}
-          className="text-xs shrink-0"
+          className="text-xs shrink-0 font-mono uppercase tracking-wider"
         >
           {STATUS_LABELS[doc.status] ?? doc.status}
         </Badge>
@@ -60,12 +60,12 @@ export function DocCard({ doc }: DocCardProps) {
       {doc.tags.length > 0 && (
         <div className="flex gap-1 flex-wrap">
           {doc.tags.slice(0, 3).map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs">
+            <Badge key={tag} variant="outline" className="text-xs font-mono uppercase tracking-wider">
               {tag}
             </Badge>
           ))}
           {doc.tags.length > 3 && (
-            <Badge variant="outline" className="text-xs">+{doc.tags.length - 3}</Badge>
+            <Badge variant="outline" className="text-xs font-mono uppercase tracking-wider">+{doc.tags.length - 3}</Badge>
           )}
         </div>
       )}

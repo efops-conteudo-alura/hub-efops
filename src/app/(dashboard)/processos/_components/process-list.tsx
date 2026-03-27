@@ -47,8 +47,8 @@ export function ProcessList({ processes, currentUserId }: Props) {
   return (
     <div className="p-6 space-y-5">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <GitBranch size={22} className="text-primary" /> Processos & Fluxos
+        <h1 className="hub-page-title flex items-center gap-2">
+          <GitBranch size={22} className="text-muted-foreground" /> Processos & Fluxos
         </h1>
         <Button asChild size="sm">
           <Link href="/processos/novo"><Plus size={15} className="mr-1" /> Novo Processo</Link>
@@ -74,7 +74,7 @@ export function ProcessList({ processes, currentUserId }: Props) {
                 className={`px-2.5 py-0.5 rounded-full text-xs border transition-colors ${
                   activeTag === tag
                     ? "bg-primary text-primary-foreground border-primary"
-                    : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+                    : "border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground"
                 }`}
               >
                 {tag}
@@ -98,7 +98,7 @@ export function ProcessList({ processes, currentUserId }: Props) {
             <Link key={p.id} href={`/processos/${p.id}`}>
               <div className="group border rounded-xl p-4 bg-card hover:border-primary hover:shadow-sm transition-all space-y-3 h-full flex flex-col">
                 <div className="flex items-start justify-between gap-2">
-                  <h2 className="font-semibold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">
+                  <h2 className="font-semibold text-sm leading-snug group-hover:text-foreground transition-colors line-clamp-2">
                     {p.title}
                   </h2>
                   <Badge

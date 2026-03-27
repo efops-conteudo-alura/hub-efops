@@ -9,8 +9,8 @@ export default async function ConfiguracoesPage() {
   return (
     <div className="p-8 max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Configurações do sistema</h1>
-        <p className="text-muted-foreground text-sm mt-1">
+        <h1 className="hub-page-title">Configurações do sistema</h1>
+        <p className="hub-section-title mt-1">
           Gerencie as integrações e credenciais usadas pelo hub.
         </p>
       </div>

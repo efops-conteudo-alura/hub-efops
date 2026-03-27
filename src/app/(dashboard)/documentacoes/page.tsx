@@ -39,10 +39,10 @@ export default async function DocumentacoesPage() {
   return (
     <div className="px-8 py-6">
       <div className="flex items-center gap-3 mb-8">
-        <BookOpen size={22} className="text-primary" />
+        <BookOpen size={22} className="text-muted-foreground" />
         <div>
-          <h1 className="text-xl font-bold">Documentações</h1>
-          <p className="text-sm text-muted-foreground">Base de conhecimento do time</p>
+          <h1 className="hub-page-title">Documentações</h1>
+          <p className="hub-section-title">Base de conhecimento do time</p>
         </div>
       </div>
 

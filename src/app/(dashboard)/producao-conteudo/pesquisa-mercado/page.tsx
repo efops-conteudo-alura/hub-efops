@@ -23,8 +23,8 @@ export default async function PesquisaMercadoPage() {
 
   return (
     <div className="p-6 max-w-5xl">
-      <h1 className="text-2xl font-bold mb-1">Pesquisa de Mercado</h1>
-      <p className="text-muted-foreground mb-6">
+      <h1 className="hub-page-title mb-1">Pesquisa de Mercado</h1>
+      <p className="hub-section-title mb-6">
         Gere uma análise de mercado sobre um curso ou carreira com benchmarking de concorrentes e tendências.
       </p>
 

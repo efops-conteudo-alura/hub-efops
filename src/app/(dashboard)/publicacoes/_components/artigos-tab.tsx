@@ -277,7 +277,7 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
                       href={`https://www.alura.com.br/artigos/${artigo.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-medium hover:text-primary transition-colors flex items-start gap-1.5 group"
+                      className="font-medium hover:text-foreground transition-colors flex items-start gap-1.5 group"
                     >
                       {artigo.nome}
                       <ExternalLink size={11} className="shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />

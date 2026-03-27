@@ -59,7 +59,7 @@ export default async function AutomationDetailPage({ params }: { params: Promise
               {STATUS_LABELS[automation.status]}
             </Badge>
           </div>
-          <h1 className="text-2xl font-bold">{automation.name}</h1>
+          <h1 className="hub-page-title">{automation.name}</h1>
           {automation.shortDesc && (
             <p className="text-muted-foreground mt-1">{automation.shortDesc}</p>
           )}
@@ -73,7 +73,7 @@ export default async function AutomationDetailPage({ params }: { params: Promise
               href={automation.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 mt-3 text-sm font-medium text-primary hover:underline"
+              className="inline-flex items-center gap-2 mt-3 text-sm font-medium text-muted-foreground hover:underline"
             >
               <ExternalLink size={14} />
               Acessar automação
@@ -86,7 +86,7 @@ export default async function AutomationDetailPage({ params }: { params: Promise
         {automation.fullDesc && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Descrição completa</CardTitle>
+              <CardTitle className="hub-card-title">Descrição completa</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm leading-relaxed whitespace-pre-wrap">{automation.fullDesc}</p>
@@ -97,7 +97,7 @@ export default async function AutomationDetailPage({ params }: { params: Promise
         {automation.tools.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="hub-card-title flex items-center gap-2">
                 <Wrench size={16} /> Ferramentas utilizadas
               </CardTitle>
             </CardHeader>
@@ -114,7 +114,7 @@ export default async function AutomationDetailPage({ params }: { params: Promise
         {hasRoi && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="hub-card-title flex items-center gap-2">
                 <TrendingUp size={16} /> ROI
               </CardTitle>
             </CardHeader>
@@ -127,7 +127,7 @@ export default async function AutomationDetailPage({ params }: { params: Promise
                         <Clock size={16} />
                         <span className="text-xs font-medium">Horas economizadas</span>
                       </div>
-                      <p className="text-2xl font-bold">{automation.roiHoursSaved}h</p>
+                      <p className="text-2xl hub-number">{automation.roiHoursSaved}h</p>
                       <p className="text-xs text-muted-foreground">por semana</p>
                     </div>
                   )}
@@ -137,7 +137,7 @@ export default async function AutomationDetailPage({ params }: { params: Promise
                         <TrendingUp size={16} />
                         <span className="text-xs font-medium">Economia mensal est.</span>
                       </div>
-                      <p className="text-2xl font-bold">
+                      <p className="text-2xl hub-number">
                         R$ {automation.roiMonthlySavings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </p>
                       <p className="text-xs text-muted-foreground">estimativa</p>

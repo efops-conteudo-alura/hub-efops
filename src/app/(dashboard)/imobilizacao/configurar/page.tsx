@@ -17,7 +17,7 @@ export default async function ImobilizacaoConfigurarPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Configuração de Times — Imobilização</h1>
+        <h1 className="hub-page-title">Configuração de Times — Imobilização</h1>
         <p className="text-muted-foreground text-sm mt-1">
           Configure os times, colaboradores, regras de alocação e a lista do ClickUp de cada time.
         </p>

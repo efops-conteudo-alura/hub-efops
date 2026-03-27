@@ -156,8 +156,8 @@ export function ExpensesByCategory() {
       ) : (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <BarChart2 size={15} className="text-primary" />
+            <CardTitle className="hub-card-title flex items-center gap-2">
+              <BarChart2 size={15} className="text-muted-foreground" />
               Gastos por categoria ao longo do tempo
             </CardTitle>
           </CardHeader>
@@ -193,13 +193,13 @@ export function ExpensesByCategory() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left pb-2 font-medium text-muted-foreground pr-4">Mês</th>
+                  <th className="hub-table-header text-left pb-2 pr-4">Mês</th>
                   {selectedCategories.map((cat) => (
-                    <th key={cat.value} className="text-right pb-2 font-medium text-muted-foreground px-3">
+                    <th key={cat.value} className="hub-table-header text-right pb-2 px-3">
                       {cat.label}
                     </th>
                   ))}
-                  <th className="text-right pb-2 font-medium text-muted-foreground pl-3">Total</th>
+                  <th className="hub-table-header text-right pb-2 pl-3">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -210,32 +210,32 @@ export function ExpensesByCategory() {
                   );
                   return (
                     <tr key={row.month as string}>
-                      <td className="py-2 font-mono text-muted-foreground pr-4">{row.month as string}</td>
+                      <td className="py-2 hub-number text-muted-foreground pr-4">{row.month as string}</td>
                       {selectedCategories.map((cat) => (
                         <td key={cat.value} className="py-2 text-right px-3">
                           {(row[cat.value] as number) > 0 ? formatBRL(row[cat.value] as number) : "—"}
                         </td>
                       ))}
-                      <td className="py-2 text-right font-semibold pl-3">{formatBRL(rowTotal)}</td>
+                      <td className="py-2 text-right hub-number pl-3">{formatBRL(rowTotal)}</td>
                     </tr>
                   );
                 })}
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-border">
-                  <td className="py-2 font-semibold pr-4">Total</td>
+                  <td className="py-2 pr-4">Total</td>
                   {selectedCategories.map((cat) => {
                     const catTotal = tableData.reduce(
                       (s, row) => s + ((row[cat.value] as number) || 0),
                       0
                     );
                     return (
-                      <td key={cat.value} className="py-2 text-right font-semibold px-3">
+                      <td key={cat.value} className="py-2 text-right hub-number px-3">
                         {catTotal > 0 ? formatBRL(catTotal) : "—"}
                       </td>
                     );
                   })}
-                  <td className="py-2 text-right font-bold pl-3">
+                  <td className="py-2 text-right hub-number pl-3">
                     {formatBRL(
                       tableData.reduce(
                         (s, row) =>

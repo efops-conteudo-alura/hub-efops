@@ -122,9 +122,9 @@ export function ReportView({ report }: Props) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold">{report.title}</h1>
+          <h1 className="hub-page-title">{report.title}</h1>
           {report.objective && (
-            <p className="text-muted-foreground mt-1">{report.objective}</p>
+            <p className="hub-section-title mt-1">{report.objective}</p>
           )}
         </div>
         <div className="flex gap-2 shrink-0">

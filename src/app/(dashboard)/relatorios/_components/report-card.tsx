@@ -32,8 +32,8 @@ export function ReportCard({ report, isAdmin }: Props) {
     <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex items-start gap-2">
-          <Icon size={18} className="text-primary shrink-0 mt-0.5" />
-          <CardTitle className="text-base leading-snug flex-1">{report.title}</CardTitle>
+          <Icon size={18} className="text-muted-foreground shrink-0 mt-0.5" />
+          <CardTitle className="hub-card-title leading-snug flex-1">{report.title}</CardTitle>
           {report.isAdminOnly && isAdmin && (
             <span title="Visível apenas para admins">
               <Lock size={13} className="text-muted-foreground shrink-0 mt-1" />

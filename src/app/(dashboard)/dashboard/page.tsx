@@ -119,10 +119,10 @@ export default async function DashboardPage() {
   return (
     <div className="p-8 max-w-6xl space-y-8">
       <div className="flex items-center gap-3">
-        <BarChart2 size={24} className="text-primary" />
+        <BarChart2 size={24} className="text-muted-foreground" />
         <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground text-sm">Visão geral do Hub — {currentMonth}</p>
+          <h1 className="hub-page-title">Dashboard</h1>
+          <p className="hub-section-title">Visão geral do Hub — {currentMonth}</p>
         </div>
       </div>
 
@@ -135,7 +135,7 @@ export default async function DashboardPage() {
                 <DollarSign size={16} className="text-orange-600" />
               </div>
               <div>
-                <p className="text-xl font-bold leading-tight">{formatBRL(gastosTotal3Meses)}</p>
+                <p className="text-xl hub-number leading-tight">{formatBRL(gastosTotal3Meses)}</p>
                 <p className="text-xs text-muted-foreground">gastos externos — últimos 3 meses</p>
               </div>
             </div>
@@ -149,7 +149,7 @@ export default async function DashboardPage() {
                 <Key size={16} className="text-blue-600" />
               </div>
               <div>
-                <p className="text-xl font-bold leading-tight">{formatBRL(custoMensalLicencas)}</p>
+                <p className="text-xl hub-number leading-tight">{formatBRL(custoMensalLicencas)}</p>
                 <p className="text-xs text-muted-foreground">custo licenças/mês est.</p>
               </div>
             </div>
@@ -163,7 +163,7 @@ export default async function DashboardPage() {
                 <Bot size={16} className="text-purple-600" />
               </div>
               <div>
-                <p className="text-xl font-bold leading-tight">
+                <p className="text-xl hub-number leading-tight">
                   {totalHoras > 0 ? `${totalHoras}h/sem` : "—"}
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -180,7 +180,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <CardTitle className="hub-card-title flex items-center gap-2">
               <DollarSign size={14} className="text-muted-foreground" />
               Gastos externos — últimos 6 meses
             </CardTitle>
@@ -192,7 +192,7 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <CardTitle className="hub-card-title flex items-center gap-2">
               <Key size={14} className="text-muted-foreground" />
               Licenças ativas por time
             </CardTitle>
@@ -225,7 +225,7 @@ export default async function DashboardPage() {
       {/* Linha 3 — KPIs de produção */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <CardTitle className="hub-card-title flex items-center gap-2">
             <TrendingUp size={14} className="text-muted-foreground" />
             Produção — últimos 3 meses ({last3Months[0]} a {last3Months[2]})
           </CardTitle>
@@ -243,7 +243,7 @@ export default async function DashboardPage() {
                 { label: "Trilhas", value: kpiTotais.trilhas },
               ].map(({ label, value }) => (
                 <div key={label} className="rounded-md border p-3 text-center">
-                  <p className="text-2xl font-bold">{value}</p>
+                  <p className="text-2xl hub-number">{value}</p>
                   <p className="text-xs text-muted-foreground">{label}</p>
                 </div>
               ))}
@@ -254,7 +254,7 @@ export default async function DashboardPage() {
 
       {/* Linha 4 — Inventário do Hub */}
       <div>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+        <h2 className="text-sm text-muted-foreground uppercase tracking-wide mb-3">
           Inventário do Hub
         </h2>
         <div className="grid grid-cols-3 gap-4">
@@ -265,7 +265,7 @@ export default async function DashboardPage() {
                   <Clock size={16} className="text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{processosPublicados}</p>
+                  <p className="text-2xl hub-number">{processosPublicados}</p>
                   <p className="text-xs text-muted-foreground">processos publicados</p>
                 </div>
               </div>
@@ -278,7 +278,7 @@ export default async function DashboardPage() {
                   <BookOpen size={16} className="text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{docsPublicadas}</p>
+                  <p className="text-2xl hub-number">{docsPublicadas}</p>
                   <p className="text-xs text-muted-foreground">docs publicadas</p>
                 </div>
               </div>
@@ -291,7 +291,7 @@ export default async function DashboardPage() {
                   <FileText size={16} className="text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{totalRelatorios}</p>
+                  <p className="text-2xl hub-number">{totalRelatorios}</p>
                   <p className="text-xs text-muted-foreground">relatórios criados</p>
                 </div>
               </div>

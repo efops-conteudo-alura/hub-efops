@@ -15,7 +15,7 @@ export default async function NovoRelatorioPage() {
           <ChevronLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">Novo Relatório</h1>
+          <h1 className="hub-page-title">Novo Relatório</h1>
           <p className="text-muted-foreground text-sm">Escolha o tipo de relatório</p>
         </div>
       </div>

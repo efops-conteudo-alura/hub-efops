@@ -32,7 +32,7 @@ export default async function EditarAssinaturaPage({
           <ChevronLeft size={16} />
           Voltar para Licenças
         </Link>
-        <h1 className="text-2xl font-bold">Editar Assinatura</h1>
+        <h1 className="hub-page-title">Editar Assinatura</h1>
         <p className="text-muted-foreground">{subscription.name}</p>
       </div>
 

@@ -145,13 +145,13 @@ export function NodeLinkDialog({ open, nodeId, links, onClose, onSave }: Props) 
           )}
 
           {/* Tabs */}
-          <div className="flex gap-1 border-b">
+          <div className="flex">
             <button
               onClick={() => setTab("automations")}
-              className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
+              className={`px-5 py-4 text-xs font-mono font-semibold uppercase border border-sidebar-border -ml-px first:ml-0 transition-colors relative ${
                 tab === "automations"
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "bg-[#0c0d0e] text-foreground border-t-foreground z-10"
+                  : "bg-sidebar text-muted-foreground hover:text-foreground"
               }`}
             >
               <span className="flex items-center gap-1.5">
@@ -160,10 +160,10 @@ export function NodeLinkDialog({ open, nodeId, links, onClose, onSave }: Props) 
             </button>
             <button
               onClick={() => setTab("url")}
-              className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
+              className={`px-5 py-4 text-xs font-mono font-semibold uppercase border border-sidebar-border -ml-px first:ml-0 transition-colors relative ${
                 tab === "url"
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  ? "bg-[#0c0d0e] text-foreground border-t-foreground z-10"
+                  : "bg-sidebar text-muted-foreground hover:text-foreground"
               }`}
             >
               <span className="flex items-center gap-1.5">

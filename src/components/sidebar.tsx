@@ -5,13 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
-  House, BarChart2, Key, LogOut, Gauge, Users, Bot,
-  GitBranch, BookOpen, ChevronLeft, ChevronRight, Menu, X, Receipt, FileBarChart, TrendingUp, BookMarked, Sun, Moon, ClipboardList, Settings, Pencil, ChevronDown, Archive,
+  House, BarChart2, Key, LogOut, Users,
+  Menu, X, Receipt, FileBarChart, TrendingUp, BookMarked,
+  Sun, Moon, ClipboardList, Settings, Pencil, ChevronDown, Archive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { ProfileDialog } from "@/components/profile-dialog";
 import { useTheme } from "next-themes";
 
@@ -30,21 +29,20 @@ type NavItem =
   | { href: string; label: string; icon: React.ElementType; children?: never }
   | { href?: never; label: string; icon: React.ElementType; children: NavChild[] };
 
-// Itens principais — Dashboard e Usuários ficam sempre no final via bottomItems
 const mainNavItems: NavItem[] = [
   { href: "/home", label: "Home", icon: House },
   { href: "/kpis", label: "KPIs", icon: TrendingUp },
   { href: "/publicacoes", label: "Publicações", icon: BookMarked },
   { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
   {
-    label: "Produção de Conteúdo",
+    label: "Produção",
     icon: Pencil,
     children: [
-      { href: "/producao-conteudo/briefing", label: "Briefing para Marketing" },
-      { href: "/producao-conteudo/validacao-ementa", label: "Validação de Ementa" },
-      { href: "/producao-conteudo/revisao-didatica", label: "Revisão Didática" },
-      { href: "/producao-conteudo/pesquisa-mercado", label: "Pesquisa de Mercado" },
-      { href: "/producao-conteudo/plano-estudos", label: "Plano de Estudos" },
+      { href: "/producao-conteudo/briefing", label: "Briefing" },
+      { href: "/producao-conteudo/validacao-ementa", label: "Validação" },
+      { href: "/producao-conteudo/revisao-didatica", label: "Revisão" },
+      { href: "/producao-conteudo/pesquisa-mercado", label: "Pesquisa" },
+      { href: "/producao-conteudo/plano-estudos", label: "Plano" },
     ],
   },
   {
@@ -52,10 +50,10 @@ const mainNavItems: NavItem[] = [
     icon: Archive,
     children: [
       { href: "/projetos", label: "Projetos" },
-      { href: "/automacoes", label: "Automações & Agentes" },
-      { href: "/processos", label: "Processos & Fluxos" },
-      { href: "/documentacoes", label: "Documentações" },
-      { href: "/biblioteca-de-prompts", label: "Biblioteca de Prompts" },
+      { href: "/automacoes", label: "Automações" },
+      { href: "/processos", label: "Processos" },
+      { href: "/documentacoes", label: "Docs" },
+      { href: "/biblioteca-de-prompts", label: "Prompts" },
     ],
   },
   { href: "/licencas", label: "Licenças", icon: Key },
@@ -65,34 +63,107 @@ const bottomNavItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: BarChart2 },
 ];
 
+function NavItemEl({
+  item,
+  pathname,
+  openSubmenus,
+  onToggleSubmenu,
+}: {
+  item: NavItem;
+  pathname: string;
+  openSubmenus: Set<string>;
+  onToggleSubmenu: (label: string) => void;
+}) {
+  const Icon = item.icon;
+
+  if (item.children) {
+    const isOpen = openSubmenus.has(item.label);
+    const isAnyChildActive = item.children.some((child) =>
+      pathname.startsWith(child.href)
+    );
+
+    return (
+      <div className="w-full">
+        <button
+          onClick={() => onToggleSubmenu(item.label)}
+          title={item.label}
+          className={cn(
+            "flex flex-col items-center justify-center gap-1.5 w-full py-3 px-2 rounded-xl transition-colors",
+            isAnyChildActive
+              ? "bg-sidebar-accent text-foreground"
+              : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
+          )}
+        >
+          <Icon size={20} strokeWidth={isAnyChildActive ? 2 : 1.5} />
+          <span className="text-[11px] font-semibold leading-tight text-center">
+            {item.label}
+          </span>
+          <ChevronDown
+            size={10}
+            className={cn(
+              "transition-transform duration-200 opacity-50",
+              isOpen && "rotate-180"
+            )}
+          />
+        </button>
+
+        {isOpen && (
+          <div className="mt-1 mb-1 space-y-0.5 px-1">
+            {item.children.map((child) => {
+              const isActive = pathname.startsWith(child.href);
+              return (
+                <Link
+                  key={child.href}
+                  href={child.href}
+                  title={child.label}
+                  className={cn(
+                    "block text-center px-2 py-1.5 rounded-lg text-xs font-medium transition-colors truncate",
+                    isActive
+                      ? "bg-sidebar-accent text-foreground font-semibold"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
+                  )}
+                >
+                  {child.label}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const isActive = pathname.startsWith(item.href);
+  return (
+    <Link
+      href={item.href}
+      title={item.label}
+      className={cn(
+        "flex flex-col items-center justify-center gap-1.5 w-full py-3 px-2 rounded-xl transition-colors",
+        isActive
+          ? "bg-sidebar-accent text-foreground"
+          : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
+      )}
+    >
+      <Icon size={20} strokeWidth={isActive ? 2 : 1.5} />
+      <span className="text-[11px] font-semibold leading-tight text-center">
+        {item.label}
+      </span>
+    </Link>
+  );
+}
+
 export function Sidebar({ user, isAdmin }: SidebarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [openSubmenus, setOpenSubmenus] = useState<Set<string>>(new Set());
 
-  // Colapsa por padrão no mobile
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 768px)");
-    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
-      if (e.matches) {
-        setCollapsed(true);
-        setMobileOpen(false);
-      }
-    };
-    handler(mq);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
-  // Fecha o drawer mobile ao navegar
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
-  // Abre automaticamente o submenu que contém a rota ativa
   useEffect(() => {
     mainNavItems.forEach((item) => {
       if (item.children?.some((child) => pathname.startsWith(child.href))) {
@@ -102,8 +173,6 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
   }, [pathname]);
 
   const toggleSubmenu = (label: string) => {
-    // Se a sidebar estiver colapsada, expande primeiro
-    if (collapsed) setCollapsed(false);
     setOpenSubmenus((prev) => {
       const next = new Set(prev);
       next.has(label) ? next.delete(label) : next.add(label);
@@ -111,268 +180,77 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
     });
   };
 
-  const allBottomNav = [
+  const allBottomNav: NavItem[] = [
     ...bottomNavItems,
     ...(isAdmin
       ? [
-          { href: "/gastos", label: "Gastos Externos", icon: Receipt },
-          { href: "/imobilizacao", label: "Imobilização", icon: ClipboardList },
+          { href: "/gastos", label: "Gastos", icon: Receipt },
+          { href: "/imobilizacao", label: "Imobil.", icon: ClipboardList },
           { href: "/admin/usuarios", label: "Usuários", icon: Users },
-          { href: "/admin/configuracoes", label: "Configurações", icon: Settings },
+          { href: "/admin/configuracoes", label: "Config.", icon: Settings },
         ]
       : []),
   ];
 
-  const navLink = (item: NavItem) => {
-    const Icon = item.icon;
+  const navProps = { pathname, openSubmenus, onToggleSubmenu: toggleSubmenu };
 
-    // Item com submenu
-    if (item.children) {
-      const isOpen = openSubmenus.has(item.label);
-      const isAnyChildActive = item.children.some((child) => pathname.startsWith(child.href));
-
-      return (
-        <div key={item.label}>
-          <button
-            onClick={() => toggleSubmenu(item.label)}
-            title={collapsed ? item.label : undefined}
-            className={cn(
-              "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-              collapsed && "justify-center px-2",
-              isAnyChildActive
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            <Icon size={18} className="shrink-0" />
-            {!collapsed && (
-              <>
-                <span className="truncate flex-1 text-left">{item.label}</span>
-                <ChevronDown
-                  size={14}
-                  className={cn("shrink-0 transition-transform duration-200", isOpen && "rotate-180")}
-                />
-              </>
-            )}
-          </button>
-
-          {!collapsed && isOpen && (
-            <div className="ml-3 mt-1 mb-1 space-y-0.5 border-l pl-3">
-              {item.children.map((child) => {
-                const isActive = pathname.startsWith(child.href);
-                return (
-                  <Link
-                    key={child.href}
-                    href={child.href}
-                    className={cn(
-                      "flex items-center px-3 py-1.5 rounded-md text-sm transition-colors",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    {child.label}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // Item simples
-    const isActive = pathname.startsWith(item.href);
-    return (
-      <Link
-        key={item.href}
-        href={item.href}
-        title={collapsed ? item.label : undefined}
-        className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-          collapsed && "justify-center px-2",
-          isActive
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-        )}
-      >
-        <Icon size={18} className="shrink-0" />
-        {!collapsed && <span className="truncate">{item.label}</span>}
-      </Link>
-    );
-  };
-
-  // Versão do navLink para o drawer mobile (sempre expandido, suporta submenu)
-  const mobileNavLink = (item: NavItem) => {
-    const Icon = item.icon;
-
-    if (item.children) {
-      const isOpen = openSubmenus.has(item.label);
-      const isAnyChildActive = item.children.some((child) => pathname.startsWith(child.href));
-
-      return (
-        <div key={item.label}>
-          <button
-            onClick={() => toggleSubmenu(item.label)}
-            className={cn(
-              "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-              isAnyChildActive
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            <Icon size={18} className="shrink-0" />
-            <span className="truncate flex-1 text-left">{item.label}</span>
-            <ChevronDown
-              size={14}
-              className={cn("shrink-0 transition-transform duration-200", isOpen && "rotate-180")}
-            />
-          </button>
-
-          {isOpen && (
-            <div className="ml-3 mt-1 mb-1 space-y-0.5 border-l pl-3">
-              {item.children.map((child) => {
-                const isActive = pathname.startsWith(child.href);
-                return (
-                  <Link
-                    key={child.href}
-                    href={child.href}
-                    className={cn(
-                      "flex items-center px-3 py-1.5 rounded-md text-sm transition-colors",
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    {child.label}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    const isActive = pathname.startsWith(item.href);
-    return (
-      <Link
-        key={item.href}
-        href={item.href}
-        className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-          isActive
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-        )}
-      >
-        <Icon size={18} className="shrink-0" />
-        <span className="truncate">{item.label}</span>
-      </Link>
-    );
-  };
-
-  const sidebarContent = (
-    <div className={cn("flex flex-col h-full bg-card border-r transition-all duration-200", collapsed ? "w-16" : "w-64")}>
-      {/* Header */}
-      <div className={cn("p-4 border-b flex items-center", collapsed ? "justify-center" : "justify-between")}>
-        {!collapsed && (
-          <div className="flex items-center gap-2 min-w-0">
-            <Gauge size={20} className="text-primary shrink-0" />
-            <h1 className="font-bold text-lg truncate">EFops Hub</h1>
-          </div>
-        )}
-        {collapsed && <Gauge size={20} className="text-primary" />}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="p-1 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0 hidden md:flex"
-          title={collapsed ? "Expandir sidebar" : "Retrair sidebar"}
-        >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
-      </div>
-
+  const sidebarInner = (
+    <>
       {/* Nav principal */}
-      <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-        {mainNavItems.map(navLink)}
+      <nav className="flex-1 flex flex-col items-center py-3 gap-1 px-2 overflow-y-auto">
+        {mainNavItems.map((item) => (
+          <NavItemEl key={item.label} item={item} {...navProps} />
+        ))}
       </nav>
 
-      {/* Nav secundária (Dashboard + Usuários sempre por último) */}
-      <div className="p-2 space-y-1 border-t">
-        {allBottomNav.map(navLink)}
+      {/* Nav rodapé (Dashboard + admin) */}
+      <div className="shrink-0 border-t border-sidebar-border px-2 py-2 flex flex-col gap-1">
+        {allBottomNav.map((item) => (
+          <NavItemEl key={item.href ?? item.label} item={item} {...navProps} />
+        ))}
       </div>
 
-      {/* Footer do usuário */}
-      <div className={cn("p-3 border-t", collapsed && "flex flex-col items-center gap-2")}>
-        {!collapsed ? (
-          <>
-            <button
-              className="flex items-center gap-3 mb-3 w-full rounded-md p-1 hover:bg-muted transition-colors text-left"
-              onClick={() => setProfileOpen(true)}
-              title="Editar perfil"
-            >
-              <Avatar className="h-8 w-8 shrink-0">
-                {user.image && <AvatarImage src={user.image} alt={user.name ?? ""} />}
-                <AvatarFallback>
-                  {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-              </div>
-            </button>
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-start text-muted-foreground"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-            >
-              <LogOut size={16} className="mr-2" />
-              Sair
-            </Button>
-          </>
-        ) : (
-          <>
-            <button
-              title="Editar perfil"
-              onClick={() => setProfileOpen(true)}
-              className="rounded-full"
-            >
-              <Avatar className="h-8 w-8">
-                {user.image && <AvatarImage src={user.image} alt={user.name ?? ""} />}
-                <AvatarFallback>
-                  {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-            </button>
-            <button
-              title={theme === "dark" ? "Modo claro" : "Modo escuro"}
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="p-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <Sun size={16} className="dark:hidden" />
-              <Moon size={16} className="hidden dark:block" />
-            </button>
-            <button
-              title="Sair"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="p-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <LogOut size={16} />
-            </button>
-          </>
-        )}
+      {/* Usuário + ações */}
+      <div className="shrink-0 border-t border-sidebar-border px-2 py-3 flex flex-col items-center gap-1">
+        <button
+          onClick={() => setProfileOpen(true)}
+          title={user.name ?? "Editar perfil"}
+          className="rounded-full mb-1 hover:opacity-80 transition-opacity"
+        >
+          <Avatar className="h-8 w-8">
+            {user.image && <AvatarImage src={user.image} alt={user.name ?? ""} />}
+            <AvatarFallback className="text-xs bg-sidebar-accent text-foreground">
+              {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "U"}
+            </AvatarFallback>
+          </Avatar>
+        </button>
+
+        <button
+          title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          className="p-2 rounded-xl text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground transition-colors"
+        >
+          <Sun size={16} className="dark:hidden" />
+          <Moon size={16} className="hidden dark:block" />
+        </button>
+
+        <button
+          title="Sair"
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="flex flex-col items-center gap-1 w-full py-2 px-2 rounded-xl text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground transition-colors"
+        >
+          <LogOut size={18} strokeWidth={1.5} />
+          <span className="text-[11px] font-semibold">Sair</span>
+        </button>
       </div>
-    </div>
+    </>
   );
 
   return (
     <>
       {/* Botão hambúrguer — apenas mobile */}
       <button
-        className="md:hidden fixed top-3 left-3 z-50 p-2 rounded-md bg-card border shadow-sm"
+        className="md:hidden fixed top-3 left-3 z-50 p-2 rounded-md bg-sidebar border border-sidebar-border shadow-sm"
         onClick={() => setMobileOpen(true)}
         aria-label="Abrir menu"
       >
@@ -380,9 +258,13 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
       </button>
 
       {/* Sidebar desktop */}
-      <div className="hidden md:flex h-screen shrink-0">
-        {sidebarContent}
-      </div>
+      <aside className="hidden md:flex flex-col w-[148px] shrink-0 border-r border-sidebar-border bg-sidebar h-screen sticky top-0">
+        <div className="flex flex-col items-center justify-center py-5 px-3 border-b border-sidebar-border shrink-0 gap-0.5">
+          <span className="text-sm font-bold text-foreground leading-none">EFops</span>
+          <span className="text-[10px] text-muted-foreground tracking-widest uppercase">Hub</span>
+        </div>
+        {sidebarInner}
+      </aside>
 
       {/* Drawer mobile */}
       {mobileOpen && (
@@ -391,56 +273,19 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
             className="md:hidden fixed inset-0 z-40 bg-black/50"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="md:hidden fixed inset-y-0 left-0 z-50 flex">
-            <div className="flex flex-col h-full bg-card border-r w-64">
-              <div className="p-4 border-b flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Gauge size={20} className="text-primary shrink-0" />
-                  <h1 className="font-bold text-lg">EFops Hub</h1>
-                </div>
-                <button
-                  onClick={() => setMobileOpen(false)}
-                  className="p-1 rounded-md text-muted-foreground hover:bg-muted"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-              <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-                {mainNavItems.map(mobileNavLink)}
-              </nav>
-              <div className="p-2 space-y-1 border-t">
-                {allBottomNav.map(mobileNavLink)}
-              </div>
-              <div className="p-3 border-t">
-                <button
-                  className="flex items-center gap-3 mb-3 w-full rounded-md p-1 hover:bg-muted transition-colors text-left"
-                  onClick={() => { setMobileOpen(false); setProfileOpen(true); }}
-                  title="Editar perfil"
-                >
-                  <Avatar className="h-8 w-8 shrink-0">
-                    {user.image && <AvatarImage src={user.image} alt={user.name ?? ""} />}
-                    <AvatarFallback>
-                      {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{user.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                  </div>
-                </button>
-                <ThemeToggle />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start text-muted-foreground"
-                  onClick={() => signOut({ callbackUrl: "/login" })}
-                >
-                  <LogOut size={16} className="mr-2" />
-                  Sair
-                </Button>
-              </div>
+          <aside className="md:hidden fixed inset-y-0 left-0 z-50 flex flex-col w-[148px] border-r border-sidebar-border bg-sidebar">
+            <div className="flex flex-col items-center justify-center py-5 px-3 border-b border-sidebar-border shrink-0 gap-0.5 relative">
+              <span className="text-sm font-bold text-foreground leading-none">EFops</span>
+              <span className="text-[10px] text-muted-foreground tracking-widest uppercase">Hub</span>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="absolute top-3 right-2 p-1 rounded-md text-muted-foreground hover:bg-sidebar-accent/50"
+              >
+                <X size={14} />
+              </button>
             </div>
-          </div>
+            {sidebarInner}
+          </aside>
         </>
       )}
 

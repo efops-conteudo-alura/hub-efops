@@ -17,8 +17,8 @@ export default async function ValidacaoEmentaPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1">Validação de Ementa</h1>
-        <p className="text-muted-foreground">
+        <h1 className="hub-page-title mb-1">Validação de Ementa</h1>
+        <p className="hub-section-title">
           Cole a ementa recebida do instrutor para receber uma avaliação e uma sugestão de ementa.
         </p>
       </div>

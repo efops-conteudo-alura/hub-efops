@@ -39,10 +39,10 @@ export default async function ProjetoDetailPage({
 
       <div className="flex items-start gap-3">
         <div className="p-3 rounded-xl bg-primary/10">
-          <FolderGit2 size={28} className="text-primary" />
+          <FolderGit2 size={28} className="text-muted-foreground" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">{project.name}</h1>
+          <h1 className="hub-page-title">{project.name}</h1>
           {project.responsible && (
             <p className="text-muted-foreground flex items-center gap-1.5 mt-1 text-sm">
               <User size={14} />
@@ -55,7 +55,7 @@ export default async function ProjetoDetailPage({
       {project.description && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Descrição</CardTitle>
+            <CardTitle className="hub-card-title">Descrição</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">{project.description}</p>
@@ -66,7 +66,7 @@ export default async function ProjetoDetailPage({
       {(project.url || project.repoUrl) && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Links</CardTitle>
+            <CardTitle className="hub-card-title">Links</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-3">
             {project.url && (

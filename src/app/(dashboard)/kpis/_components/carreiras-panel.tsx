@@ -78,12 +78,12 @@ export function CarreirasPanel({ initialLevels, onSynced }: CarreirasPanelProps)
         </div>
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
           {newCount > 0 && (
-            <span className="text-primary font-semibold flex items-center gap-1">
+            <span className="text-foreground hub-number flex items-center gap-1">
               <Sparkles size={13} /> {newCount} novos
             </span>
           )}
-          <span><span className="font-semibold text-foreground">{publishedCount}</span> publicados</span>
-          <span><span className="font-semibold text-foreground">{levels.length - publishedCount}</span> em breve</span>
+          <span><span className="hub-number text-foreground">{publishedCount}</span> publicados</span>
+          <span><span className="hub-number text-foreground">{levels.length - publishedCount}</span> em breve</span>
         </div>
       </div>
 
@@ -113,7 +113,7 @@ export function CarreirasPanel({ initialLevels, onSynced }: CarreirasPanelProps)
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-sm">{career.name}</span>
                       {careerIsNew && (
-                        <Badge variant="default" className="gap-1 text-xs py-0">
+                        <Badge variant="default" className="gap-1 text-xs py-0 font-mono uppercase tracking-wider">
                           <Sparkles size={10} /> NOVO
                         </Badge>
                       )}
@@ -144,11 +144,11 @@ export function CarreirasPanel({ initialLevels, onSynced }: CarreirasPanelProps)
                           </div>
                           <div className="shrink-0">
                             {level.isPublished ? (
-                              <Badge variant="default" className="gap-1">
+                              <Badge variant="default" className="gap-1 font-mono uppercase tracking-wider">
                                 <CheckCircle2 size={11} /> Publicado
                               </Badge>
                             ) : (
-                              <Badge variant="secondary" className="gap-1">
+                              <Badge variant="secondary" className="gap-1 font-mono uppercase tracking-wider">
                                 <Clock size={11} /> Em breve
                               </Badge>
                             )}

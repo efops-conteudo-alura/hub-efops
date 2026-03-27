@@ -270,17 +270,17 @@ export function SubscriptionTable({
                   { field: "isActive", label: "Status" },
                 ] as const
               ).map(({ field, label }) => (
-                <TableHead key={field}>
+                <TableHead key={field} className="hub-table-header">
                   <button
                     onClick={() => handleSort(field)}
-                    className="flex items-center gap-1 font-semibold hover:text-foreground transition-colors"
+                    className="flex items-center gap-1 hover:text-foreground transition-colors"
                   >
                     {label}
                     <SortIcon field={field} />
                   </button>
                 </TableHead>
               ))}
-              <TableHead className="w-[90px]">Ações</TableHead>
+              <TableHead className="hub-table-header w-[90px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -300,7 +300,7 @@ export function SubscriptionTable({
                   <div>
                     <button
                       onClick={() => setDetailSub(s)}
-                      className="font-medium text-left hover:text-primary transition-colors"
+                      className="font-medium text-left hover:text-foreground transition-colors"
                     >
                       {s.name}
                     </button>
@@ -394,7 +394,7 @@ export function SubscriptionTable({
               {detailSub.url && (
                 <div className="flex gap-2">
                   <span className="text-muted-foreground w-36 shrink-0">URL</span>
-                  <a href={detailSub.url} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline flex items-center gap-1 break-all">
+                  <a href={detailSub.url} target="_blank" rel="noopener noreferrer" className="font-medium text-foreground hover:underline flex items-center gap-1 break-all">
                     {detailSub.url} <ExternalLink size={12} className="shrink-0" />
                   </a>
                 </div>

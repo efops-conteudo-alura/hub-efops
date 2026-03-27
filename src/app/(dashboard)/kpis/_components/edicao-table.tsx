@@ -88,10 +88,10 @@ export function EdicaoTable({ year, data, isAdmin, onChange }: EdicaoTableProps)
     else onChange([record, ...data]);
   }
 
-  const colHeader = "px-3 py-2 text-center text-xs font-semibold whitespace-nowrap";
+  const colHeader = "px-3 py-2 hub-table-header text-center whitespace-nowrap";
   const rowLabel = "px-3 py-2 text-sm text-muted-foreground font-medium whitespace-nowrap w-36";
   const cell = "px-3 py-2 text-sm text-center tabular-nums";
-  const thTotal = "px-3 py-2 text-center text-xs font-semibold whitespace-nowrap border-l";
+  const thTotal = "px-3 py-2 hub-table-header text-center whitespace-nowrap border-l";
   const tdTotal = "px-3 py-2 text-sm text-center tabular-nums border-l";
 
   // Totais do ano
@@ -112,13 +112,13 @@ export function EdicaoTable({ year, data, isAdmin, onChange }: EdicaoTableProps)
     <div className="space-y-4">
       {/* KPIs de Edição */}
       <div className="space-y-2">
-        <p className="text-sm font-semibold text-foreground">Pós-produção</p>
+        <p className="hub-card-title">Pós-produção</p>
 
         <div className="rounded-md border overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b bg-muted/40">
-                <th className="px-3 py-2 text-left text-xs text-muted-foreground font-medium w-36" />
+                <th className="px-3 py-2 hub-table-header text-left w-36" />
                 {allMonths.map((m) => (
                   <th key={m} className={colHeader}>{fmtMonthShort(m)}</th>
                 ))}
@@ -148,11 +148,11 @@ export function EdicaoTable({ year, data, isAdmin, onChange }: EdicaoTableProps)
                   const r = dataByMonth.get(m);
                   return (
                     <td key={m} className={cell}>
-                      {r ? <span className="font-bold text-primary">{calcScoreEdicao(r)}</span> : <span className="text-muted-foreground">—</span>}
+                      {r ? <span className="font-bold text-foreground">{calcScoreEdicao(r)}</span> : <span className="text-muted-foreground">—</span>}
                     </td>
                   );
                 })}
-                <td className={tdTotal + " font-bold text-primary"}>{hasData ? totalScoreEdicaoAno : <span className="text-muted-foreground">—</span>}</td>
+                <td className={tdTotal + " font-bold text-foreground"}>{hasData ? totalScoreEdicaoAno : <span className="text-muted-foreground">—</span>}</td>
               </tr>
               {isAdmin && (
                 <tr>
@@ -188,12 +188,12 @@ export function EdicaoTable({ year, data, isAdmin, onChange }: EdicaoTableProps)
 
       {/* Distribuição de Entregas */}
       <div className="space-y-2">
-        <p className="text-sm font-semibold text-foreground">Distribuição de Entregas</p>
+        <p className="hub-card-title">Distribuição de Entregas</p>
         <div className="rounded-md border overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b bg-muted/40">
-                <th className="px-3 py-2 text-left text-xs text-muted-foreground font-medium w-48" />
+                <th className="px-3 py-2 hub-table-header text-left w-48" />
                 {allMonths.map((m) => (
                   <th key={m} className={colHeader}>{fmtMonthShort(m)}</th>
                 ))}

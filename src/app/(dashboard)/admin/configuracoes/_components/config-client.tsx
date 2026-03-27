@@ -68,7 +68,7 @@ export function ConfigClient() {
   return (
     <div className="space-y-6">
       <div className="rounded-lg border bg-muted/40 p-6 space-y-3">
-        <h2 className="font-semibold text-base">Caelum BI</h2>
+        <h2 className="hub-card-title">Caelum BI</h2>
         <p className="text-sm text-muted-foreground">
           O sync de cursos em <strong>Publicações</strong> busca os dados via uma query SQL salva no{" "}
           <strong>Caelum BI</strong> (<code>bi.caelumalura.com.br</code>). Cole aqui o link público da

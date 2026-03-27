@@ -79,9 +79,9 @@ function PromptCard({
       {/* Card */}
       <Card className="flex flex-col h-full">
         <CardHeader className="pb-2 space-y-1.5">
-          <p className="text-sm font-semibold leading-tight">{prompt.titulo}</p>
+          <p className="hub-card-title leading-tight">{prompt.titulo}</p>
           {prompt.categoria && (
-            <Badge variant="secondary" className="text-xs w-fit">{prompt.categoria}</Badge>
+            <Badge variant="secondary" className="text-xs w-fit font-mono uppercase tracking-wider">{prompt.categoria}</Badge>
           )}
           {prompt.descricao && (
             <p className="text-xs text-muted-foreground line-clamp-2">{prompt.descricao}</p>
@@ -114,7 +114,7 @@ function PromptCard({
             <DialogTitle>{prompt.titulo}</DialogTitle>
             <div className="flex items-center gap-2 flex-wrap pt-1">
               {prompt.categoria && (
-                <Badge variant="secondary" className="text-xs">{prompt.categoria}</Badge>
+                <Badge variant="secondary" className="text-xs font-mono uppercase tracking-wider">{prompt.categoria}</Badge>
               )}
               {prompt.descricao && (
                 <span className="text-xs text-muted-foreground">{prompt.descricao}</span>
@@ -230,7 +230,7 @@ export function PromptsClient({ prompts: initial, userId, isAdmin }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Biblioteca de Prompts</h1>
+          <h1 className="hub-page-title">Biblioteca de Prompts</h1>
           <p className="text-muted-foreground text-sm">
             {prompts.length} prompt{prompts.length !== 1 ? "s" : ""} · compartilhados pelo time
           </p>
@@ -254,7 +254,7 @@ export function PromptsClient({ prompts: initial, userId, isAdmin }: Props) {
             <div className="flex flex-wrap gap-1.5">
               <button
                 onClick={() => setCategoriaAtiva(null)}
-                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors font-mono uppercase ${
                   !categoriaAtiva
                     ? "bg-primary text-primary-foreground border-primary"
                     : "border-border text-muted-foreground hover:bg-muted"
@@ -266,7 +266,7 @@ export function PromptsClient({ prompts: initial, userId, isAdmin }: Props) {
                 <button
                   key={cat}
                   onClick={() => setCategoriaAtiva(cat === categoriaAtiva ? null : cat)}
-                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                  className={`text-xs px-2.5 py-1 rounded-full border transition-colors font-mono uppercase ${
                     categoriaAtiva === cat
                       ? "bg-primary text-primary-foreground border-primary"
                       : "border-border text-muted-foreground hover:bg-muted"

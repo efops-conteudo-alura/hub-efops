@@ -53,10 +53,10 @@ export default async function AutomacoesPage() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <Bot size={28} className="text-primary" />
+          <Bot size={28} className="text-muted-foreground" />
           <div>
-            <h1 className="text-2xl font-bold">Automações & Agentes</h1>
-            <p className="text-muted-foreground">
+            <h1 className="hub-page-title">Automações & Agentes</h1>
+            <p className="hub-section-title">
               {automations.length} {automations.length === 1 ? "item" : "itens"} cadastrados
             </p>
           </div>
@@ -77,7 +77,7 @@ export default async function AutomacoesPage() {
                 <Bot size={18} className="text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{totalActive}</p>
+                <p className="text-2xl hub-number">{totalActive}</p>
                 <p className="text-xs text-muted-foreground">ativos</p>
               </div>
             </CardContent>
@@ -88,7 +88,7 @@ export default async function AutomacoesPage() {
                 <Clock size={18} className="text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{totalHours}h</p>
+                <p className="text-2xl hub-number">{totalHours}h</p>
                 <p className="text-xs text-muted-foreground">economizadas/semana</p>
               </div>
             </CardContent>
@@ -99,7 +99,7 @@ export default async function AutomacoesPage() {
                 <TrendingUp size={18} className="text-emerald-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">
+                <p className="text-2xl hub-number">
                   R$ {totalSavings.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
                 </p>
                 <p className="text-xs text-muted-foreground">economia mensal est.</p>
@@ -123,10 +123,10 @@ export default async function AutomacoesPage() {
                 <AutomationThumbnail url={a.thumbnailUrl} type={a.type} />
                 <CardContent className="pt-3 pb-3 flex flex-col gap-1 flex-1">
                   <div className="flex items-center justify-between">
-                    <Badge variant={STATUS_VARIANTS[a.status]} className="text-xs">{STATUS_LABELS[a.status]}</Badge>
+                    <Badge variant={STATUS_VARIANTS[a.status]} className="text-xs font-mono uppercase tracking-wider">{STATUS_LABELS[a.status]}</Badge>
                     {a.creator && <p className="text-xs text-muted-foreground truncate ml-2">por {a.creator}</p>}
                   </div>
-                  <p className="font-semibold leading-tight line-clamp-1">{a.name}</p>
+                  <p className="leading-tight line-clamp-1">{a.name}</p>
                   {a.shortDesc && (
                     <p className="text-xs text-muted-foreground line-clamp-2">{a.shortDesc}</p>
                   )}

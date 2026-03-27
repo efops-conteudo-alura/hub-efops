@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { SubscriptionTable } from "@/components/subscription-table";
 import { SubscriptionUploadButton } from "./_components/upload-button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AuditTab } from "./_components/audit-tab";
+import { LicencasClient } from "./_components/licencas-client";
 
 export default async function LicencasPage() {
   const session = await auth();
@@ -37,8 +36,8 @@ export default async function LicencasPage() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Licenças</h1>
-          <p className="text-muted-foreground">
+          <h1 className="hub-page-title">Licenças</h1>
+          <p className="hub-section-title">
             {subscriptions.length}{" "}
             {subscriptions.length === 1 ? "item" : "itens"} cadastrados
           </p>
@@ -55,18 +54,7 @@ export default async function LicencasPage() {
       </div>
 
       {isAdmin ? (
-        <Tabs defaultValue="lista">
-          <TabsList className="mb-4">
-            <TabsTrigger value="lista">Lista</TabsTrigger>
-            <TabsTrigger value="historico">Histórico</TabsTrigger>
-          </TabsList>
-          <TabsContent value="lista">
-            <SubscriptionTable subscriptions={subscriptions} isAdmin={isAdmin} />
-          </TabsContent>
-          <TabsContent value="historico">
-            <AuditTab />
-          </TabsContent>
-        </Tabs>
+        <LicencasClient subscriptions={subscriptions} isAdmin={isAdmin} />
       ) : (
         <SubscriptionTable subscriptions={subscriptions} isAdmin={isAdmin} />
       )}

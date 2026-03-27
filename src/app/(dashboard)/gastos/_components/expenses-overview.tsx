@@ -176,8 +176,8 @@ export function ExpensesOverview({ isAdmin }: Props) {
       {chartData.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp size={15} className="text-primary" />
+            <CardTitle className="hub-card-title flex items-center gap-2">
+              <TrendingUp size={15} className="text-muted-foreground" />
               Total por mês + Média móvel (3 meses)
             </CardTitle>
           </CardHeader>
@@ -200,7 +200,7 @@ export function ExpensesOverview({ isAdmin }: Props) {
       {/* Resumo total */}
       {expenses.length > 0 && (
         <div className="text-sm text-muted-foreground">
-          {expenses.length} entradas · Total: <span className="font-semibold text-foreground">{formatBRL(totalGeral)}</span>
+          {expenses.length} entradas · Total: <span className="hub-number text-foreground">{formatBRL(totalGeral)}</span>
         </div>
       )}
 
@@ -251,12 +251,12 @@ export function ExpensesOverview({ isAdmin }: Props) {
                 {sortedExpenses().map((e) => (
                   <div key={e.id} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0 gap-4">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <span className="text-sm font-mono text-muted-foreground shrink-0" title={e.date ?? undefined}>
+                      <span className="text-sm hub-number text-muted-foreground shrink-0" title={e.date ?? undefined}>
                         {e.date
                           ? new Date(e.date + "T00:00:00").toLocaleDateString("pt-BR")
                           : e.month}
                       </span>
-                      <Badge variant="secondary" className="text-xs shrink-0">
+                      <Badge variant="secondary" className="text-xs shrink-0 font-mono uppercase tracking-wider">
                         {CATEGORY_LABELS[e.category] ?? e.category}
                       </Badge>
                       {e.description && (
@@ -264,7 +264,7 @@ export function ExpensesOverview({ isAdmin }: Props) {
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-sm font-semibold">{formatBRL(e.value)}</span>
+                      <span className="text-sm hub-number">{formatBRL(e.value)}</span>
                       {isAdmin && <ExpenseFormDialog expense={e} onSaved={load} />}
                       {isAdmin && (
                         <button

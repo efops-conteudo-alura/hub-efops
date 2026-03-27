@@ -106,7 +106,7 @@ export function AllowedEmailsTab() {
               <div key={e.id} className="flex items-center justify-between px-4 py-2">
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-mono">{e.email}</span>
-                  <Badge variant={e.hasAccount ? "secondary" : "outline"} className="text-xs">
+                  <Badge variant={e.hasAccount ? "secondary" : "outline"} className="text-xs font-mono uppercase tracking-wider">
                     {e.hasAccount ? "Tem conta" : "Sem conta"}
                   </Badge>
                 </div>

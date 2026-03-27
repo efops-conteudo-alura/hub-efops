@@ -100,7 +100,7 @@ export default function CadastroInstrutorPage() {
     <div className="min-h-screen bg-muted/50 py-10 px-4">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-2">
-          <Gauge size={22} className="text-primary" />
+          <Gauge size={22} className="text-muted-foreground" />
           <span className="font-bold text-lg">EFops Hub — Alura</span>
         </div>
 

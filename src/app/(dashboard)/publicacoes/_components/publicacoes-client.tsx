@@ -35,24 +35,24 @@ export function PublicacoesClient({ isAdmin, initialLevels }: Props) {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <BookMarked size={26} className="text-primary" />
+        <BookMarked size={26} className="text-muted-foreground" />
         <div>
-          <h1 className="text-2xl font-bold">Publicações</h1>
-          <p className="text-muted-foreground text-sm">Conteúdo publicado pela Alura</p>
+          <h1 className="hub-page-title">Publicações</h1>
+          <p className="hub-section-title">Conteúdo publicado pela Alura</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b flex gap-1">
+      <div className="flex">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              "px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px",
+              "px-5 py-4 text-xs font-mono font-semibold uppercase border border-sidebar-border -ml-px first:ml-0 transition-colors relative",
               activeTab === tab.key
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "bg-[#0c0d0e] text-foreground border-t-foreground z-10"
+                : "bg-sidebar text-muted-foreground hover:text-foreground"
             )}
           >
             {tab.label}

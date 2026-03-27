@@ -17,7 +17,7 @@ export default async function NovaPlanilhaPage() {
           <ChevronLeft size={20} />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">Planilha & Formulário</h1>
+          <h1 className="hub-page-title">Planilha & Formulário</h1>
           <p className="text-muted-foreground text-sm">Defina os campos e o objetivo do relatório</p>
         </div>
       </div>

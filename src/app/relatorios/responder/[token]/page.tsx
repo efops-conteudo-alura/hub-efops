@@ -80,7 +80,7 @@ export default function ResponderFormPage() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header simples */}
       <header className="border-b px-6 py-3 flex items-center gap-2">
-        <Gauge size={20} className="text-primary" />
+        <Gauge size={20} className="text-muted-foreground" />
         <span className="font-bold text-base">EFops Hub</span>
       </header>
 

@@ -118,7 +118,7 @@ export function DocUploadDialog({ open, onClose }: Props) {
           />
           {file ? (
             <div className="flex items-center justify-center gap-2 text-sm">
-              <FileText size={16} className="text-primary" />
+              <FileText size={16} className="text-muted-foreground" />
               <span className="font-medium truncate max-w-[200px]">{file.name}</span>
             </div>
           ) : (

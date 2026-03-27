@@ -204,7 +204,7 @@ export function ReportBuilder({
                 <button
                   type="button"
                   onClick={() => updateField(field.id, "options", [...(field.options ?? []), ""])}
-                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:underline"
                 >
                   <Plus size={12} /> Adicionar opção
                 </button>

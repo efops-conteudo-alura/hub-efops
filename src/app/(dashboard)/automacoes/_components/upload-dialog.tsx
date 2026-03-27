@@ -59,7 +59,7 @@ export function AutomacaoUploadDialog({ open, onClose }: Props) {
         <div className="space-y-4">
           <a
             href="/api/automacoes/upload"
-            className="flex items-center gap-2 text-sm text-primary hover:underline"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:underline"
           >
             <Download size={14} /> Baixar template Excel
           </a>

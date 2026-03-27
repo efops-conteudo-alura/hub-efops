@@ -100,10 +100,10 @@ export function KpisOverview({
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <TrendingUp size={28} className="text-primary" />
+          <TrendingUp size={28} className="text-muted-foreground" />
           <div>
-            <h1 className="text-2xl font-bold">KPIs de Conteúdo</h1>
-            <p className="text-muted-foreground text-sm">Indicadores mensais de publicação e edição</p>
+            <h1 className="hub-page-title">KPIs de Conteúdo</h1>
+            <p className="hub-section-title">Indicadores mensais de publicação e edição</p>
           </div>
         </div>
 
@@ -164,16 +164,16 @@ export function KpisOverview({
       </div>
 
       {/* Tabs */}
-      <div className="border-b flex gap-1">
+      <div className="flex">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              "px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px",
+              "px-5 py-4 text-xs font-mono font-semibold uppercase border border-sidebar-border -ml-px first:ml-0 transition-colors relative",
               activeTab === tab.key
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "bg-[#0c0d0e] text-foreground border-t-foreground z-10"
+                : "bg-sidebar text-muted-foreground hover:text-foreground"
             )}
           >
             {tab.label}

@@ -108,8 +108,8 @@ export function UsuariosClient({ initialUsers }: UsuariosClientProps) {
     <div className="p-8 max-w-6xl">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Usuários</h1>
-          <p className="text-muted-foreground">
+          <h1 className="hub-page-title">Usuários</h1>
+          <p className="hub-section-title">
             {users.length} {users.length === 1 ? "usuário" : "usuários"} cadastrados
           </p>
         </div>
@@ -117,16 +117,16 @@ export function UsuariosClient({ initialUsers }: UsuariosClientProps) {
       </div>
 
       {/* Tabs */}
-      <div className="border-b flex gap-1 mb-6">
+      <div className="flex mb-6">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              "px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px",
+              "px-5 py-4 text-xs font-mono font-semibold uppercase border border-sidebar-border -ml-px first:ml-0 transition-colors relative",
               activeTab === tab.key
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "bg-[#0c0d0e] text-foreground border-t-foreground z-10"
+                : "bg-sidebar text-muted-foreground hover:text-foreground"
             )}
           >
             {tab.label}
@@ -139,13 +139,13 @@ export function UsuariosClient({ initialUsers }: UsuariosClientProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Email</TableHead>
+                <TableHead className="hub-table-header">Nome</TableHead>
+                <TableHead className="hub-table-header">Email</TableHead>
                 {allApps.map((app) => (
-                  <TableHead key={app}>{APP_LABELS[app] ?? app}</TableHead>
+                  <TableHead key={app} className="hub-table-header">{APP_LABELS[app] ?? app}</TableHead>
                 ))}
-                <TableHead>Criado em</TableHead>
-                <TableHead className="w-20" />
+                <TableHead className="hub-table-header">Criado em</TableHead>
+                <TableHead className="hub-table-header w-20" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -160,6 +160,7 @@ export function UsuariosClient({ initialUsers }: UsuariosClientProps) {
                         {appRole ? (
                           <Badge
                             variant={appRole.role === "ADMIN" ? "default" : "secondary"}
+                            className="font-mono uppercase tracking-wider"
                           >
                             {ROLE_LABELS[appRole.role] ?? appRole.role}
                           </Badge>
