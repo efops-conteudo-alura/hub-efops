@@ -1,23 +1,34 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx prisma db push)",
-      "mcp__vercel__list_teams",
-      "mcp__vercel__list_projects",
-      "mcp__vercel__list_deployments",
-      "Bash(npx prisma:*)",
-      "Bash(npx tsc:*)",
-      "mcp__vercel__get_deployment",
-      "Bash(cd:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(git:*)",
+      "Bash(node:*)",
+      "Bash(gh:*)",
       "WebSearch",
       "WebFetch(domain:developers.gamma.app)",
       "WebFetch(domain:github.com)",
-      "Bash(git push:*)",
+      "Bash(cat:*)",
+      "Bash(cat \"C:/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-efops/src/app/\\(dashboard\\)/admin/usuarios/usuarios-client.tsx\")",
+      "Bash(xargs grep:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "mcp__vercel__get_runtime_logs",
-      "Bash(gh issue:*)"
-    ]
+      "Bash(NEW=/c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-producao-conteudo)",
+      "Bash(OLD=/c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-efops)",
+      "Bash(__NEW_LINE_0022f4b6178d3c8a__ mkdir:*)",
+      "Bash(cp $OLD/src/app/api/auth/[...nextauth]/route.ts $NEW/src/app/api/auth/[...nextauth]/route.ts)",
+      "Bash(cp $OLD/src/app/\\\\\\(auth\\\\\\)/login/page.tsx $NEW/src/app/\\\\\\(auth\\\\\\)/login/page.tsx)",
+      "Bash(ls /c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-efops/src/app/\\\\\\(dashboard\\\\\\)/admin/)",
+      "Bash(ls /c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-efops/src/app/\\\\\\(dashboard\\\\\\)/processos/)",
+      "Bash(ls /c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-efops/src/app/\\\\\\(dashboard\\\\\\)/dashboard/)",
+      "Bash(find \"C:\\\\Users\\\\vasco\\\\OneDrive\\\\Documentos\\\\projetos-alura\\\\projeto-hub-efops\\\\src\\\\app\\\\\\(dashboard\\)\" -name \"*.tsx\" -type f)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(find \"/c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-efops/src/app/\\(dashboard\\)\" -type f -name \"page.tsx\")",
+      "mcp__vercel__list_deployments",
+      "mcp__vercel__get_deployment"
+    ],
+    "defaultMode": "acceptEdits"
   },
   "enabledMcpjsonServers": [
     "vercel"

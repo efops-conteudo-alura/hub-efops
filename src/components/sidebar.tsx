@@ -33,17 +33,7 @@ const mainNavItems: NavItem[] = [
   { href: "/kpis", label: "KPIs", icon: TrendingUp },
   { href: "/publicacoes", label: "Publicações", icon: BookMarked },
   { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
-  {
-    label: "Produção",
-    icon: Pencil,
-    children: [
-      { href: "/producao-conteudo/briefing", label: "Briefing" },
-      { href: "/producao-conteudo/validacao-ementa", label: "Validação" },
-      { href: "/producao-conteudo/revisao-didatica", label: "Revisão" },
-      { href: "/producao-conteudo/pesquisa-mercado", label: "Pesquisa" },
-      { href: "/producao-conteudo/plano-estudos", label: "Plano" },
-    ],
-  },
+  { href: "/briefing", label: "Briefing", icon: Pencil },
   {
     label: "Acervo",
     icon: Archive,
