@@ -13,6 +13,7 @@ import { ProducaoTable, buildProducaoTsv } from "./producao-table";
 import { EdicaoTable, buildEdicaoTsv } from "./edicao-table";
 import { PesosDialog } from "./pesos-dialog";
 import { KpisCharts } from "./kpis-charts";
+import { PublicacoesSyncDialog } from "./publicacoes-sync-dialog";
 import type { KpiProducao } from "./producao-form-dialog";
 import type { KpiEdicao } from "./edicao-form-dialog";
 
@@ -78,6 +79,14 @@ export function KpisOverview({
   const suggestedYears = Array.from({ length: 11 }, (_, i) => currentYear - 5 + i).filter(
     (y) => !existingYears.has(y)
   );
+
+  async function handleRefreshProducao() {
+    const res = await fetch("/api/kpis/producao");
+    if (res.ok) {
+      const data = await res.json();
+      setProducao(data);
+    }
+  }
 
   async function handleAddYear(year: number) {
     setAddingYear(true);
@@ -149,6 +158,13 @@ export function KpisOverview({
 
           {activeTab === "publicacao" && (
             <>
+              {isAdmin && (
+                <PublicacoesSyncDialog
+                  anos={anos}
+                  producao={producao}
+                  onSuccess={handleRefreshProducao}
+                />
+              )}
               <Button variant="outline" size="sm" onClick={handleCopy}>
                 {copied ? <Check size={14} className="mr-2 text-green-500" /> : <ClipboardCopy size={14} className="mr-2" />}
                 {copied ? "Copiado!" : "Copiar dados"}
