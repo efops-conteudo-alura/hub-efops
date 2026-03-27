@@ -4,7 +4,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { SubscriptionTable } from "@/components/subscription-table";
 import { AuditTab } from "./audit-tab";
-import type { Prisma } from "@/generated/prisma";
+import type { Prisma } from "@prisma/client";
 
 type Subscription = Prisma.SubscriptionGetPayload<{
   select: {
