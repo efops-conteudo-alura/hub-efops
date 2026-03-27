@@ -128,6 +128,108 @@ if (!session || session.user.role !== "ADMIN") {
 
 ---
 
+## Identidade Visual (Alura Design System)
+
+O Hub segue a identidade visual do site da Alura. **Para alterar qualquer aspecto visual globalmente, edite apenas `src/app/globals.css`** — não saia aplicando classes inline nos componentes.
+
+### Fontes
+
+Três fontes carregadas via `next/font/google` em `src/app/layout.tsx`:
+
+| Fonte | Variável CSS | Uso |
+|---|---|---|
+| Encode Sans | `--font-encode-sans` | Títulos de página, card, tabela, gráfico |
+| Roboto Flex | `--font-roboto-flex` | Corpo, subtítulos, labels, dropdowns, botões |
+| JetBrains Mono | `--font-jetbrains-mono` | Abas, tags, números, IDs, datas, código |
+
+### Classes semânticas `.hub-*`
+
+Definidas em `@layer components` dentro de `globals.css`. **Sempre use estas classes — nunca defina font-family inline.**
+
+```css
+.hub-page-title    /* h1 de módulo: Encode Sans, text-4xl, font-light */
+.hub-section-title /* subtítulo abaixo do h1: Roboto Flex, text-base, muted */
+.hub-card-title    /* título de card/painel: Encode Sans, text-xl, font-normal */
+.hub-chart-title   /* título de gráfico: Encode Sans, text-lg, font-normal */
+.hub-table-header  /* <th> de tabela: Encode Sans, text-xs, uppercase */
+.hub-tab-label     /* label de aba: JetBrains Mono, text-xs, uppercase */
+.hub-tag           /* badge/tag: JetBrains Mono, uppercase, pill com borda */
+.hub-number        /* números, IDs, datas, valores: JetBrains Mono */
+```
+
+### Overrides globais (fora de `@layer`)
+
+Regras sem layer ganham de todas as utilities do Tailwind — usadas para sobrescrever defaults do shadcn:
+
+```css
+/* body herda Roboto Flex — garante que tabelas e texto genérico usem a fonte certa */
+body { font-family: var(--font-roboto-flex, sans-serif); }
+
+/* CardTitle do shadcn tem font-semibold hardcoded — anulado aqui */
+[data-slot="card-title"] { font-family: var(--font-encode-sans); font-weight: 400; }
+
+/* Todos os badges: JetBrains Mono + caixa alta */
+[data-slot="badge"] { font-family: var(--font-jetbrains-mono); text-transform: uppercase; letter-spacing: 0.05em; }
+```
+
+### Paleta de cores (dark mode)
+
+```
+--background:    #1b1c1e  /* fundo das páginas */
+--card:          #0c0d0e  /* cards — mais escuro que o fundo */
+--sidebar:       #131416  /* sidebar — o mais escuro */
+--foreground:    #f4f5f6
+--muted-foreground: #888d96
+--border:        #54565f
+--primary:       #052fd3  /* azul Alura */
+--secondary:     #37393f
+```
+
+> Cards são **mais escuros** que o fundo — inverso do padrão típico.
+
+### Uso do azul (`--primary: #052fd3`)
+
+Azul restrito a:
+- Botões de criação de artefato ("Nova licença", "Novo relatório", etc.)
+- Indicador de aba ativa (traço `border-t-foreground` no estilo caixinha)
+- Tags/badges de status quando aplicável
+
+**Não usar azul em:** ícones decorativos, textos, hover states genéricos.
+
+### Estilo de abas (caixinha)
+
+```tsx
+// base
+"px-5 py-4 text-xs font-mono font-semibold uppercase border border-sidebar-border -ml-px first:ml-0 transition-colors relative"
+// ativa
+"bg-[#0c0d0e] text-foreground border-t-foreground z-10"
+// inativa
+"bg-sidebar text-muted-foreground hover:text-foreground"
+```
+
+### Botões
+
+- `variant="default"` → azul, para ações primárias de criação
+- `variant="outline"` → fundo `bg-secondary`, sem borda visível, chapado
+- Sempre `rounded-lg`, sem sombra, sem profundidade
+
+### Sidebar
+
+- Largura fixa 148px, sem botão de colapso
+- Ícone centralizado + label abaixo
+- Estado ativo: `bg-sidebar-accent text-foreground` (sem azul)
+- Mobile: drawer 148px via `Sheet`
+
+### Regras gerais de ID visual
+
+- Títulos de página, card e gráfico: **Encode Sans, sem bold** (`font-normal` ou `font-light`)
+- Corpo, labels, dropdowns: **Roboto Flex**
+- Qualquer número, ID, data ou quantidade: **`hub-number`** (JetBrains Mono)
+- Qualquer badge/tag de status ou categoria: **`hub-tag`** ou `[data-slot="badge"]` (JetBrains Mono + uppercase)
+- Ícones decorativos: `text-muted-foreground` (nunca coloridos exceto em contextos de feature card)
+
+---
+
 ## Autenticação e permissões
 
 - Middleware (`src/middleware.ts`) protege todas as rotas exceto:
