@@ -15,7 +15,7 @@ export default async function ValidacaoEmentaPage() {
     : [];
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
         <h1 className="hub-page-title mb-1">Validação de Ementa</h1>
         <p className="hub-section-title">

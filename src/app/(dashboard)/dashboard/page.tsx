@@ -117,7 +117,7 @@ export default async function DashboardPage() {
   const maxTeamCount = teamData[0]?._count.id ?? 1;
 
   return (
-    <div className="p-8 max-w-6xl space-y-8">
+    <div className="p-6 max-w-7xl mx-auto space-y-8">
       <div className="flex items-center gap-3">
         <BarChart2 size={24} className="text-muted-foreground" />
         <div>

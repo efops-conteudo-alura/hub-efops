@@ -50,7 +50,7 @@ export default async function AutomacoesPage() {
   const totalSavings = automations.reduce((acc, a) => acc + (a.roiMonthlySavings || 0), 0);
 
   return (
-    <div className="p-8">
+    <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
           <Bot size={28} className="text-muted-foreground" />
@@ -116,7 +116,7 @@ export default async function AutomacoesPage() {
           {isAdmin && <p className="text-sm text-muted-foreground mt-1">Clique em "Nova Automação / Agente" para começar.</p>}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {automations.map((a) => (
             <Link key={a.id} href={`/automacoes/${a.id}`} className="h-full">
               <Card className="hover:border-primary/50 transition-colors cursor-pointer overflow-hidden flex flex-col h-full">

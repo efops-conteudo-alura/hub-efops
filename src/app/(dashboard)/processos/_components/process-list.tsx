@@ -45,7 +45,7 @@ export function ProcessList({ processes, currentUserId }: Props) {
   }
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-6 max-w-7xl mx-auto space-y-5">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h1 className="hub-page-title flex items-center gap-2">
           <GitBranch size={22} className="text-muted-foreground" /> Processos & Fluxos

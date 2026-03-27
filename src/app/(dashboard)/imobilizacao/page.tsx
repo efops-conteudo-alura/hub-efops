@@ -32,7 +32,7 @@ export default async function ImobilizacaoPage() {
   ]);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 space-y-6">
       <div className="mb-6">
         <h1 className="hub-page-title">Imobilização</h1>
         <p className="text-muted-foreground text-sm mt-1">

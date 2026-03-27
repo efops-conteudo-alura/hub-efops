@@ -50,7 +50,7 @@ export default async function HomePage() {
   const STATUS_LABELS: Record<string, string> = { ACTIVE: "Ativa", INACTIVE: "Inativa", TESTING: "Em teste" };
 
   return (
-    <div className="p-8 max-w-6xl">
+    <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="hub-page-title">Bem-vindo, {session?.user?.name?.split(" ")[0]}!</h1>
         <p className="hub-section-title">Hub de Eficiência Operacional — Conteúdo</p>

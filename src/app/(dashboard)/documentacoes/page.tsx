@@ -37,7 +37,7 @@ export default async function DocumentacoesPage() {
   }));
 
   return (
-    <div className="px-8 py-6">
+    <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center gap-3 mb-8">
         <BookOpen size={22} className="text-muted-foreground" />
         <div>

@@ -13,7 +13,7 @@ export default function GastosLayout({ children }: { children: React.ReactNode }
   ];
 
   return (
-    <div className="p-8 max-w-6xl">
+    <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
         <h1 className="hub-page-title">Gastos Externos</h1>
         <p className="text-muted-foreground mt-1">Instrutores, editores e prestadores de serviço.</p>

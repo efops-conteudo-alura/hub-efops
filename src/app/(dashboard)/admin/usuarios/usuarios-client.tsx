@@ -105,7 +105,7 @@ export function UsuariosClient({ initialUsers }: UsuariosClientProps) {
   ];
 
   return (
-    <div className="p-8 max-w-6xl">
+    <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="hub-page-title">Usuários</h1>

@@ -18,7 +18,7 @@ export default async function BibliotecaDePromptsPage() {
   }))
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl mx-auto">
       <PromptsClient prompts={serialized} userId={userId} isAdmin={isAdmin} />
     </div>
   )
