@@ -37,7 +37,8 @@ const APP_CONFIG: Record<string, { label: string; roles: { value: string; label:
   "hub-producao-conteudo": {
     label: "Hub Produção",
     roles: [
-      { value: "USER", label: "Usuário" },
+      { value: "INSTRUCTOR", label: "Instrutor" },
+      { value: "COORDINATOR", label: "Coordenador" },
       { value: "ADMIN", label: "Admin" },
     ],
   },
