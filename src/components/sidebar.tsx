@@ -5,9 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
-  House, BarChart2, Key, LogOut, Users,
-  Menu, X, Receipt, FileBarChart, TrendingUp, BookMarked,
-  ClipboardList, Settings, Pencil, ChevronDown, Archive,
+  House, BarChart2, Key, LogOut,
+  Menu, X, FileBarChart, TrendingUp, BookMarked,
+  Settings, Pencil, ChevronDown, Archive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -77,7 +77,7 @@ function NavItemEl({
           onClick={() => onToggleSubmenu(item.label)}
           title={item.label}
           className={cn(
-            "flex flex-col items-center justify-center gap-2 w-full py-5 px-2 rounded-xl transition-colors",
+            "flex flex-col items-center justify-center gap-2 w-full py-4 px-2 rounded-xl transition-colors",
             isAnyChildActive
               ? "bg-muted text-foreground"
               : "text-foreground/70 hover:text-foreground hover:bg-muted/50"
@@ -128,7 +128,7 @@ function NavItemEl({
       href={item.href}
       title={item.label}
       className={cn(
-        "flex flex-col items-center justify-center gap-2 w-full py-5 px-2 rounded-xl transition-colors",
+        "flex flex-col items-center justify-center gap-2 w-full py-4 px-2 rounded-xl transition-colors",
         isActive
           ? "bg-muted text-foreground"
           : "text-foreground/70 hover:text-foreground hover:bg-muted/50"
@@ -153,7 +153,12 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
   }, [pathname]);
 
   useEffect(() => {
-    mainNavItems.forEach((item) => {
+    const adminPaths = ["/gastos", "/imobilizacao", "/admin/usuarios", "/admin/configuracoes"];
+    const allWithChildren = [
+      ...mainNavItems,
+      { label: "Admin", children: adminPaths.map((href) => ({ href })) },
+    ];
+    allWithChildren.forEach((item) => {
       if (item.children?.some((child) => pathname.startsWith(child.href))) {
         setOpenSubmenus((prev) => new Set(prev).add(item.label));
       }
@@ -172,10 +177,16 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
     ...bottomNavItems,
     ...(isAdmin
       ? [
-          { href: "/gastos", label: "Gastos", icon: Receipt },
-          { href: "/imobilizacao", label: "Imobil.", icon: ClipboardList },
-          { href: "/admin/usuarios", label: "Usuários", icon: Users },
-          { href: "/admin/configuracoes", label: "Config.", icon: Settings },
+          {
+            label: "Admin",
+            icon: Settings,
+            children: [
+              { href: "/gastos", label: "Gastos" },
+              { href: "/imobilizacao", label: "Imobil." },
+              { href: "/admin/usuarios", label: "Usuários" },
+              { href: "/admin/configuracoes", label: "Config." },
+            ],
+          } as NavItem,
         ]
       : []),
   ];
