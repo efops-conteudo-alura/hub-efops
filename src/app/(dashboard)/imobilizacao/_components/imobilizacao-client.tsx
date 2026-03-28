@@ -557,7 +557,7 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
                   onClick={() => setTimeSelecionadoId(time.id)}
                   className={`px-5 py-4 text-xs font-mono font-semibold uppercase border border-sidebar-border -ml-px first:ml-0 transition-colors relative ${
                     timeSelecionadoId === time.id
-                      ? "bg-[#0c0d0e] text-foreground border-t-foreground z-10"
+                      ? "bg-card text-foreground border-t-foreground z-10"
                       : "bg-sidebar text-muted-foreground hover:text-foreground"
                   }`}
                 >

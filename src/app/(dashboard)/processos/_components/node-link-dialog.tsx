@@ -150,7 +150,7 @@ export function NodeLinkDialog({ open, nodeId, links, onClose, onSave }: Props) 
               onClick={() => setTab("automations")}
               className={`px-5 py-4 text-xs font-mono font-semibold uppercase border border-sidebar-border -ml-px first:ml-0 transition-colors relative ${
                 tab === "automations"
-                  ? "bg-[#0c0d0e] text-foreground border-t-foreground z-10"
+                  ? "bg-card text-foreground border-t-foreground z-10"
                   : "bg-sidebar text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -162,7 +162,7 @@ export function NodeLinkDialog({ open, nodeId, links, onClose, onSave }: Props) 
               onClick={() => setTab("url")}
               className={`px-5 py-4 text-xs font-mono font-semibold uppercase border border-sidebar-border -ml-px first:ml-0 transition-colors relative ${
                 tab === "url"
-                  ? "bg-[#0c0d0e] text-foreground border-t-foreground z-10"
+                  ? "bg-card text-foreground border-t-foreground z-10"
                   : "bg-sidebar text-muted-foreground hover:text-foreground"
               }`}
             >
