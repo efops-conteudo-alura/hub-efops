@@ -16,10 +16,10 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   user: { name?: string | null; email?: string | null; image?: string | null };
-  isAdmin: boolean;
+  canChangePassword: boolean;
 }
 
-export function ProfileDialog({ open, onOpenChange, user, isAdmin }: Props) {
+export function ProfileDialog({ open, onOpenChange, user, canChangePassword }: Props) {
   const { update } = useSession();
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -48,7 +48,7 @@ export function ProfileDialog({ open, onOpenChange, user, isAdmin }: Props) {
   }
 
   async function handleSave() {
-    if (isAdmin && newPassword && newPassword !== confirmPassword) {
+    if (canChangePassword && newPassword && newPassword !== confirmPassword) {
       setError("As senhas não coincidem");
       return;
     }
@@ -57,7 +57,7 @@ export function ProfileDialog({ open, onOpenChange, user, isAdmin }: Props) {
     setSuccess(false);
     try {
       const body: Record<string, string | null> = { name, image };
-      if (isAdmin && newPassword) {
+      if (canChangePassword && newPassword) {
         body.currentPassword = currentPassword;
         body.newPassword = newPassword;
       }
@@ -144,8 +144,8 @@ export function ProfileDialog({ open, onOpenChange, user, isAdmin }: Props) {
             <p className="text-sm text-muted-foreground">{user.email}</p>
           </div>
 
-          {/* Senha — admin only */}
-          {isAdmin && (
+          {/* Senha */}
+          {canChangePassword && (
             <div className="space-y-3 pt-2 border-t">
               <p className="text-sm font-medium">Alterar senha</p>
               <div className="space-y-1.5">

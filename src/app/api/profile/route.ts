@@ -18,16 +18,16 @@ export async function PUT(request: NextRequest) {
   if (name && String(name).trim()) data.name = String(name).trim();
   if (image !== undefined) data.image = image || null;
 
-  // Alteração de senha: admin only
+  // Alteração de senha: qualquer usuário com senha pode alterar a própria
   if (newPassword) {
-    if (session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!user.password) {
+      return NextResponse.json({ error: "Este usuário não tem senha definida" }, { status: 400 });
     }
     if (!currentPassword) {
       return NextResponse.json({ error: "Senha atual é obrigatória" }, { status: 400 });
     }
-    if (!user.password) {
-      return NextResponse.json({ error: "Este usuário não tem senha definida" }, { status: 400 });
+    if (String(newPassword).length < 8) {
+      return NextResponse.json({ error: "A nova senha deve ter ao menos 8 caracteres" }, { status: 400 });
     }
     const match = await bcrypt.compare(currentPassword, user.password);
     if (!match) {

@@ -20,10 +20,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Email não autorizado. Contacte um administrador." }, { status: 403 });
   }
 
-  // Verifica se já tem conta
+  // Verifica se já tem conta (criada por outro hub)
   const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (existing) {
-    return NextResponse.json({ error: "Já existe uma conta com este email." }, { status: 409 });
+    // Garante que o usuário existente tenha acesso aos três apps
+    await Promise.all([
+      prisma.appRole.upsert({
+        where: { userId_app: { userId: existing.id, app: "hub-efops" } },
+        create: { userId: existing.id, app: "hub-efops", role: "USER" },
+        update: {},
+      }),
+      prisma.appRole.upsert({
+        where: { userId_app: { userId: existing.id, app: "select-activity" } },
+        create: { userId: existing.id, app: "select-activity", role: "COORDINATOR" },
+        update: {},
+      }),
+      prisma.appRole.upsert({
+        where: { userId_app: { userId: existing.id, app: "hub-producao-conteudo" } },
+        create: { userId: existing.id, app: "hub-producao-conteudo", role: "USER" },
+        update: {},
+      }),
+    ]);
+    return NextResponse.json({ success: true, existing: true });
   }
 
   const hashed = await bcrypt.hash(password, 12);

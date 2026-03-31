@@ -283,7 +283,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
         open={profileOpen}
         onOpenChange={setProfileOpen}
         user={user}
-        isAdmin={isAdmin}
+        canChangePassword={true}
       />
     </>
   );

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,8 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const contaCriada = searchParams.get("msg") === "conta-criada";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -79,6 +81,11 @@ export default function LoginPage() {
                 required
               />
             </div>
+            {contaCriada && !error && (
+              <p className="text-sm text-green-600 bg-green-600/10 px-3 py-2 rounded-lg">
+                Conta criada com sucesso! Faça login para continuar.
+              </p>
+            )}
             {error && (
               <p className="text-sm text-destructive">
                 {error}{" "}
