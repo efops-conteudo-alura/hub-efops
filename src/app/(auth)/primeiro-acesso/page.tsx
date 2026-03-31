@@ -59,7 +59,7 @@ export default function PrimeiroAcessoPage() {
     <div className="min-h-screen flex items-center justify-center bg-muted/50">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Criar conta</CardTitle>
+          <CardTitle className="text-2xl font-light">Criar conta</CardTitle>
           <CardDescription>
             Preencha os dados para ativar o seu acesso ao Hub
           </CardDescription>
