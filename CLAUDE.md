@@ -230,6 +230,57 @@ Azul restrito a:
 
 ---
 
+## Ecossistema de Apps — Gerenciamento Centralizado
+
+> **O hub-efops é o ponto central de toda a gestão de usuários e acessos do ecossistema.**  
+> Todos os outros apps compartilham o mesmo banco PostgreSQL (Neon) e dependem das tabelas `User`, `AllowedEmail` e `AppRole` gerenciadas aqui.
+
+### Apps no ecossistema
+
+| Identificador (app) | Projeto | Roles disponíveis |
+|---|---|---|
+| `hub-efops` | este projeto | `ADMIN`, `USER` |
+| `hub-producao-conteudo` | projeto-hub-producao-conteudo | `ADMIN`, `USER` |
+| `select-activity` | (embutido no hub-producao) | `ADMIN`, `COORDINATOR`, `INSTRUCTOR` |
+
+### Como o controle de acesso funciona
+
+- **`AllowedEmail`** — whitelist de e-mails autorizados a criar conta em qualquer app do ecossistema. Gerenciada em `/admin/usuarios` neste hub. É uma tabela única compartilhada.
+- **`User`** — tabela única de usuários para todos os apps. Criada aqui ou em qualquer app do ecossistema via `/primeiro-acesso`.
+- **`AppRole`** — define qual usuário tem acesso a qual app e com qual role. Um usuário pode ter múltiplos AppRoles (um por app). Sem AppRole para um app = sem acesso a ele.
+
+```prisma
+model AppRole {
+  userId String
+  app    String   // ex: "hub-efops", "hub-producao-conteudo", "select-activity"
+  role   String   // ex: "ADMIN", "USER", "COORDINATOR", "INSTRUCTOR"
+  @@unique([userId, app])
+}
+```
+
+### O que acontece quando alguém se cadastra
+
+- Cadastro via hub-efops (`/api/auth/register`): cria User + AppRoles para `hub-efops:USER`, `hub-producao-conteudo:USER` e `select-activity:COORDINATOR`
+- Cadastro via hub-producao (`/api/seletor/auth/register`): cria User + AppRoles para `hub-producao-conteudo:USER` e `select-activity:COORDINATOR`
+- Se o usuário já existir em qualquer app: os AppRoles faltantes são criados via upsert (sem erro, sem duplicata)
+- Em ambos os casos, o e-mail deve estar em `AllowedEmail` para o cadastro ser aceito
+
+### Migrações do banco
+
+**Só este projeto roda `npx prisma migrate`.** Os outros apps usam apenas `npx prisma generate` para gerar o client a partir do schema já migrado. Ao adicionar modelos ou campos ao banco, a migration deve ser criada aqui.
+
+### Como adicionar um novo app ao ecossistema
+
+1. Definir o identificador do app (ex: `"hub-novo-app"`) — será o valor do campo `app` no `AppRole`
+2. Definir as roles que o app usará (ex: `"USER"`, `"ADMIN"`)
+3. Atualizar a rota `/api/auth/register` neste hub para criar o AppRole do novo app no cadastro
+4. Atualizar a rota de cadastro do hub-producao para também criar o AppRole do novo app (quando um usuário novo se cadastra por lá)
+5. No novo app: implementar `auth.ts` que busca o AppRole pelo identificador definido e valida o acesso
+6. No novo app: usar `npx prisma generate` (nunca `migrate`)
+7. Documentar o novo app na tabela "Apps no ecossistema" acima (nos CLAUDE.md de ambos os hubs existentes)
+
+---
+
 ## Autenticação e permissões
 
 - Middleware (`src/middleware.ts`) protege todas as rotas exceto:
