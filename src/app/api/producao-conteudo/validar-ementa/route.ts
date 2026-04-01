@@ -4,7 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const SYSTEM_PROMPT = `Você é um especialista em design instrucional e desenvolvimento de cursos online para a Alura. Sua tarefa é avaliar ementas de cursos enviadas por instrutores e gerar uma sugestão estruturada.
 
