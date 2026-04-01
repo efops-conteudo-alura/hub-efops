@@ -18,6 +18,8 @@ model User {
   appRoles  AppRole[]
   submissionsAsInstructor  Submission[] @relation("SubmissionInstructor")
   submissionsAsCoordinator Submission[] @relation("SubmissionCoordinator")
+  revisorAuditorias        RevisorAuditoria[]
+  credentials              UserCredential[]
 }
 
 model AppRole {
@@ -486,4 +488,28 @@ enum ColaboradorTipo {
   NORMAL
   LIDER
   ESPECIAL
+}
+
+// --- Revisor de Conteúdo ---
+
+model RevisorAuditoria {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cursoId     String
+  cursoTitulo String
+  resultado   Json     // objeto com detalhes da auditoria enviado pela extensão
+  createdAt   DateTime @default(now())
+}
+
+model UserCredential {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service   String   // ex: "github", "aws_access_key", "aws_secret_key", "video_uploader"
+  value     String   // criptografado com AES-256-GCM (mesmo padrão do SystemConfig)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, service])
 }
