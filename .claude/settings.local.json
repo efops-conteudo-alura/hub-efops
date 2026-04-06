@@ -26,7 +26,9 @@
       "Bash(ls:*)",
       "Bash(find \"/c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-efops/src/app/\\(dashboard\\)\" -type f -name \"page.tsx\")",
       "mcp__vercel__list_deployments",
-      "mcp__vercel__get_deployment"
+      "mcp__vercel__get_deployment",
+      "mcp__figma__get_screenshot",
+      "Bash(grep -n \"font-heading\\\\|--font-heading\" /c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-producao-conteudo/tailwind.config* /c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-producao-conteudo/src/app/globals.css)"
     ],
     "defaultMode": "acceptEdits"
   },

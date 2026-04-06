@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       where: {
         dataPublicacao: { gte: startDate, lt: endDate },
         statusPub: { in: ["pub", "PUBLISHED"] },
-        catalogos: { has: "alura" },
+        catalogos: { hasSome: ["alura", "tech-marketing"] },
         NOT: { catalogos: { has: CATALOGO_BB } },
       },
     }),
