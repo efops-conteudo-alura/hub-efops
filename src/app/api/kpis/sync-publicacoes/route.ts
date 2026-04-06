@@ -35,7 +35,7 @@ export async function POST(req: Request) {
         dataPublicacao: { gte: startDate, lt: endDate },
         OR: [
           { autor: null },
-          { autor: { not: "Fabrício Carraro" } },
+          { autor: { notIn: ["Fabrício Carraro", "Marcell"] } },
         ],
       },
     }),
