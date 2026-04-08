@@ -233,6 +233,13 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
         ))}
       </div>
 
+      {/* Contagem */}
+      {!loading && sorted.length > 0 && (
+        <p className="hub-number text-2xl font-bold text-foreground">
+          {sorted.length} <span className="text-base font-normal text-muted-foreground">artigos</span>
+        </p>
+      )}
+
       {/* Tabela */}
       {loading ? (
         <p className="text-sm text-muted-foreground text-center py-12">Carregando...</p>
@@ -299,7 +306,6 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
               ))}
             </tbody>
           </table>
-          <p className="text-xs text-muted-foreground mt-3">{sorted.length} artigos</p>
         </div>
       )}
     </div>

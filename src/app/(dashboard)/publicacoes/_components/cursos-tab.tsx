@@ -592,6 +592,13 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
         </button>
       </div>
 
+      {/* Contagem */}
+      {!loading && sortedCourses.length > 0 && (
+        <p className="hub-number text-2xl font-bold text-foreground">
+          {sortedCourses.length} <span className="text-base font-normal text-muted-foreground">cursos</span>
+        </p>
+      )}
+
       {/* Tabela */}
       {loading ? (
         <p className="text-sm text-muted-foreground text-center py-12">Carregando...</p>
@@ -713,7 +720,6 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
               ))}
             </tbody>
           </table>
-          <p className="text-xs text-muted-foreground mt-3">{sortedCourses.length} cursos</p>
         </div>
       )}
     </div>

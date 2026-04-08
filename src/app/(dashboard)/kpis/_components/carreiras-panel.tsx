@@ -64,6 +64,7 @@ export function CarreirasPanel({ initialLevels, onSynced }: CarreirasPanelProps)
 
   const publishedCount = levels.filter((l) => l.isPublished).length;
   const newCount = previousSyncAt ? levels.filter((l) => isNew(l, previousSyncAt)).length : 0;
+  const carreiraCount = new Set(levels.map((l) => l.carreiraSlug)).size;
 
   return (
     <div className="space-y-4">
@@ -82,6 +83,8 @@ export function CarreirasPanel({ initialLevels, onSynced }: CarreirasPanelProps)
               <Sparkles size={13} /> {newCount} novos
             </span>
           )}
+          <span><span className="hub-number text-foreground">{carreiraCount}</span> carreiras</span>
+          <span><span className="hub-number text-foreground">{levels.length}</span> módulos</span>
           <span><span className="hub-number text-foreground">{publishedCount}</span> publicados</span>
           <span><span className="hub-number text-foreground">{levels.length - publishedCount}</span> em breve</span>
         </div>
