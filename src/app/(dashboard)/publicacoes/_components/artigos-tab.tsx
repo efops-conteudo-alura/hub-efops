@@ -48,7 +48,7 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
   const [syncResult, setSyncResult] = useState<string>("");
   const [copied, setCopied] = useState(false);
 
-  const [monthFrom, setMonthFrom] = useState(() => searchParams.get("a_mf") ?? "2025-01");
+  const [monthFrom, setMonthFrom] = useState(() => searchParams.get("a_mf") ?? "");
   const [monthTo, setMonthTo] = useState(() => searchParams.get("a_mt") ?? "");
   const [selectedCat, setSelectedCat] = useState(() => searchParams.get("a_cat") ?? "");
   const [sortField, setSortField] = useState<SortField>(() => {
@@ -62,7 +62,7 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
   // Sincroniza estado → URL (merge com params das outras abas)
   useEffect(() => {
     const params = new URLSearchParams(searchParamsRef.current.toString());
-    monthFrom && monthFrom !== "2025-01" ? params.set("a_mf", monthFrom) : params.delete("a_mf");
+    monthFrom ? params.set("a_mf", monthFrom) : params.delete("a_mf");
     monthTo ? params.set("a_mt", monthTo) : params.delete("a_mt");
     selectedCat ? params.set("a_cat", selectedCat) : params.delete("a_cat");
     sortField !== "dataPublicacao" ? params.set("a_sf", sortField) : params.delete("a_sf");

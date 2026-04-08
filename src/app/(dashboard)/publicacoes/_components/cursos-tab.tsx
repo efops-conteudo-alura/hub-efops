@@ -71,9 +71,14 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   const [monthTo, setMonthTo] = useState(() => searchParams.get("c_mt") ?? "");
   const [showEmBreve, setShowEmBreve] = useState(() => searchParams.get("c_eb") !== "0");
   const [showCheckpoint, setShowCheckpoint] = useState(() => searchParams.get("c_cp") !== "0");
-  const [catalogFilters, setCatalogFilters] = useState<Record<string, CatalogFilterValue>>(
-    () => parseCatalogFilters(searchParams)
-  );
+  const [catalogFilters, setCatalogFilters] = useState<Record<string, CatalogFilterValue>>(() => {
+    const fromUrl = parseCatalogFilters(searchParams);
+    // Se não há nenhum filtro de catálogo na URL, aplica o default "alura: é"
+    if (!searchParams.get("c_inc") && !searchParams.get("c_exc")) {
+      return { alura: "include" };
+    }
+    return fromUrl;
+  });
   const [subcatFilters, setSubcatFilters] = useState<Record<string, CatalogFilterValue>>(
     () => parseSubcatFilters(searchParams)
   );
@@ -202,7 +207,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
 
   const hasSubcatFilters = activeSubcatFilters.length > 0 || filterSemSubcat !== null;
 
-  const hasFilters = monthFrom || monthTo || !showEmBreve || !showCheckpoint || activeCatalogFilters.length > 0 || hasSubcatFilters;
+  const hasFilters = !!(monthFrom || monthTo || !showEmBreve || !showCheckpoint || activeCatalogFilters.length > 0 || hasSubcatFilters);
 
   const sortedCourses = useMemo(() => {
     let filtered = courses;
