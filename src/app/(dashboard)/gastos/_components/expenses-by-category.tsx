@@ -44,7 +44,7 @@ function groupByMonthAndCategory(expenses: Expense[], selectedCategories: string
   return rows.map((row, i) => {
     const slice = rows.slice(Math.max(0, i - 2), i + 1);
     const avg = slice.reduce((s, r) => {
-      const rowTotal = selectedCategories.reduce((rs, cat) => rs + ((r[cat] as number) || 0), 0);
+      const rowTotal = selectedCategories.reduce((rs, cat) => rs + (((r as ChartRow)[cat] as number) || 0), 0);
       return s + rowTotal;
     }, 0) / slice.length;
     return { ...row, media3: Math.round(avg * 100) / 100 };
