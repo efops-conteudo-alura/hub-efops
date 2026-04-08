@@ -47,7 +47,7 @@ export function GastosChart({ data }: { data: GastosChartRow[] }) {
   if (data.length === 0) {
     return (
       <p className="text-sm text-muted-foreground text-center py-8 italic">
-        Nenhum dado de gastos nos últimos 6 meses.
+        Nenhum dado de gastos para o período selecionado.
       </p>
     );
   }

@@ -7,57 +7,161 @@ import {
   FileText, BookOpen, BarChart2, Clock,
 } from "lucide-react";
 import { GastosChart, type GastosChartRow } from "./_components/gastos-chart";
+import { DashboardFilter } from "./_components/dashboard-filter";
 
 function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
-function getLast6Months(): string[] {
-  const now = new Date();
-  const months: string[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
-  }
-  return months;
+const MONTH_NAMES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
+function formatMonthShort(m: string) {
+  const [year, month] = m.split("-");
+  return `${MONTH_NAMES[parseInt(month) - 1]}/${year}`;
 }
 
-function getLast3Months(): string[] {
-  const now = new Date();
-  const months: string[] = [];
-  for (let i = 2; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
-  }
-  return months;
+function getNMonthsAgo(today: Date, n: number): string {
+  const d = new Date(today.getFullYear(), today.getMonth() - n, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-export default async function DashboardPage() {
+function getMonthStr(today: Date, offset = 0): string {
+  const d = new Date(today.getFullYear(), today.getMonth() + offset, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function buildYearMonths(year: number, upToMonth?: number): string[] {
+  const limit = upToMonth ?? 12;
+  return Array.from({ length: limit }, (_, i) =>
+    `${year}-${String(i + 1).padStart(2, "0")}`
+  );
+}
+
+type FilterConfig = {
+  gastoCardMonths: string[];
+  chartMonths: string[];
+  kpiMonths: string[];
+  gastoCardLabel: string;
+  chartLabel: string;
+  kpiLabel: string;
+  periodoLabel: string;
+};
+
+function getFilterConfig(periodo: string | null, today: Date): FilterConfig {
+  const currentYear = today.getFullYear();
+  const currentMonthNum = today.getMonth() + 1;
+
+  if (periodo === "mes-atual") {
+    const m = getMonthStr(today);
+    const label = formatMonthShort(m);
+    return {
+      gastoCardMonths: [m],
+      chartMonths: [m],
+      kpiMonths: [m],
+      gastoCardLabel: `gastos externos — ${label}`,
+      chartLabel: `Gastos externos — ${label}`,
+      kpiLabel: `Produção — ${label}`,
+      periodoLabel: label,
+    };
+  }
+
+  if (periodo === "mes-passado") {
+    const m = getMonthStr(today, -1);
+    const label = formatMonthShort(m);
+    return {
+      gastoCardMonths: [m],
+      chartMonths: [m],
+      kpiMonths: [m],
+      gastoCardLabel: `gastos externos — ${label}`,
+      chartLabel: `Gastos externos — ${label}`,
+      kpiLabel: `Produção — ${label}`,
+      periodoLabel: label,
+    };
+  }
+
+  if (periodo === "ano-atual") {
+    const months = buildYearMonths(currentYear, currentMonthNum);
+    const label = String(currentYear);
+    return {
+      gastoCardMonths: months,
+      chartMonths: months,
+      kpiMonths: months,
+      gastoCardLabel: `gastos externos — ${label}`,
+      chartLabel: `Gastos externos — ${label}`,
+      kpiLabel: `Produção — ${label}`,
+      periodoLabel: label,
+    };
+  }
+
+  if (periodo === "ano-passado") {
+    const year = currentYear - 1;
+    const months = buildYearMonths(year);
+    const label = String(year);
+    return {
+      gastoCardMonths: months,
+      chartMonths: months,
+      kpiMonths: months,
+      gastoCardLabel: `gastos externos — ${label}`,
+      chartLabel: `Gastos externos — ${label}`,
+      kpiLabel: `Produção — ${label}`,
+      periodoLabel: label,
+    };
+  }
+
+  // default — sem filtro
+  const last6: string[] = [];
+  for (let i = 5; i >= 0; i--) last6.push(getNMonthsAgo(today, i));
+  const last3 = last6.slice(3);
+
+  return {
+    gastoCardMonths: last3,
+    chartMonths: last6,
+    kpiMonths: last3,
+    gastoCardLabel: "gastos externos — últimos 3 meses",
+    chartLabel: "Gastos externos — últimos 6 meses",
+    kpiLabel: `Produção — últimos 3 meses (${last3[0]} a ${last3[2]})`,
+    periodoLabel: "",
+  };
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ periodo?: string }>;
+}) {
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") redirect("/home");
 
+  const params = await searchParams;
+  const periodo = params.periodo ?? null;
+
   const today = new Date();
-  const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-  const last6Months = getLast6Months();
-  const last3Months = getLast3Months();
-  const sixMonthsAgo = last6Months[0];
+  const currentMonth = getMonthStr(today);
+
+  const cfg = getFilterConfig(periodo, today);
+
+  const chartGte = cfg.chartMonths[0];
+  const chartLte = cfg.chartMonths[cfg.chartMonths.length - 1];
 
   const [
-    gastosUltimos3,
-    gastosUltimos6,
+    gastosCard,
+    gastosChart,
     licencasAtivas,
     roiTotals,
     activeAutomations,
-    kpiUltimos3,
+    kpiData,
     teamData,
     processosPublicados,
     docsPublicadas,
     totalRelatorios,
   ] = await Promise.all([
-    prisma.expense.aggregate({ where: { month: { in: last3Months } }, _sum: { value: true } }),
+    prisma.expense.aggregate({
+      where: { month: { in: cfg.gastoCardMonths } },
+      _sum: { value: true },
+    }),
     prisma.expense.groupBy({
       by: ["month", "category"],
-      where: { month: { gte: sixMonthsAgo } },
+      where: { month: { gte: chartGte, lte: chartLte } },
       _sum: { value: true },
       orderBy: { month: "asc" },
     }),
@@ -67,7 +171,7 @@ export default async function DashboardPage() {
     }),
     prisma.automation.aggregate({ where: { status: "ACTIVE" }, _sum: { roiHoursSaved: true, roiMonthlySavings: true } }),
     prisma.automation.count({ where: { status: "ACTIVE" } }),
-    prisma.kpiProducao.findMany({ where: { month: { in: last3Months } } }),
+    prisma.kpiProducao.findMany({ where: { month: { in: cfg.kpiMonths } } }),
     prisma.subscription.groupBy({
       by: ["team"],
       _count: { id: true },
@@ -87,19 +191,19 @@ export default async function DashboardPage() {
     return acc;
   }, 0);
 
-  // Gráfico de gastos — transformar groupBy em rows por mês
+  // Gráfico de gastos
   const gastosMap: Record<string, Record<string, number>> = {};
-  for (const g of gastosUltimos6) {
+  for (const g of gastosChart) {
     if (!gastosMap[g.month]) gastosMap[g.month] = {};
     gastosMap[g.month][g.category] = (g._sum.value ?? 0);
   }
-  const gastosChartData: GastosChartRow[] = last6Months.map((month) => ({
+  const gastosChartData: GastosChartRow[] = cfg.chartMonths.map((month) => ({
     month,
     ...(gastosMap[month] ?? {}),
   }));
 
-  // KPI produção — soma dos últimos 3 meses
-  const kpiTotais = kpiUltimos3.reduce(
+  // KPI produção
+  const kpiTotais = kpiData.reduce(
     (acc, k) => ({
       cursos: acc.cursos + k.cursos,
       artigos: acc.artigos + k.artigos,
@@ -112,18 +216,23 @@ export default async function DashboardPage() {
 
   const totalHoras = roiTotals._sum.roiHoursSaved ?? 0;
   const totalEconomia = roiTotals._sum.roiMonthlySavings ?? 0;
-  const gastosTotal3Meses = gastosUltimos3._sum.value ?? 0;
+  const gastosTotal = gastosCard._sum.value ?? 0;
 
   const maxTeamCount = teamData[0]?._count.id ?? 1;
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">
-      <div className="flex items-center gap-3">
-        <BarChart2 size={24} className="text-muted-foreground" />
-        <div>
-          <h1 className="hub-page-title">Dashboard</h1>
-          <p className="hub-section-title">Visão geral do Hub — {currentMonth}</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <BarChart2 size={24} className="text-muted-foreground" />
+          <div>
+            <h1 className="hub-page-title">Dashboard</h1>
+            <p className="hub-section-title">
+              {periodo ? `Visão geral — ${cfg.periodoLabel}` : `Visão geral do Hub — ${currentMonth}`}
+            </p>
+          </div>
         </div>
+        <DashboardFilter active={periodo} />
       </div>
 
       {/* Linha 1 — Cards de resumo */}
@@ -135,8 +244,8 @@ export default async function DashboardPage() {
                 <DollarSign size={16} className="text-orange-600" />
               </div>
               <div>
-                <p className="text-xl hub-number leading-tight">{formatBRL(gastosTotal3Meses)}</p>
-                <p className="text-xs text-muted-foreground">gastos externos — últimos 3 meses</p>
+                <p className="text-xl hub-number leading-tight">{formatBRL(gastosTotal)}</p>
+                <p className="text-xs text-muted-foreground">{cfg.gastoCardLabel}</p>
               </div>
             </div>
           </CardContent>
@@ -182,7 +291,7 @@ export default async function DashboardPage() {
           <CardHeader className="pb-2">
             <CardTitle className="hub-card-title flex items-center gap-2">
               <DollarSign size={14} className="text-muted-foreground" />
-              Gastos externos — últimos 6 meses
+              {cfg.chartLabel}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -227,11 +336,11 @@ export default async function DashboardPage() {
         <CardHeader className="pb-2">
           <CardTitle className="hub-card-title flex items-center gap-2">
             <TrendingUp size={14} className="text-muted-foreground" />
-            Produção — últimos 3 meses ({last3Months[0]} a {last3Months[2]})
+            {cfg.kpiLabel}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {kpiUltimos3.length === 0 ? (
+          {kpiData.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">Sem dados de produção para este período.</p>
           ) : (
             <div className="grid grid-cols-5 gap-3">
