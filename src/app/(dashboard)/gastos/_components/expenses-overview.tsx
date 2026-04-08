@@ -10,7 +10,7 @@ import { SyncClickUpButton } from "./sync-button";
 import { UploadDialog } from "./upload-dialog";
 import { MonthPicker } from "./month-picker";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -183,15 +183,15 @@ export function ExpensesOverview({ isAdmin }: Props) {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+              <ComposedChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="month" tickFormatter={formatMonth} tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} width={56} />
                 <Tooltip content={ExpensesOverviewTooltip} />
                 <Legend formatter={(v) => v === "total" ? "Total" : "Média 3 meses"} wrapperStyle={{ fontSize: 12, background: "hsl(var(--card) / 0.85)", borderRadius: 6, padding: "2px 8px", border: "1px solid hsl(var(--border))" }} />
-                <Line type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={2} dot={false} />
+                <Bar dataKey="total" fill="#6366f1" radius={[3, 3, 0, 0]} maxBarSize={40} />
                 <Line type="monotone" dataKey="media3" stroke="#f59e0b" strokeWidth={2} strokeDasharray="5 3" dot={false} />
-              </LineChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BarChart2 } from "lucide-react";
 import { MonthPicker } from "./month-picker";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 
 const ALL_CATEGORIES = [
@@ -25,7 +25,8 @@ interface Expense {
 
 interface ChartRow {
   month: string;
-  [category: string]: number | string;
+  media3?: number | null;
+  [category: string]: number | string | null | undefined;
 }
 
 function groupByMonthAndCategory(expenses: Expense[], selectedCategories: string[]): ChartRow[] {
@@ -35,9 +36,19 @@ function groupByMonthAndCategory(expenses: Expense[], selectedCategories: string
     if (!map[e.month]) map[e.month] = {};
     map[e.month][e.category] = (map[e.month][e.category] ?? 0) + e.value;
   }
-  return Object.entries(map)
+  const rows = Object.entries(map)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([month, cats]) => ({ month, ...cats }));
+
+  // Média móvel de 3 meses sobre o total de cada mês
+  return rows.map((row, i) => {
+    const slice = rows.slice(Math.max(0, i - 2), i + 1);
+    const avg = slice.reduce((s, r) => {
+      const rowTotal = selectedCategories.reduce((rs, cat) => rs + ((r[cat] as number) || 0), 0);
+      return s + rowTotal;
+    }, 0) / slice.length;
+    return { ...row, media3: Math.round(avg * 100) / 100 };
+  });
 }
 
 function formatMonth(m: string) {
@@ -51,17 +62,23 @@ function formatBRL(v: number) {
 
 function ExpensesByCategoryTooltip({ active, payload, label }: { active?: boolean; payload?: readonly { dataKey: string; value: number; color: string }[]; label?: string | number }) {
   if (!active || !payload?.length) return null;
-  const items = payload.filter((e) => e.value > 0);
-  if (!items.length) return null;
+  const barItems = payload.filter((e) => e.dataKey !== "media3" && e.value > 0);
+  const mediaItem = payload.find((e) => e.dataKey === "media3");
+  if (!barItems.length && !mediaItem) return null;
   return (
     <div className="rounded-md border bg-popover shadow-md px-3 py-2 text-xs space-y-0.5">
       <p className="font-semibold text-foreground mb-1">{formatMonth(String(label))}</p>
-      {items.map((entry) => (
+      {barItems.map((entry) => (
         <p key={entry.dataKey} style={{ color: entry.color }}>
           {ALL_CATEGORIES.find((c) => c.value === entry.dataKey)?.label ?? entry.dataKey}:{" "}
           <span className="font-medium">{formatBRL(entry.value)}</span>
         </p>
       ))}
+      {mediaItem && (
+        <p style={{ color: mediaItem.color }} className="border-t border-border pt-0.5 mt-0.5">
+          Média 3 meses: <span className="font-medium">{formatBRL(mediaItem.value)}</span>
+        </p>
+      )}
     </div>
   );
 }
@@ -163,24 +180,26 @@ export function ExpensesByCategory() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+              <ComposedChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="month" tickFormatter={formatMonth} tick={{ fontSize: 12 }} />
                 <YAxis tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 12 }} width={56} />
                 <Tooltip content={ExpensesByCategoryTooltip} />
-                <Legend formatter={(v) => ALL_CATEGORIES.find((c) => c.value === v)?.label ?? v} wrapperStyle={{ fontSize: 12, background: "hsl(var(--card) / 0.85)", borderRadius: 6, padding: "2px 8px", border: "1px solid hsl(var(--border))" }} />
+                <Legend
+                  formatter={(v) => v === "media3" ? "Média 3 meses" : (ALL_CATEGORIES.find((c) => c.value === v)?.label ?? v)}
+                  wrapperStyle={{ fontSize: 12, background: "hsl(var(--card) / 0.85)", borderRadius: 6, padding: "2px 8px", border: "1px solid hsl(var(--border))" }}
+                />
                 {selectedCategories.map((cat) => (
-                  <Line
+                  <Bar
                     key={cat.value}
-                    type="monotone"
                     dataKey={cat.value}
-                    stroke={cat.color}
-                    strokeWidth={2}
-                    dot={false}
-                    connectNulls
+                    stackId="stack"
+                    fill={cat.color}
+                    maxBarSize={40}
                   />
                 ))}
-              </LineChart>
+                <Line type="monotone" dataKey="media3" stroke="#ffffff" strokeWidth={2} strokeDasharray="5 3" dot={false} />
+              </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
