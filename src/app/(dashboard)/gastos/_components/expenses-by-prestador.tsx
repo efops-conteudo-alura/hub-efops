@@ -13,13 +13,17 @@ import {
   ComposedChart, Line,
 } from "recharts";
 
-const CATEGORY_LABELS: Record<string, string> = {
-  INSTRUTOR: "Instrutor",
-  EDITOR_FREELANCER: "Editor Freelancer",
-  EDITOR_EXTERNO: "Editor Externo",
-  SUPORTE_EDUCACIONAL: "Suporte Educacional",
-  OUTROS: "Outros",
-};
+const ALL_CATEGORIES = [
+  { value: "INSTRUTOR", label: "Instrutor", color: "#6366f1" },
+  { value: "EDITOR_FREELANCER", label: "Editor Freelancer", color: "#f59e0b" },
+  { value: "EDITOR_EXTERNO", label: "Editor Externo", color: "#10b981" },
+  { value: "SUPORTE_EDUCACIONAL", label: "Suporte Educacional", color: "#f43f5e" },
+  { value: "OUTROS", label: "Outros", color: "#64748b" },
+];
+
+const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
+  ALL_CATEGORIES.map((c) => [c.value, c.label])
+);
 
 const BAR_COLORS = [
   "#6366f1", "#8b5cf6", "#a855f7", "#d946ef", "#ec4899",
@@ -182,6 +186,7 @@ export function ExpensesByPrestador() {
   const [loading, setLoading] = useState(true);
   const [monthFrom, setMonthFrom] = useState("");
   const [monthTo, setMonthTo] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedPrestadores, setSelectedPrestadores] = useState<string[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -199,16 +204,35 @@ export function ExpensesByPrestador() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Todos os prestadores disponíveis (para o dropdown)
-  const allRows = buildPrestadorRows(expenses);
-
-  // Filtra as expenses pelo prestador selecionado
-  const filteredExpenses = selectedPrestadores.length === 0
+  // 1. Filtro de categoria — alimenta o dropdown de prestadores
+  const catExpenses = selectedCategories.length === 0
     ? expenses
-    : expenses.filter((e) => {
+    : expenses.filter((e) => selectedCategories.includes(e.category));
+
+  // 2. Quando a categoria muda, descarta prestadores que não existem mais
+  useEffect(() => {
+    if (selectedPrestadores.length === 0) return;
+    const validKeys = new Set(buildPrestadorRows(catExpenses).map((r) => r.name));
+    const stillValid = selectedPrestadores.filter((k) => validKeys.has(k));
+    if (stillValid.length !== selectedPrestadores.length) setSelectedPrestadores(stillValid);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategories, expenses]);
+
+  // 3. Todos os prestadores disponíveis (filtrados pela categoria selecionada)
+  const allRows = buildPrestadorRows(catExpenses);
+
+  // 4. Filtro de prestador sobre as expenses já filtradas por categoria
+  const filteredExpenses = selectedPrestadores.length === 0
+    ? catExpenses
+    : catExpenses.filter((e) => {
         const key = normalizeName(e.description?.trim() || "Sem nome");
         return selectedPrestadores.includes(key);
       });
+
+  // Categorias presentes nos dados (para mostrar só as relevantes nos pills)
+  const activeCategories = ALL_CATEGORIES.filter((c) =>
+    expenses.some((e) => e.category === c.value)
+  );
 
   const tableRows = buildPrestadorRows(filteredExpenses);
   const rankingData = buildRankingData(tableRows);
@@ -234,7 +258,7 @@ export function ExpensesByPrestador() {
 
   return (
     <div className="space-y-6">
-      {/* Filtros de período + dropdown de prestadores */}
+      {/* Filtros de período */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">De</span>
@@ -249,8 +273,44 @@ export function ExpensesByPrestador() {
             Limpar datas
           </Button>
         )}
+      </div>
 
-        {/* Multi-select de prestadores */}
+      {/* Filtro de categoria */}
+      <div className="flex flex-wrap gap-2">
+        {activeCategories.map((cat) => {
+          const isSelected = selectedCategories.includes(cat.value);
+          return (
+            <button
+              key={cat.value}
+              onClick={() => {
+                setSelectedCategories((prev) =>
+                  prev.includes(cat.value) ? prev.filter((c) => c !== cat.value) : [...prev, cat.value]
+                );
+              }}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
+                isSelected
+                  ? "text-white border-transparent"
+                  : "bg-transparent text-muted-foreground border-border hover:border-foreground"
+              )}
+              style={isSelected ? { backgroundColor: cat.color, borderColor: cat.color } : {}}
+            >
+              {cat.label}
+            </button>
+          );
+        })}
+        {selectedCategories.length > 0 && (
+          <button
+            onClick={() => { setSelectedCategories([]); setSelectedPrestadores([]); }}
+            className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Limpar
+          </button>
+        )}
+      </div>
+
+      {/* Multi-select de prestadores */}
+      <div className="flex flex-wrap items-center gap-3">
         <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
           <PopoverTrigger asChild>
             <button className={cn(
