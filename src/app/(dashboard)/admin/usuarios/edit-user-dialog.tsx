@@ -26,19 +26,12 @@ const APP_CONFIG: Record<string, { label: string; roles: { value: string; label:
       { value: "ADMIN", label: "Admin" },
     ],
   },
-  "select-activity": {
-    label: "Select Activity",
-    roles: [
-      { value: "INSTRUCTOR", label: "Instrutor" },
-      { value: "COORDINATOR", label: "Coordenador" },
-      { value: "ADMIN", label: "Admin" },
-    ],
-  },
   "hub-producao-conteudo": {
     label: "Hub Produção",
     roles: [
-      { value: "INSTRUCTOR", label: "Instrutor" },
+      { value: "USER", label: "Usuário" },
       { value: "COORDINATOR", label: "Coordenador" },
+      { value: "INSTRUCTOR", label: "Instrutor" },
       { value: "ADMIN", label: "Admin" },
     ],
   },

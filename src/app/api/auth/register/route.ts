@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   // Verifica se já tem conta (criada por outro hub)
   const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (existing) {
-    // Garante que o usuário existente tenha acesso aos três apps
+    // Garante que o usuário existente tenha acesso aos dois hubs como COORDINATOR
     await Promise.all([
       prisma.appRole.upsert({
         where: { userId_app: { userId: existing.id, app: "hub-efops" } },
@@ -31,13 +31,8 @@ export async function POST(req: NextRequest) {
         update: {},
       }),
       prisma.appRole.upsert({
-        where: { userId_app: { userId: existing.id, app: "select-activity" } },
-        create: { userId: existing.id, app: "select-activity", role: "COORDINATOR" },
-        update: {},
-      }),
-      prisma.appRole.upsert({
         where: { userId_app: { userId: existing.id, app: "hub-producao-conteudo" } },
-        create: { userId: existing.id, app: "hub-producao-conteudo", role: "USER" },
+        create: { userId: existing.id, app: "hub-producao-conteudo", role: "COORDINATOR" },
         update: {},
       }),
     ]);
@@ -52,8 +47,7 @@ export async function POST(req: NextRequest) {
   await prisma.appRole.createMany({
     data: [
       { userId: newUser.id, app: "hub-efops", role: "USER" },
-      { userId: newUser.id, app: "select-activity", role: "COORDINATOR" },
-      { userId: newUser.id, app: "hub-producao-conteudo", role: "USER" },
+      { userId: newUser.id, app: "hub-producao-conteudo", role: "COORDINATOR" },
     ],
   });
 

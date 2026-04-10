@@ -27,7 +27,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const updated = await prisma.user.update({ where: { id }, data: userUpdateData });
 
-  const KNOWN_APPS = ["hub-efops", "select-activity", "hub-producao-conteudo"];
+  const KNOWN_APPS = ["hub-efops", "hub-producao-conteudo"];
 
   if (Array.isArray(appRoles)) {
     // Upsert roles enviados
