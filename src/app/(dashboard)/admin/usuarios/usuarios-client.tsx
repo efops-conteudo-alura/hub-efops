@@ -57,14 +57,8 @@ export function UsuariosClient({ initialUsers }: UsuariosClientProps) {
   const [editUser, setEditUser] = useState<User | null>(null);
   const [editOpen, setEditOpen] = useState(false);
 
-  // Collect all unique apps, hub-efops first then others sorted
-  const allApps = Array.from(
-    new Set(users.flatMap((u) => u.appRoles.map((r) => r.app)))
-  ).sort((a, b) => {
-    if (a === "hub-efops") return -1;
-    if (b === "hub-efops") return 1;
-    return a.localeCompare(b);
-  });
+  // Colunas fixas — apenas os apps do ecossistema atual
+  const allApps = ["hub-efops", "hub-producao-conteudo"];
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Remover usuário "${name}"?`)) return;
