@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,13 @@ interface Expense {
   description?: string | null;
   notes?: string | null;
   source: string;
+  currency?: string | null;
+  exchangeRate?: number | null;
+}
+
+function valueBrl(e: Expense): number {
+  if (e.currency === "USD") return e.exchangeRate ? e.value * e.exchangeRate : 0;
+  return e.value;
 }
 
 interface MonthTotal {
@@ -49,7 +57,7 @@ function computeMovingAverage(data: MonthTotal[], window = 3): MonthTotal[] {
 function groupByMonth(expenses: Expense[]): MonthTotal[] {
   const map: Record<string, number> = {};
   for (const e of expenses) {
-    map[e.month] = (map[e.month] ?? 0) + e.value;
+    map[e.month] = (map[e.month] ?? 0) + valueBrl(e);
   }
   const sorted = Object.entries(map)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -64,6 +72,13 @@ function formatMonth(m: string) {
 
 function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0 });
+}
+
+function formatValue(e: Expense) {
+  if (e.currency === "USD") {
+    return e.value.toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 });
+  }
+  return formatBRL(e.value);
 }
 
 interface Props {
@@ -86,6 +101,8 @@ function ExpensesOverviewTooltip({ active, payload, label }: { active?: boolean;
 }
 
 export function ExpensesOverview({ isAdmin }: Props) {
+  const urlSearchParams = useSearchParams();
+  const cc = urlSearchParams.get("cc");
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [monthFrom, setMonthFrom] = useState("");
@@ -125,11 +142,12 @@ export function ExpensesOverview({ isAdmin }: Props) {
     const params = new URLSearchParams();
     if (monthFrom) params.set("month_from", monthFrom);
     if (monthTo) params.set("month_to", monthTo);
+    if (cc) params.set("cost_center", cc);
     const res = await fetch(`/api/gastos?${params}`);
     const data = await res.json();
     setExpenses(data);
     setLoading(false);
-  }, [monthFrom, monthTo]);
+  }, [monthFrom, monthTo, cc]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -140,7 +158,7 @@ export function ExpensesOverview({ isAdmin }: Props) {
   }
 
   const chartData = groupByMonth(expenses);
-  const totalGeral = expenses.reduce((s, e) => s + e.value, 0);
+  const totalGeral = expenses.reduce((s, e) => s + valueBrl(e), 0);
 
   return (
     <div className="space-y-6">
@@ -264,7 +282,7 @@ export function ExpensesOverview({ isAdmin }: Props) {
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-sm hub-number">{formatBRL(e.value)}</span>
+                      <span className="text-sm hub-number">{formatValue(e)}</span>
                       {isAdmin && <ExpenseFormDialog expense={e} onSaved={load} />}
                       {isAdmin && (
                         <button

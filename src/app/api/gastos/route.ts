@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   const monthFrom = searchParams.get("month_from");
   const monthTo = searchParams.get("month_to");
   const categories = searchParams.getAll("categories[]");
+  const costCenter = searchParams.get("cost_center");
 
   const expenses = await prisma.expense.findMany({
     where: {
@@ -23,6 +24,9 @@ export async function GET(request: NextRequest) {
         : {}),
       ...(categories.length > 0
         ? { category: { in: categories as import("@prisma/client").ExpenseCategory[] } }
+        : {}),
+      ...(costCenter === "ALURA" || costCenter === "LATAM"
+        ? { costCenter: costCenter as import("@prisma/client").ExpenseCostCenter }
         : {}),
     },
     orderBy: [{ month: "asc" }, { createdAt: "asc" }],

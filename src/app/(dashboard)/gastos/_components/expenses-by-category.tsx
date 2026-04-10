@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BarChart2 } from "lucide-react";
@@ -21,6 +22,13 @@ interface Expense {
   month: string;
   value: number;
   category: string;
+  currency?: string | null;
+  exchangeRate?: number | null;
+}
+
+function valueBrl(e: Expense): number {
+  if (e.currency === "USD") return e.exchangeRate ? e.value * e.exchangeRate : 0;
+  return e.value;
 }
 
 interface ChartRow {
@@ -34,7 +42,7 @@ function groupByMonthAndCategory(expenses: Expense[], selectedCategories: string
   for (const e of expenses) {
     if (!selectedCategories.includes(e.category)) continue;
     if (!map[e.month]) map[e.month] = {};
-    map[e.month][e.category] = (map[e.month][e.category] ?? 0) + e.value;
+    map[e.month][e.category] = (map[e.month][e.category] ?? 0) + valueBrl(e);
   }
   const rows = Object.entries(map)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -84,6 +92,8 @@ function ExpensesByCategoryTooltip({ active, payload, label }: { active?: boolea
 }
 
 export function ExpensesByCategory() {
+  const urlSearchParams = useSearchParams();
+  const cc = urlSearchParams.get("cc");
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [monthFrom, setMonthFrom] = useState("");
@@ -95,11 +105,12 @@ export function ExpensesByCategory() {
     const params = new URLSearchParams();
     if (monthFrom) params.set("month_from", monthFrom);
     if (monthTo) params.set("month_to", monthTo);
+    if (cc) params.set("cost_center", cc);
     const res = await fetch(`/api/gastos?${params}`);
     const data = await res.json();
     setExpenses(data);
     setLoading(false);
-  }, [monthFrom, monthTo]);
+  }, [monthFrom, monthTo, cc]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -118,7 +129,7 @@ export function ExpensesByCategory() {
     for (const cat of selected) {
       row[cat] = expenses
         .filter((e) => e.month === month && e.category === cat)
-        .reduce((s, e) => s + e.value, 0);
+        .reduce((s, e) => s + valueBrl(e), 0);
     }
     return row;
   });

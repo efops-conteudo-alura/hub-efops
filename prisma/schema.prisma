@@ -129,17 +129,20 @@ enum AutomationStatus {
 }
 
 model Expense {
-  id          String          @id @default(cuid())
-  month       String          // formato "2026-02"
-  date        String?         // formato "2026-02-14" (opcional, quando há data exata)
-  value       Float           // em BRL
-  category    ExpenseCategory
-  description String?         // nome do instrutor/prestador
-  source      ExpenseSource   @default(MANUAL)
-  externalId  String?         @unique // task ID do ClickUp (deduplicação)
-  notes       String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id           String            @id @default(cuid())
+  month        String            // formato "2026-02"
+  date         String?           // formato "2026-02-14" (opcional, quando há data exata)
+  value        Float             // valor na moeda original (BRL ou USD)
+  category     ExpenseCategory
+  description  String?           // nome do instrutor/prestador
+  source       ExpenseSource     @default(MANUAL)
+  externalId   String?           @unique // task ID do ClickUp (deduplicação)
+  notes        String?
+  costCenter   ExpenseCostCenter @default(ALURA)
+  currency     ExpenseCurrency   @default(BRL)
+  exchangeRate Float?            // taxa USD→BRL na data do pagamento (null para BRL)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 }
 
 enum ExpenseCategory {
@@ -154,6 +157,16 @@ enum ExpenseSource {
   CLICKUP
   UPLOAD
   MANUAL
+}
+
+enum ExpenseCostCenter {
+  ALURA
+  LATAM
+}
+
+enum ExpenseCurrency {
+  BRL
+  USD
 }
 
 model Process {
