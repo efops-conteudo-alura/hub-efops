@@ -10,7 +10,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const { id } = await params;
-  const { name, password, appRoles } = await req.json();
+  let body;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Body inválido." }, { status: 400 });
+  }
+  const { name, password, appRoles } = body;
 
   const userUpdateData: { name?: string; password?: string } = {};
   if (name?.trim()) userUpdateData.name = name.trim();
@@ -28,17 +34,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const updated = await prisma.user.update({ where: { id }, data: userUpdateData });
 
   const KNOWN_APPS = ["hub-efops", "hub-producao-conteudo"];
+  const KNOWN_ROLES: Record<string, string[]> = {
+    "hub-efops": ["USER", "ADMIN"],
+    "hub-producao-conteudo": ["USER", "COORDINATOR", "INSTRUCTOR", "ADMIN"],
+  };
 
   if (Array.isArray(appRoles)) {
-    // Upsert roles enviados
+    // Upsert roles enviados — ignora combinações app/role inválidas
     for (const { app, role } of appRoles) {
-      if (app && role) {
-        await prisma.appRole.upsert({
-          where: { userId_app: { userId: id, app } },
-          create: { userId: id, app, role },
-          update: { role },
-        });
-      }
+      if (!KNOWN_APPS.includes(app) || !KNOWN_ROLES[app]?.includes(role)) continue;
+      await prisma.appRole.upsert({
+        where: { userId_app: { userId: id, app } },
+        create: { userId: id, app, role },
+        update: { role },
+      });
     }
 
     // Remover roles de apps conhecidos que vieram como "Sem acesso"
