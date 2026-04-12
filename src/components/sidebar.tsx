@@ -7,7 +7,7 @@ import { signOut } from "next-auth/react";
 import {
   House, BarChart2, Key, LogOut,
   Menu, X, FileBarChart, TrendingUp, BookMarked,
-  Settings, Pencil, ChevronDown, Archive,
+  Settings, Pencil, ChevronDown, Archive, Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -153,11 +153,11 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
   }, [pathname]);
 
   useEffect(() => {
-    const adminPaths = ["/gastos", "/imobilizacao", "/admin/usuarios", "/admin/configuracoes"];
-    const allWithChildren = [
-      ...mainNavItems,
-      { label: "Admin", children: adminPaths.map((href) => ({ href })) },
+    const extraGroups = [
+      { label: "Gestão", children: [{ href: "/gastos" }, { href: "/imobilizacao" }] },
+      { label: "Configurações", children: [{ href: "/admin/usuarios" }, { href: "/admin/configuracoes" }] },
     ];
+    const allWithChildren = [...mainNavItems, ...extraGroups];
     allWithChildren.forEach((item) => {
       if (item.children?.some((child) => pathname.startsWith(child.href))) {
         setOpenSubmenus((prev) => new Set(prev).add(item.label));
@@ -178,13 +178,19 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
     ...(isAdmin
       ? [
           {
-            label: "Admin",
-            icon: Settings,
+            label: "Gestão",
+            icon: Wallet,
             children: [
               { href: "/gastos", label: "Gastos" },
               { href: "/imobilizacao", label: "Imobil." },
+            ],
+          } as NavItem,
+          {
+            label: "Configurações",
+            icon: Settings,
+            children: [
               { href: "/admin/usuarios", label: "Usuários" },
-              { href: "/admin/configuracoes", label: "Config." },
+              { href: "/admin/configuracoes", label: "Sistema" },
             ],
           } as NavItem,
         ]

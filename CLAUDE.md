@@ -401,3 +401,50 @@ const response = await anthropic.messages.create({ ... })
 - Não passar dados do body do request diretamente para o Prisma sem validação prévia
 - Não retornar 401 quando o usuário está autenticado mas sem permissão — usar 403
 - Não usar `anthropic.messages.stream()` como fallback quando chunks já foram enviados ao cliente — usar `messages.create()` no fallback
+
+---
+
+## Pendências de segurança conhecidas
+
+### Licenças: POST e PUT sem proteção de role
+
+**Arquivos:** `src/app/api/subscriptions/route.ts` (POST) e `src/app/api/subscriptions/[id]/route.ts` (PUT)
+
+Qualquer usuário autenticado (USER) consegue criar e editar assinaturas via API direta, mesmo que a interface só mostre esses botões para ADMINs. O DELETE já exige `role === "ADMIN"` — POST e PUT deveriam seguir o mesmo padrão.
+
+**Correção:** Adicionar em ambos, logo após o check de sessão:
+```ts
+if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+```
+
+---
+
+## Ideias pendentes de implementação
+
+### "Esqueci minha senha" (ambos os hubs)
+
+Fluxo planejado:
+1. Usuário digita o e-mail em `/esqueci-senha`
+2. Sistema gera token único com expiração de 1h e salva no banco (`PasswordResetToken`)
+3. Envia e-mail com link `/redefinir-senha?token=abc123`
+4. Usuário define nova senha; token é apagado
+
+**Serviço escolhido: Resend** — API simples, plano gratuito generoso, boa integração com Next.js.
+
+**Bloqueio — domínio de e-mail:** O Resend exige um domínio verificado para enviar e-mails para qualquer destinatário (instrutores têm e-mails variados — gmail, outlook, etc.). Opções em aberto:
+1. Verificar `alura.com.br` no painel do Resend — depende de acesso ao DNS da Alura
+2. Comprar um domínio próprio (~R$15/ano no Registro.br) e verificar no Resend
+3. Usar Nodemailer com uma conta Gmail dedicada (sem custo, sem domínio, mais trabalhoso)
+
+**Próximo passo:** decidir qual domínio usar como remetente antes de implementar.
+
+**Schema Prisma a adicionar (hub-efops, propagado para os demais):**
+```prisma
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+```

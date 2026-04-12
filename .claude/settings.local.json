@@ -28,7 +28,9 @@
       "mcp__vercel__list_deployments",
       "mcp__vercel__get_deployment",
       "mcp__figma__get_screenshot",
-      "Bash(grep -n \"font-heading\\\\|--font-heading\" /c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-producao-conteudo/tailwind.config* /c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-producao-conteudo/src/app/globals.css)"
+      "Bash(grep -n \"font-heading\\\\|--font-heading\" /c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-producao-conteudo/tailwind.config* /c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-producao-conteudo/src/app/globals.css)",
+      "mcp__vercel__list_teams",
+      "mcp__vercel__list_projects"
     ],
     "defaultMode": "acceptEdits"
   },
