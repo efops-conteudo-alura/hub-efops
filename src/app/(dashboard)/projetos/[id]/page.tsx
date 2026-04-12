@@ -45,7 +45,6 @@ export default async function ProjetoDetailPage({
               {project.responsible}
             </p>
           )}
-        </div>
       </div>
 
       {project.description && (
