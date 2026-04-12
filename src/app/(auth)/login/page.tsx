@@ -19,6 +19,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const contaCriada = searchParams.get("msg") === "conta-criada";
+  const senhaCriada = searchParams.get("msg") === "senha-criada";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -81,9 +82,9 @@ function LoginForm() {
                 required
               />
             </div>
-            {contaCriada && !error && (
+            {(contaCriada || senhaCriada) && !error && (
               <p className="text-sm text-green-600 bg-green-600/10 px-3 py-2 rounded-lg">
-                Conta criada com sucesso! Faça login para continuar.
+                {senhaCriada ? "Senha criada! Faça login para continuar." : "Conta criada com sucesso! Faça login para continuar."}
               </p>
             )}
             {error && (

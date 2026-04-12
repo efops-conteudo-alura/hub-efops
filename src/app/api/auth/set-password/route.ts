@@ -13,22 +13,27 @@ export async function POST(req: NextRequest) {
   }
 
   const normalizedEmail = email.trim().toLowerCase();
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
-  if (!user) {
-    return NextResponse.json({ error: "Conta não encontrada." }, { status: 404 });
+  try {
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+
+    if (!user) {
+      return NextResponse.json({ error: "Conta não encontrada." }, { status: 404 });
+    }
+
+    // Este endpoint é exclusivo para migração — só funciona se ainda não tem senha
+    if (user.password) {
+      return NextResponse.json(
+        { error: "Esta conta já tem senha. Use as opções de recuperação no login." },
+        { status: 400 }
+      );
+    }
+
+    const hashed = await bcrypt.hash(password, 12);
+    await prisma.user.update({ where: { id: user.id }, data: { password: hashed } });
+
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Erro interno. Tente novamente." }, { status: 500 });
   }
-
-  // Este endpoint é exclusivo para migração — só funciona se ainda não tem senha
-  if (user.password) {
-    return NextResponse.json(
-      { error: "Esta conta já tem senha. Use as opções de recuperação no login." },
-      { status: 400 }
-    );
-  }
-
-  const hashed = await bcrypt.hash(password, 12);
-  await prisma.user.update({ where: { id: user.id }, data: { password: hashed } });
-
-  return NextResponse.json({ success: true });
 }

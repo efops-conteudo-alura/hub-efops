@@ -38,20 +38,23 @@ export default function CriarSenhaPage() {
     }
 
     setLoading(true);
-    const res = await fetch("/api/auth/set-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    setLoading(false);
-
-    if (!res.ok) {
-      setError(data.error ?? "Erro ao criar senha.");
-      return;
+    try {
+      const res = await fetch("/api/auth/set-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Erro ao criar senha.");
+        return;
+      }
+      router.push("/login?msg=senha-criada");
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
-
-    router.push("/login?msg=senha-criada");
   }
 
   return (
