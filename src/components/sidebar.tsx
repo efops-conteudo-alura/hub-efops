@@ -203,7 +203,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
             </button>
           </div>
           <nav className="flex-1 flex flex-col py-2 gap-0.5 px-2 overflow-y-auto">
-            {activeGroup.children.map((child) => (
+            {(activeGroup.children ?? []).map((child) => (
               <SubmenuChild key={child.href} child={child} pathname={pathname} />
             ))}
           </nav>
