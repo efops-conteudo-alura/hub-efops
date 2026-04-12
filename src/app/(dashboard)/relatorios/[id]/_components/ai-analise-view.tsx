@@ -71,7 +71,6 @@ export function AiAnaliseView({ report, resultados: initialResultados }: AiAnali
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <BrainCircuit size={20} className="text-muted-foreground" />
             <h1 className="hub-page-title">{report.title}</h1>
             <Badge variant="secondary" className="text-xs">Análise de IA</Badge>
           </div>

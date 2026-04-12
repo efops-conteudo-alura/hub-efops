@@ -52,14 +52,9 @@ export default async function AutomacoesPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <Bot size={28} className="text-muted-foreground" />
-          <div>
-            <h1 className="hub-page-title">Automações & Agentes</h1>
-            <p className="hub-section-title">
-              {automations.length} {automations.length === 1 ? "item" : "itens"} cadastrados
-            </p>
-          </div>
+        <div>
+          <h1 className="hub-page-title">Automações & Agentes</h1>
+          <p className="hub-section-title">Agentes e automações do departamento de conteúdo</p>
         </div>
         {isAdmin && (
           <div className="flex gap-2">

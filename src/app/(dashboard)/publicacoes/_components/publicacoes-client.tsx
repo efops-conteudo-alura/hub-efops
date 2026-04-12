@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { BookMarked } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CursosTab } from "./cursos-tab";
 import { ArtigosTab } from "./artigos-tab";
@@ -34,12 +33,9 @@ export function PublicacoesClient({ isAdmin, initialLevels }: Props) {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <BookMarked size={26} className="text-muted-foreground" />
-        <div>
-          <h1 className="hub-page-title">Publicações</h1>
-          <p className="hub-section-title">Conteúdo publicado pela Alura</p>
-        </div>
+      <div>
+        <h1 className="hub-page-title">Publicações</h1>
+        <p className="hub-section-title">Conteúdo publicado pela Alura</p>
       </div>
 
       {/* Tabs */}

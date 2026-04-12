@@ -47,9 +47,10 @@ export function ProcessList({ processes, currentUserId }: Props) {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-5">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="hub-page-title flex items-center gap-2">
-          <GitBranch size={22} className="text-muted-foreground" /> Processos & Fluxos
-        </h1>
+        <div>
+          <h1 className="hub-page-title">Processos & Fluxos</h1>
+          <p className="hub-section-title">Processos e fluxos operacionais do departamento</p>
+        </div>
         <Button asChild size="sm">
           <Link href="/processos/novo"><Plus size={15} className="mr-1" /> Novo Processo</Link>
         </Button>

@@ -38,8 +38,7 @@ export default async function LicencasPage() {
         <div>
           <h1 className="hub-page-title">Licenças</h1>
           <p className="hub-section-title">
-            {subscriptions.length}{" "}
-            {subscriptions.length === 1 ? "item" : "itens"} cadastrados
+            Assinaturas e ferramentas do time
           </p>
         </div>
         <div className="flex gap-2">

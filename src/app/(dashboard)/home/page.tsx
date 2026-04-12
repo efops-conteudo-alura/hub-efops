@@ -3,23 +3,23 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  TrendingUp, BookOpen, FileBarChart, Sparkles, Key, Pencil,
-  DollarSign, Clock, ArrowRight,
+  TrendingUp, BookMarked, FileBarChart, Sparkles, Key, Pencil,
+  DollarSign, Timer, ArrowRight,
 } from "lucide-react";
 import { UsefulLinks } from "./_components/useful-links";
 
 const MODULES = [
-  { href: "/kpis", label: "KPIs de Conteúdo", desc: "Indicadores mensais de publicação e edição.", icon: TrendingUp },
-  { href: "/publicacoes", label: "Publicações", desc: "Catálogo de cursos, trilhas, artigos e carreiras.", icon: BookOpen },
-  { href: "/relatorios", label: "Relatórios", desc: "Builder de formulários e análise com IA.", icon: FileBarChart },
-  { href: "/biblioteca-de-prompts", label: "Biblioteca de Prompts", desc: "Prompts compartilhados pelo time.", icon: Sparkles },
-  { href: "/licencas", label: "Licenças", desc: "Gestão de assinaturas e ferramentas.", icon: Key },
-  { href: "/briefing", label: "Briefing para Marketing", desc: "Geração de briefings para o time de marketing.", icon: Pencil },
+  { href: "/kpis", label: "KPIs de Conteúdo", desc: "Indicadores mensais de publicação e edição", icon: TrendingUp },
+  { href: "/publicacoes", label: "Publicações", desc: "Conteúdo publicado pela Alura", icon: BookMarked },
+  { href: "/relatorios", label: "Relatórios", desc: "Formulários de coleta e análise com IA", icon: FileBarChart },
+  { href: "/biblioteca-de-prompts", label: "Biblioteca de Prompts", desc: "Prompts compartilhados pelo time", icon: Sparkles },
+  { href: "/licencas", label: "Licenças", desc: "Assinaturas e ferramentas do time", icon: Key },
+  { href: "/briefing", label: "Briefing para Marketing", desc: "Geração de briefings para o time de marketing", icon: Pencil },
 ];
 
 const ADMIN_MODULES = [
-  { href: "/gastos", label: "Gastos", desc: "Controle de despesas do departamento.", icon: DollarSign },
-  { href: "/imobilizacao", label: "Imobilização", desc: "Controle de horas imobilizadas por colaborador.", icon: Clock },
+  { href: "/gastos", label: "Gastos com externos", desc: "Instrutores, editores e prestadores de serviço", icon: DollarSign },
+  { href: "/imobilizacao", label: "Imobilização", desc: "Horas imobilizadas por colaborador e produto", icon: Timer },
 ];
 
 export default async function HomePage() {

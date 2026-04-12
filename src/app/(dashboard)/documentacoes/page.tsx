@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { BookOpen } from "lucide-react";
+import { FileText } from "lucide-react";
 import { DocList } from "./_components/doc-list";
 
 export default async function DocumentacoesPage() {
@@ -38,12 +38,9 @@ export default async function DocumentacoesPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center gap-3 mb-8">
-        <BookOpen size={22} className="text-muted-foreground" />
-        <div>
-          <h1 className="hub-page-title">Documentações</h1>
-          <p className="hub-section-title">Base de conhecimento do time</p>
-        </div>
+      <div className="mb-8">
+        <h1 className="hub-page-title">Documentações</h1>
+        <p className="hub-section-title">Base de conhecimento do time</p>
       </div>
 
       <DocList docs={serialized} />

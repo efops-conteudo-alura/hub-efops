@@ -108,12 +108,9 @@ export function KpisOverview({
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
-          <TrendingUp size={28} className="text-muted-foreground" />
-          <div>
-            <h1 className="hub-page-title">KPIs de Conteúdo</h1>
-            <p className="hub-section-title">Indicadores mensais de publicação e edição</p>
-          </div>
+        <div>
+          <h1 className="hub-page-title">KPIs de Conteúdo</h1>
+          <p className="hub-section-title">Indicadores mensais de publicação e edição</p>
         </div>
 
         <div className="flex items-center gap-2">

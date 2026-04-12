@@ -18,9 +18,7 @@ export default async function ProjetosPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="hub-page-title">Projetos</h1>
-          <p className="text-muted-foreground text-sm">
-            {projects.length} projeto{projects.length !== 1 ? "s" : ""} cadastrado{projects.length !== 1 ? "s" : ""}
-          </p>
+          <p className="hub-section-title">Iniciativas e entregas do time de conteúdo</p>
         </div>
         {isAdmin && <NewProjectDialog />}
       </div>

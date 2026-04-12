@@ -7,7 +7,9 @@ import { signOut } from "next-auth/react";
 import {
   House, BarChart2, Key, LogOut,
   Menu, X, FileBarChart, TrendingUp, BookMarked,
-  Settings, Pencil, ChevronDown, Archive, Wallet,
+  Settings, Pencil, ChevronRight, ChevronLeft, Archive, Wallet,
+  FolderKanban, Zap, GitBranch, FileText, Sparkles,
+  DollarSign, Timer, Users, Server,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,7 +24,7 @@ interface SidebarProps {
   isAdmin: boolean;
 }
 
-type NavChild = { href: string; label: string };
+type NavChild = { href: string; label: string; icon: React.ElementType };
 
 type NavItem =
   | { href: string; label: string; icon: React.ElementType; children?: never }
@@ -38,11 +40,11 @@ const mainNavItems: NavItem[] = [
     label: "Acervo",
     icon: Archive,
     children: [
-      { href: "/projetos", label: "Projetos" },
-      { href: "/automacoes", label: "Automações" },
-      { href: "/processos", label: "Processos" },
-      { href: "/documentacoes", label: "Docs" },
-      { href: "/biblioteca-de-prompts", label: "Prompts" },
+      { href: "/projetos", label: "Projetos", icon: FolderKanban },
+      { href: "/automacoes", label: "Automações", icon: Zap },
+      { href: "/processos", label: "Processos", icon: GitBranch },
+      { href: "/documentacoes", label: "Docs", icon: FileText },
+      { href: "/biblioteca-de-prompts", label: "Prompts", icon: Sparkles },
     ],
   },
   { href: "/licencas", label: "Licenças", icon: Key },
@@ -52,73 +54,33 @@ const bottomNavItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: BarChart2 },
 ];
 
-function NavItemEl({
+function RootItem({
   item,
   pathname,
-  openSubmenus,
-  onToggleSubmenu,
+  onEnterGroup,
 }: {
   item: NavItem;
   pathname: string;
-  openSubmenus: Set<string>;
-  onToggleSubmenu: (label: string) => void;
+  onEnterGroup: (group: NavItem) => void;
 }) {
   const Icon = item.icon;
 
   if (item.children) {
-    const isOpen = openSubmenus.has(item.label);
-    const isAnyChildActive = item.children.some((child) =>
-      pathname.startsWith(child.href)
-    );
-
+    const isActive = item.children.some((c) => pathname.startsWith(c.href));
     return (
-      <div className="w-full">
-        <button
-          onClick={() => onToggleSubmenu(item.label)}
-          title={item.label}
-          className={cn(
-            "flex flex-col items-center justify-center gap-2 w-full py-4 px-2 rounded-xl transition-colors",
-            isAnyChildActive
-              ? "bg-muted text-foreground"
-              : "text-foreground/70 hover:text-foreground hover:bg-muted/50"
-          )}
-        >
-          <Icon size={22} strokeWidth={isAnyChildActive ? 2 : 1.5} />
-          <span className="text-[11px] font-semibold leading-tight text-center">
-            {item.label}
-          </span>
-          <ChevronDown
-            size={10}
-            className={cn(
-              "transition-transform duration-200 opacity-50",
-              isOpen && "rotate-180"
-            )}
-          />
-        </button>
-
-        {isOpen && (
-          <div className="mt-1 mb-1 space-y-0.5 px-1">
-            {item.children.map((child) => {
-              const isActive = pathname.startsWith(child.href);
-              return (
-                <Link
-                  key={child.href}
-                  href={child.href}
-                  title={child.label}
-                  className={cn(
-                    "block text-center px-2 py-1.5 rounded-lg text-xs font-medium transition-colors truncate",
-                    isActive
-                      ? "bg-sidebar-accent text-foreground font-semibold"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
-                  )}
-                >
-                  {child.label}
-                </Link>
-              );
-            })}
-          </div>
+      <button
+        onClick={() => onEnterGroup(item)}
+        className={cn(
+          "flex items-center gap-2.5 w-full px-3 py-2.5 rounded-md transition-colors text-left",
+          isActive
+            ? "bg-muted text-foreground"
+            : "text-foreground/70 hover:text-foreground hover:bg-muted/50"
         )}
-      </div>
+      >
+        <Icon size={18} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
+        <span className="flex-1 text-sm font-medium leading-none">{item.label}</span>
+        <ChevronRight size={13} className="shrink-0 opacity-40" />
+      </button>
     );
   }
 
@@ -126,18 +88,34 @@ function NavItemEl({
   return (
     <Link
       href={item.href}
-      title={item.label}
       className={cn(
-        "flex flex-col items-center justify-center gap-2 w-full py-4 px-2 rounded-xl transition-colors",
+        "flex items-center gap-2.5 w-full px-3 py-2.5 rounded-md transition-colors",
         isActive
           ? "bg-muted text-foreground"
           : "text-foreground/70 hover:text-foreground hover:bg-muted/50"
       )}
     >
-      <Icon size={22} strokeWidth={isActive ? 2 : 1.5} />
-      <span className="text-[11px] font-semibold leading-tight text-center">
-        {item.label}
-      </span>
+      <Icon size={18} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
+      <span className="text-sm font-medium leading-none">{item.label}</span>
+    </Link>
+  );
+}
+
+function SubmenuChild({ child, pathname }: { child: NavChild; pathname: string }) {
+  const isActive = pathname.startsWith(child.href);
+  const Icon = child.icon;
+  return (
+    <Link
+      href={child.href}
+      className={cn(
+        "flex items-center gap-2.5 w-full px-3 py-2.5 rounded-md transition-colors text-sm leading-none",
+        isActive
+          ? "bg-muted text-foreground font-medium"
+          : "text-foreground/70 hover:text-foreground hover:bg-muted/50"
+      )}
+    >
+      <Icon size={16} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
+      {child.label}
     </Link>
   );
 }
@@ -146,97 +124,131 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [openSubmenus, setOpenSubmenus] = useState<Set<string>>(new Set());
+  const [activeGroup, setActiveGroup] = useState<NavItem | null>(null);
+
+  const adminItems: NavItem[] = isAdmin
+    ? [
+        {
+          label: "Gestão",
+          icon: Wallet,
+          children: [
+            { href: "/gastos", label: "Gastos com externos", icon: DollarSign },
+            { href: "/imobilizacao", label: "Imobilização", icon: Timer },
+          ],
+        },
+        {
+          label: "Configurações",
+          icon: Settings,
+          children: [
+            { href: "/admin/usuarios", label: "Usuários", icon: Users },
+            { href: "/admin/configuracoes", label: "Sistema", icon: Server },
+          ],
+        },
+      ]
+    : [];
+
+  const allItems = [...mainNavItems, ...bottomNavItems, ...adminItems];
 
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
+  // Entra automaticamente no submenu correto ao navegar direto para uma rota filha
   useEffect(() => {
-    const extraGroups = [
-      { label: "Gestão", children: [{ href: "/gastos" }, { href: "/imobilizacao" }] },
-      { label: "Configurações", children: [{ href: "/admin/usuarios" }, { href: "/admin/configuracoes" }] },
-    ];
-    const allWithChildren = [...mainNavItems, ...extraGroups];
-    allWithChildren.forEach((item) => {
-      if (item.children?.some((child) => pathname.startsWith(child.href))) {
-        setOpenSubmenus((prev) => new Set(prev).add(item.label));
-      }
-    });
+    const match = allItems.find(
+      (item) => item.children?.some((child) => pathname.startsWith(child.href))
+    );
+    setActiveGroup(match ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  const toggleSubmenu = (label: string) => {
-    setOpenSubmenus((prev) => {
-      const next = new Set(prev);
-      next.has(label) ? next.delete(label) : next.add(label);
-      return next;
-    });
-  };
+  const inSubmenu = activeGroup !== null;
 
-  const allBottomNav: NavItem[] = [
-    ...bottomNavItems,
-    ...(isAdmin
-      ? [
-          {
-            label: "Gestão",
-            icon: Wallet,
-            children: [
-              { href: "/gastos", label: "Gastos" },
-              { href: "/imobilizacao", label: "Imobil." },
-            ],
-          } as NavItem,
-          {
-            label: "Configurações",
-            icon: Settings,
-            children: [
-              { href: "/admin/usuarios", label: "Usuários" },
-              { href: "/admin/configuracoes", label: "Sistema" },
-            ],
-          } as NavItem,
-        ]
-      : []),
-  ];
+  const rootPanel = (
+    <div className="w-1/2 h-full flex flex-col">
+      <nav className="flex-1 flex flex-col py-3 gap-0.5 px-2 overflow-y-auto">
+        {mainNavItems.map((item) => (
+          <RootItem
+            key={item.label}
+            item={item}
+            pathname={pathname}
+            onEnterGroup={setActiveGroup}
+          />
+        ))}
+      </nav>
+      <div className="shrink-0 border-t border-sidebar-border px-2 py-2 flex flex-col gap-0.5">
+        {[...bottomNavItems, ...adminItems].map((item) => (
+          <RootItem
+            key={item.label}
+            item={item}
+            pathname={pathname}
+            onEnterGroup={setActiveGroup}
+          />
+        ))}
+      </div>
+    </div>
+  );
 
-  const navProps = { pathname, openSubmenus, onToggleSubmenu: toggleSubmenu };
+  const submenuPanel = (
+    <div className="w-1/2 h-full flex flex-col">
+      {activeGroup && (
+        <>
+          <div className="shrink-0 border-b border-sidebar-border px-2 py-3">
+            <button
+              onClick={() => setActiveGroup(null)}
+              className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm font-semibold text-foreground hover:bg-muted/50 transition-colors w-full"
+            >
+              <ChevronLeft size={15} className="shrink-0" />
+              <span>{activeGroup.label}</span>
+            </button>
+          </div>
+          <nav className="flex-1 flex flex-col py-2 gap-0.5 px-2 overflow-y-auto">
+            {activeGroup.children.map((child) => (
+              <SubmenuChild key={child.href} child={child} pathname={pathname} />
+            ))}
+          </nav>
+        </>
+      )}
+    </div>
+  );
 
   const sidebarInner = (
     <>
-      {/* Nav principal */}
-      <nav className="flex-1 flex flex-col items-center py-3 gap-2 px-2 overflow-y-auto">
-        {mainNavItems.map((item) => (
-          <NavItemEl key={item.label} item={item} {...navProps} />
-        ))}
-      </nav>
-
-      {/* Nav rodapé (Dashboard + admin) */}
-      <div className="shrink-0 border-t border-sidebar-border px-2 py-2 flex flex-col gap-2">
-        {allBottomNav.map((item) => (
-          <NavItemEl key={item.href ?? item.label} item={item} {...navProps} />
-        ))}
+      {/* Painéis deslizantes */}
+      <div className="flex-1 overflow-hidden">
+        <div
+          className="flex h-full"
+          style={{
+            width: "200%",
+            transform: inSubmenu ? "translateX(-50%)" : "translateX(0%)",
+            transition: "transform 220ms ease-in-out",
+          }}
+        >
+          {rootPanel}
+          {submenuPanel}
+        </div>
       </div>
 
-      {/* Usuário + ações */}
-      <div className="shrink-0 border-t border-sidebar-border px-2 py-3 flex flex-col items-center gap-1">
+      {/* Usuário — sempre visível */}
+      <div className="shrink-0 border-t border-sidebar-border px-3 py-3 flex items-center justify-between">
         <button
           onClick={() => setProfileOpen(true)}
           title={user.name ?? "Editar perfil"}
-          className="rounded-full mb-1 hover:opacity-80 transition-opacity"
+          className="rounded-full hover:opacity-80 transition-opacity"
         >
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-7 w-7">
             {user.image && <AvatarImage src={user.image} alt={user.name ?? ""} />}
             <AvatarFallback className="text-xs bg-sidebar-accent text-foreground">
               {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
         </button>
-
-<button
+        <button
           title="Sair"
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex flex-col items-center gap-2 w-full py-4 px-2 rounded-xl text-foreground/70 hover:text-foreground hover:bg-muted/50 transition-colors"
+          className="p-2 rounded-lg text-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"
         >
-          <LogOut size={22} strokeWidth={1.5} />
-          <span className="text-[11px] font-semibold">Sair</span>
+          <LogOut size={16} strokeWidth={1.5} />
         </button>
       </div>
     </>
@@ -244,7 +256,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
 
   return (
     <>
-      {/* Botão hambúrguer — apenas mobile */}
+      {/* Hambúrguer mobile */}
       <button
         className="md:hidden fixed top-3 left-3 z-50 p-2 rounded-md bg-sidebar border border-sidebar-border shadow-sm"
         onClick={() => setMobileOpen(true)}
@@ -254,8 +266,8 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
       </button>
 
       {/* Sidebar desktop */}
-      <aside className="hidden md:flex flex-col w-[148px] shrink-0 border-r border-sidebar-border bg-sidebar h-screen sticky top-0">
-        <div className="flex flex-col items-center justify-center py-5 px-3 border-b border-sidebar-border shrink-0 gap-0.5">
+      <aside className="hidden md:flex flex-col w-[200px] shrink-0 border-r border-sidebar-border bg-sidebar h-screen sticky top-0">
+        <div className="flex flex-col justify-center py-4 px-4 border-b border-sidebar-border shrink-0 gap-0.5">
           <span className="text-sm font-bold text-foreground leading-none">EFops</span>
           <span className="text-[10px] text-muted-foreground tracking-widest uppercase">Hub</span>
         </div>
@@ -269,8 +281,8 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
             className="md:hidden fixed inset-0 z-40 bg-black/50"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="md:hidden fixed inset-y-0 left-0 z-50 flex flex-col w-[148px] border-r border-sidebar-border bg-sidebar">
-            <div className="flex flex-col items-center justify-center py-5 px-3 border-b border-sidebar-border shrink-0 gap-0.5 relative">
+          <aside className="md:hidden fixed inset-y-0 left-0 z-50 flex flex-col w-[200px] border-r border-sidebar-border bg-sidebar">
+            <div className="flex flex-col justify-center py-4 px-4 border-b border-sidebar-border shrink-0 gap-0.5 relative">
               <span className="text-sm font-bold text-foreground leading-none">EFops</span>
               <span className="text-[10px] text-muted-foreground tracking-widest uppercase">Hub</span>
               <button

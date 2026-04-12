@@ -102,9 +102,7 @@ export function UsuariosClient({ initialUsers }: UsuariosClientProps) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="hub-page-title">Usuários</h1>
-          <p className="hub-section-title">
-            {users.length} {users.length === 1 ? "usuário" : "usuários"} cadastrados
-          </p>
+          <p className="hub-section-title">Acessos e permissões do ecossistema</p>
         </div>
         {activeTab === "usuarios" && <CreateUserDialog onCreated={() => router.refresh()} />}
       </div>

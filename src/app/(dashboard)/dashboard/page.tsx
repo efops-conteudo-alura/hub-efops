@@ -223,14 +223,11 @@ export default async function DashboardPage({
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <BarChart2 size={24} className="text-muted-foreground" />
-          <div>
-            <h1 className="hub-page-title">Dashboard</h1>
-            <p className="hub-section-title">
-              {periodo ? `Visão geral — ${cfg.periodoLabel}` : `Visão geral do Hub — ${currentMonth}`}
-            </p>
-          </div>
+        <div>
+          <h1 className="hub-page-title">Dashboard</h1>
+          <p className="hub-section-title">
+            {periodo ? `Visão geral — ${cfg.periodoLabel}` : `Visão geral do Hub — ${currentMonth}`}
+          </p>
         </div>
         <DashboardFilter active={periodo} />
       </div>

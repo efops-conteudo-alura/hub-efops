@@ -16,10 +16,6 @@ export default function GastosLayout({ children }: { children: React.ReactNode }
     { href: "/gastos/prestadores", label: "Por Prestador" },
   ];
 
-  const title =
-    cc === "ALURA" ? "Gastos Externos Alura" :
-    cc === "LATAM" ? "Gastos Externos LATAM" :
-    "Gastos Externos";
 
   function setFilter(value: string | null) {
     const params = new URLSearchParams(searchParams.toString());
@@ -61,7 +57,7 @@ export default function GastosLayout({ children }: { children: React.ReactNode }
       </div>
 
       <div className="mb-6">
-        <h1 className="hub-page-title">{title}</h1>
+        <h1 className="hub-page-title">Gastos com externos</h1>
         <p className="text-muted-foreground mt-1">Instrutores, editores e prestadores de serviço.</p>
       </div>
 
