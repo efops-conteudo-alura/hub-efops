@@ -33,7 +33,33 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
+function getCurrentMonth(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function getCurrentQuarterRange() {
+  const d = new Date();
+  const q = Math.floor(d.getMonth() / 3);
+  return {
+    from: `${d.getFullYear()}-${String(q * 3 + 1).padStart(2, "0")}`,
+    to: `${d.getFullYear()}-${String(q * 3 + 3).padStart(2, "0")}`,
+  };
+}
+
+function getCurrentWeekRange() {
+  const today = new Date();
+  const daysToMonday = (today.getDay() + 6) % 7;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - daysToMonday);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  return { from: fmt(monday), to: fmt(sunday) };
+}
+
 type SortField = "nome" | "autor" | "dataPublicacao" | "dataModificacao";
+type DatePreset = "semana" | "mes" | "trimestre";
 
 export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
   const searchParams = useSearchParams();
@@ -58,6 +84,8 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
   const [sortDir, setSortDir] = useState<"asc" | "desc">(() =>
     searchParams.get("a_sd") === "asc" ? "asc" : "desc"
   );
+  const [activePreset, setActivePreset] = useState<DatePreset | null>(null);
+  const [weekFilter, setWeekFilter] = useState<{ from: string; to: string } | null>(null);
 
   // Sincroniza estado → URL (merge com params das outras abas)
   useEffect(() => {
@@ -91,6 +119,42 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
     });
   }, [artigos, sortField, sortDir]);
 
+  const displayed = useMemo(() => {
+    if (!weekFilter) return sorted;
+    return sorted.filter((a) => {
+      if (!a.dataPublicacao) return false;
+      const d = a.dataPublicacao.slice(0, 10);
+      return d >= weekFilter.from && d <= weekFilter.to;
+    });
+  }, [sorted, weekFilter]);
+
+  function handlePreset(preset: DatePreset) {
+    if (activePreset === preset) {
+      setActivePreset(null);
+      setMonthFrom("");
+      setMonthTo("");
+      setWeekFilter(null);
+      return;
+    }
+    setActivePreset(preset);
+    if (preset === "mes") {
+      const m = getCurrentMonth();
+      setMonthFrom(m);
+      setMonthTo(m);
+      setWeekFilter(null);
+    } else if (preset === "trimestre") {
+      const { from, to } = getCurrentQuarterRange();
+      setMonthFrom(from);
+      setMonthTo(to);
+      setWeekFilter(null);
+    } else {
+      const m = getCurrentMonth();
+      setMonthFrom(m);
+      setMonthTo(m);
+      setWeekFilter(getCurrentWeekRange());
+    }
+  }
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -117,14 +181,14 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
     const html = [
       "<table>",
       "<tr><th>Nome</th><th>Categoria</th><th>Autor</th><th>Publicação</th><th>Atualização</th></tr>",
-      ...sorted.map((a) =>
+      ...displayed.map((a) =>
         `<tr><td><a href="https://www.alura.com.br/artigos/${a.slug}">${esc(a.nome)}</a></td><td>${esc(a.categoria ?? "")}</td><td>${esc(a.autor ?? "")}</td><td>${formatDate(a.dataPublicacao)}</td><td>${formatDate(a.dataModificacao)}</td></tr>`
       ),
       "</table>",
     ].join("\n");
     const plain = [
       ["Nome", "Categoria", "Autor", "Publicação", "Atualização", "Link"].join("\t"),
-      ...sorted.map((a) =>
+      ...displayed.map((a) =>
         [a.nome, a.categoria ?? "", a.autor ?? "", formatDate(a.dataPublicacao), formatDate(a.dataModificacao), `https://www.alura.com.br/artigos/${a.slug}`].join("\t")
       ),
     ].join("\n");
@@ -174,19 +238,33 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">De</span>
-          <MonthPicker value={monthFrom} onChange={setMonthFrom} placeholder="Início" />
+          <MonthPicker value={monthFrom} onChange={(v) => { setMonthFrom(v); setActivePreset(null); setWeekFilter(null); }} placeholder="Início" />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Até</span>
-          <MonthPicker value={monthTo} onChange={setMonthTo} placeholder="Fim" />
+          <MonthPicker value={monthTo} onChange={(v) => { setMonthTo(v); setActivePreset(null); setWeekFilter(null); }} placeholder="Fim" />
         </div>
+        {(["semana", "mes", "trimestre"] as const).map((preset) => (
+          <button
+            key={preset}
+            onClick={() => handlePreset(preset)}
+            className={cn(
+              "h-8 px-3 rounded-md border text-xs transition-colors",
+              activePreset === preset
+                ? "bg-primary/10 text-primary border-primary/30 dark:bg-primary/20"
+                : "bg-transparent text-muted-foreground border-border hover:border-foreground"
+            )}
+          >
+            {preset === "semana" ? "Semana atual" : preset === "mes" ? "Mês atual" : "Trimestre atual"}
+          </button>
+        ))}
         {(monthFrom || monthTo || selectedCat) && (
-          <Button variant="ghost" size="sm" onClick={() => { setMonthFrom(""); setMonthTo(""); setSelectedCat(""); }}>
+          <Button variant="ghost" size="sm" onClick={() => { setMonthFrom(""); setMonthTo(""); setSelectedCat(""); setActivePreset(null); setWeekFilter(null); }}>
             Limpar tudo
           </Button>
         )}
         <div className="ml-auto flex items-center gap-3">
-          {sorted.length > 0 && !loading && (
+          {displayed.length > 0 && !loading && (
             <Button size="sm" variant="outline" onClick={handleCopy}>
               {copied ? <Check size={14} className="mr-2 text-green-500" /> : <ClipboardCopy size={14} className="mr-2" />}
               {copied ? "Copiado!" : "Copiar dados"}
@@ -234,9 +312,9 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
       </div>
 
       {/* Contagem */}
-      {!loading && sorted.length > 0 && (
+      {!loading && displayed.length > 0 && (
         <p className="hub-number text-2xl font-bold text-foreground">
-          {sorted.length} <span className="text-base font-normal text-muted-foreground">artigos</span>
+          {displayed.length} <span className="text-base font-normal text-muted-foreground">artigos</span>
         </p>
       )}
 
@@ -277,7 +355,7 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {sorted.map((artigo) => (
+              {displayed.map((artigo) => (
                 <tr key={artigo.id}>
                   <td className="py-2.5 pr-4">
                     <a

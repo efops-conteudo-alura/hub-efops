@@ -29,6 +29,32 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
+function getCurrentMonth(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function getCurrentQuarterRange() {
+  const d = new Date();
+  const q = Math.floor(d.getMonth() / 3);
+  return {
+    from: `${d.getFullYear()}-${String(q * 3 + 1).padStart(2, "0")}`,
+    to: `${d.getFullYear()}-${String(q * 3 + 3).padStart(2, "0")}`,
+  };
+}
+
+function getCurrentWeekRange() {
+  const today = new Date();
+  const daysToMonday = (today.getDay() + 6) % 7;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - daysToMonday);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  return { from: fmt(monday), to: fmt(sunday) };
+}
+
+type DatePreset = "semana" | "mes" | "trimestre";
 type CatalogFilterValue = "include" | "exclude";
 
 function parseCatalogFilters(searchParams: URLSearchParams): Record<string, CatalogFilterValue> {
@@ -93,6 +119,8 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   const [sortDir, setSortDir] = useState<"asc" | "desc">(() =>
     searchParams.get("c_sd") === "asc" ? "asc" : "desc"
   );
+  const [activePreset, setActivePreset] = useState<DatePreset | null>(null);
+  const [weekFilter, setWeekFilter] = useState<{ from: string; to: string } | null>(null);
 
   // Sincroniza estado → URL
   useEffect(() => {
@@ -259,6 +287,42 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     });
   }, [courses, sortField, sortDir, showEmBreve, showCheckpoint, activeCatalogFilters, activeSubcatFilters, filterSemSubcat]);
 
+  const displayedCourses = useMemo(() => {
+    if (!weekFilter) return sortedCourses;
+    return sortedCourses.filter((c) => {
+      if (!c.dataPublicacao) return false;
+      const d = c.dataPublicacao.slice(0, 10);
+      return d >= weekFilter.from && d <= weekFilter.to;
+    });
+  }, [sortedCourses, weekFilter]);
+
+  function handlePreset(preset: DatePreset) {
+    if (activePreset === preset) {
+      setActivePreset(null);
+      setMonthFrom("");
+      setMonthTo("");
+      setWeekFilter(null);
+      return;
+    }
+    setActivePreset(preset);
+    if (preset === "mes") {
+      const m = getCurrentMonth();
+      setMonthFrom(m);
+      setMonthTo(m);
+      setWeekFilter(null);
+    } else if (preset === "trimestre") {
+      const { from, to } = getCurrentQuarterRange();
+      setMonthFrom(from);
+      setMonthTo(to);
+      setWeekFilter(null);
+    } else {
+      const m = getCurrentMonth();
+      setMonthFrom(m);
+      setMonthTo(m);
+      setWeekFilter(getCurrentWeekRange());
+    }
+  }
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -284,14 +348,14 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
     const html = [
       "<table>",
       "<tr><th>ID</th><th>Nome</th><th>Categoria</th><th>Instrutor</th><th>Catálogo(s)</th><th>Publicação</th></tr>",
-      ...sortedCourses.map((c) =>
+      ...displayedCourses.map((c) =>
         `<tr><td>${c.aluraId ?? ""}</td><td><a href="https://www.alura.com.br/curso-online-${c.slug}">${esc(c.nome)}</a></td><td>${esc(c.categoria ?? "")}</td><td>${esc(getInstrutor(c))}</td><td>${esc(c.catalogos.join(", "))}</td><td>${formatDate(c.dataPublicacao)}</td></tr>`
       ),
       "</table>",
     ].join("\n");
     const plain = [
       ["ID", "Nome", "Categoria", "Instrutor", "Catálogo(s)", "Publicação", "Link"].join("\t"),
-      ...sortedCourses.map((c) =>
+      ...displayedCourses.map((c) =>
         [c.aluraId ?? "", c.nome, c.categoria ?? "", getInstrutor(c), c.catalogos.join(", "), formatDate(c.dataPublicacao), `https://www.alura.com.br/curso-online-${c.slug}`].join("\t")
       ),
     ].join("\n");
@@ -332,17 +396,84 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
 
   return (
     <div className="space-y-5">
-      {/* Filtros de data + catálogo + botões */}
+      {/* Linha 1: Filtros de data */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">De</span>
-          <MonthPicker value={monthFrom} onChange={setMonthFrom} placeholder="Início" />
+          <MonthPicker value={monthFrom} onChange={(v) => { setMonthFrom(v); setActivePreset(null); setWeekFilter(null); }} placeholder="Início" />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Até</span>
-          <MonthPicker value={monthTo} onChange={setMonthTo} placeholder="Fim" />
+          <MonthPicker value={monthTo} onChange={(v) => { setMonthTo(v); setActivePreset(null); setWeekFilter(null); }} placeholder="Fim" />
         </div>
+        {(["semana", "mes", "trimestre"] as const).map((preset) => (
+          <button
+            key={preset}
+            onClick={() => handlePreset(preset)}
+            className={cn(
+              "h-8 px-3 rounded-md border text-xs transition-colors",
+              activePreset === preset
+                ? "bg-primary/10 text-primary border-primary/30 dark:bg-primary/20"
+                : "bg-transparent text-muted-foreground border-border hover:border-foreground"
+            )}
+          >
+            {preset === "semana" ? "Semana atual" : preset === "mes" ? "Mês atual" : "Trimestre atual"}
+          </button>
+        ))}
+        <div className="ml-auto flex flex-col items-end gap-1">
+          <div className="flex items-center gap-3">
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={() => {
+                setMonthFrom("");
+                setMonthTo("");
+                setShowEmBreve(true);
+                setShowCheckpoint(true);
+                setCatalogFilters({});
+                setSubcatFilters({});
+                setFilterSemSubcat(null);
+                setActivePreset(null);
+                setWeekFilter(null);
+              }}>
+                Limpar tudo
+              </Button>
+            )}
+            {displayedCourses.length > 0 && !loading && (
+              <Button size="sm" variant="outline" onClick={handleCopy}>
+                {copied ? <Check size={14} className="mr-2 text-green-500" /> : <ClipboardCopy size={14} className="mr-2" />}
+                {copied ? "Copiado!" : "Copiar dados"}
+              </Button>
+            )}
+            {isAdmin && (
+              <>
+                <Button size="sm" variant="outline" onClick={handleSync} disabled={syncing}>
+                  <RefreshCw size={14} className={cn("mr-2", syncing && "animate-spin")} />
+                  {syncing ? "Sincronizando..." : "Sync BI"}
+                </Button>
+              </>
+            )}
+          </div>
+          {isAdmin && (
+            <>
+              {syncResult && <p className="text-[10px] text-muted-foreground/70">{syncResult}</p>}
+              <p className="text-[10px] text-muted-foreground/50 text-right">
+                Não está vendo cursos recentes? Acesse o{" "}
+                <a
+                  href="https://bi.caelumalura.com.br/query?id=2722"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-muted-foreground transition-colors"
+                >
+                  Caelum BI
+                </a>
+                {" "}e execute a query antes de sincronizar.
+              </p>
+            </>
+          )}
+        </div>
+      </div>
 
+      {/* Linha 2: Catálogos e subcategorias */}
+      <div className="flex flex-wrap items-center gap-3">
         {availableCatalogs.length > 0 && (
           <Popover>
             <PopoverTrigger asChild>
@@ -519,53 +650,9 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
             </PopoverContent>
           </Popover>
         )}
-
-        {hasFilters && (
-          <Button variant="ghost" size="sm" onClick={() => {
-            setMonthFrom("");
-            setMonthTo("");
-            setShowEmBreve(true);
-            setShowCheckpoint(true);
-            setCatalogFilters({});
-            setSubcatFilters({});
-            setFilterSemSubcat(null);
-          }}>
-            Limpar tudo
-          </Button>
-        )}
-
-        <div className="ml-auto flex items-center gap-3">
-          {sortedCourses.length > 0 && !loading && (
-            <Button size="sm" variant="outline" onClick={handleCopy}>
-              {copied ? <Check size={14} className="mr-2 text-green-500" /> : <ClipboardCopy size={14} className="mr-2" />}
-              {copied ? "Copiado!" : "Copiar dados"}
-            </Button>
-          )}
-          {isAdmin && (
-            <>
-              <Button size="sm" variant="outline" onClick={handleSync} disabled={syncing}>
-                <RefreshCw size={14} className={cn("mr-2", syncing && "animate-spin")} />
-                {syncing ? "Sincronizando..." : "Sync BI"}
-              </Button>
-              <div className="flex flex-col items-end gap-0.5">
-                <a
-                  href="https://bi.caelumalura.com.br/query?id=2722"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  title="Abrir query no Caelum BI"
-                >
-                  <ExternalLink size={13} />
-                  Caelum BI
-                </a>
-                {syncResult && <p className="text-[10px] text-muted-foreground/70">{syncResult}</p>}
-              </div>
-            </>
-          )}
-        </div>
       </div>
 
-      {/* Filtro de especiais */}
+      {/* Linha 3: Filtros especiais */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs text-muted-foreground">Ocultar:</span>
         <button
@@ -593,9 +680,9 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
       </div>
 
       {/* Contagem */}
-      {!loading && sortedCourses.length > 0 && (
+      {!loading && displayedCourses.length > 0 && (
         <p className="hub-number text-2xl font-bold text-foreground">
-          {sortedCourses.length} <span className="text-base font-normal text-muted-foreground">cursos</span>
+          {displayedCourses.length} <span className="text-base font-normal text-muted-foreground">cursos</span>
         </p>
       )}
 
@@ -662,7 +749,7 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {sortedCourses.map((course) => (
+              {displayedCourses.map((course) => (
                 <tr key={course.id}>
                   <td className="py-2.5 pr-4 text-muted-foreground font-mono text-xs tabular-nums">
                     {course.aluraId ?? "—"}
