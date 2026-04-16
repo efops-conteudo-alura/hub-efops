@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   House, BarChart2, Key, LogOut,
-  Menu, X, FileBarChart, TrendingUp, BookMarked,
-  Settings, Pencil, ChevronRight, ChevronLeft, Archive, Wallet,
+  FileBarChart, TrendingUp, BookMarked,
+  Settings, Pencil, Archive, Wallet,
   FolderKanban, Zap, GitBranch, FileText, Sparkles,
-  DollarSign, Timer, Users, Server,
+  DollarSign, Timer, Users, Server, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -31,7 +32,7 @@ type NavItem =
   | { href?: never; label: string; icon: React.ElementType; children: NavChild[] };
 
 const mainNavItems: NavItem[] = [
-  { href: "/home", label: "Home", icon: House },
+  { href: "/home", label: "Início", icon: House },
   { href: "/kpis", label: "KPIs", icon: TrendingUp },
   { href: "/publicacoes", label: "Publicações", icon: BookMarked },
   { href: "/relatorios", label: "Relatórios", icon: FileBarChart },
@@ -54,77 +55,106 @@ const bottomNavItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: BarChart2 },
 ];
 
-function RootItem({
+function NavGroup({
   item,
   pathname,
-  onEnterGroup,
+  defaultOpen,
 }: {
-  item: NavItem;
+  item: NavItem & { children: NavChild[] };
   pathname: string;
-  onEnterGroup: (group: NavItem) => void;
+  defaultOpen: boolean;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
   const Icon = item.icon;
+  const isActive = item.children.some((c) => pathname.startsWith(c.href));
 
-  if (item.children) {
-    const isActive = item.children.some((c) => pathname.startsWith(c.href));
-    return (
+  return (
+    <div>
       <button
-        onClick={() => onEnterGroup(item)}
+        onClick={() => setOpen((v) => !v)}
         className={cn(
-          "flex items-center gap-2.5 w-full px-3 py-2.5 rounded-md transition-colors text-left",
+          "flex items-center gap-2 w-full px-3 py-3 rounded-[8px] transition-colors text-left",
           isActive
             ? "bg-muted text-foreground"
-            : "text-foreground/70 hover:text-foreground hover:bg-muted/50"
+            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
         )}
       >
-        <Icon size={18} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
-        <span className="flex-1 text-sm font-medium leading-none">{item.label}</span>
-        <ChevronRight size={13} className="shrink-0 opacity-40" />
+        <Icon size={20} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
+        <span className={cn("flex-1 text-sm leading-tight", isActive ? "font-semibold" : "font-normal")}>
+          {item.label}
+        </span>
+        {open
+          ? <ChevronDown size={14} className="shrink-0 opacity-50" />
+          : <ChevronRight size={14} className="shrink-0 opacity-50" />
+        }
       </button>
-    );
-  }
+      {open && (
+        <div className="mt-0.5 flex flex-col gap-0.5 pl-3">
+          {item.children.map((child) => {
+            const childActive = pathname.startsWith(child.href);
+            const ChildIcon = child.icon;
+            return (
+              <Link
+                key={child.href}
+                href={child.href}
+                className={cn(
+                  "flex items-center gap-2 w-full px-3 py-2.5 rounded-[8px] transition-colors text-sm leading-tight",
+                  childActive
+                    ? "bg-muted text-foreground font-semibold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50 font-normal"
+                )}
+              >
+                <ChildIcon size={16} strokeWidth={childActive ? 2 : 1.5} className="shrink-0" />
+                {child.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
-  const isActive = pathname.startsWith(item.href);
+function NavLink({ href, label, icon: Icon }: { href: string; label: string; icon: React.ElementType }) {
+  const pathname = usePathname();
+  const isActive = pathname === href || pathname.startsWith(href + "/");
   return (
     <Link
-      href={item.href}
+      href={href}
       className={cn(
-        "flex items-center gap-2.5 w-full px-3 py-2.5 rounded-md transition-colors",
+        "flex items-center gap-2 w-full px-3 py-3 rounded-[8px] transition-colors",
         isActive
           ? "bg-muted text-foreground"
-          : "text-foreground/70 hover:text-foreground hover:bg-muted/50"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
       )}
     >
-      <Icon size={18} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
-      <span className="text-sm font-medium leading-none">{item.label}</span>
+      <Icon size={20} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
+      <span className={cn("text-sm leading-tight", isActive ? "font-semibold" : "font-normal")}>
+        {label}
+      </span>
     </Link>
   );
 }
 
-function SubmenuChild({ child, pathname }: { child: NavChild; pathname: string }) {
-  const isActive = pathname.startsWith(child.href);
-  const Icon = child.icon;
+function NavItems({ items, pathname }: { items: NavItem[]; pathname: string }) {
   return (
-    <Link
-      href={child.href}
-      className={cn(
-        "flex items-center gap-2.5 w-full px-3 py-2.5 rounded-md transition-colors text-sm leading-none",
-        isActive
-          ? "bg-muted text-foreground font-medium"
-          : "text-foreground/70 hover:text-foreground hover:bg-muted/50"
-      )}
-    >
-      <Icon size={16} strokeWidth={isActive ? 2 : 1.5} className="shrink-0" />
-      {child.label}
-    </Link>
+    <>
+      {items.map((item) => {
+        if (item.children) {
+          const isOpen = item.children.some((c) => pathname.startsWith(c.href));
+          return (
+            <NavGroup key={item.label} item={item} pathname={pathname} defaultOpen={isOpen} />
+          );
+        }
+        return <NavLink key={item.href} href={item.href} label={item.label} icon={item.icon} />;
+      })}
+    </>
   );
 }
 
 export function Sidebar({ user, isAdmin }: SidebarProps) {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [activeGroup, setActiveGroup] = useState<NavItem | null>(null);
 
   const adminItems: NavItem[] = isAdmin
     ? [
@@ -147,155 +177,63 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
       ]
     : [];
 
-  const allItems = [...mainNavItems, ...bottomNavItems, ...adminItems];
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
-  // Entra automaticamente no submenu correto ao navegar direto para uma rota filha
-  useEffect(() => {
-    const match = allItems.find(
-      (item) => item.children?.some((child) => pathname.startsWith(child.href))
-    );
-    setActiveGroup(match ?? null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
-  const inSubmenu = activeGroup !== null;
-
-  const rootPanel = (
-    <div className="w-1/2 h-full flex flex-col">
-      <nav className="flex-1 flex flex-col py-3 gap-0.5 px-2 overflow-y-auto">
-        {mainNavItems.map((item) => (
-          <RootItem
-            key={item.label}
-            item={item}
-            pathname={pathname}
-            onEnterGroup={setActiveGroup}
-          />
-        ))}
-      </nav>
-      <div className="shrink-0 border-t border-sidebar-border px-2 py-2 flex flex-col gap-0.5">
-        {[...bottomNavItems, ...adminItems].map((item) => (
-          <RootItem
-            key={item.label}
-            item={item}
-            pathname={pathname}
-            onEnterGroup={setActiveGroup}
-          />
-        ))}
-      </div>
-    </div>
-  );
-
-  const submenuPanel = (
-    <div className="w-1/2 h-full flex flex-col">
-      {activeGroup && (
-        <>
-          <div className="shrink-0 border-b border-sidebar-border px-2 py-3">
-            <button
-              onClick={() => setActiveGroup(null)}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm font-semibold text-foreground hover:bg-muted/50 transition-colors w-full"
-            >
-              <ChevronLeft size={15} className="shrink-0" />
-              <span>{activeGroup.label}</span>
-            </button>
-          </div>
-          <nav className="flex-1 flex flex-col py-2 gap-0.5 px-2 overflow-y-auto">
-            {(activeGroup.children ?? []).map((child) => (
-              <SubmenuChild key={child.href} child={child} pathname={pathname} />
-            ))}
-          </nav>
-        </>
-      )}
-    </div>
-  );
-
-  const sidebarInner = (
-    <>
-      {/* Painéis deslizantes */}
-      <div className="flex-1 overflow-hidden">
-        <div
-          className="flex h-full"
-          style={{
-            width: "200%",
-            transform: inSubmenu ? "translateX(-50%)" : "translateX(0%)",
-            transition: "transform 220ms ease-in-out",
-          }}
-        >
-          {rootPanel}
-          {submenuPanel}
-        </div>
-      </div>
-
-      {/* Usuário — sempre visível */}
-      <div className="shrink-0 border-t border-sidebar-border px-3 py-3 flex items-center justify-between">
-        <button
-          onClick={() => setProfileOpen(true)}
-          title={user.name ?? "Editar perfil"}
-          className="rounded-full hover:opacity-80 transition-opacity"
-        >
-          <Avatar className="h-7 w-7">
-            {user.image && <AvatarImage src={user.image} alt={user.name ?? ""} />}
-            <AvatarFallback className="text-xs bg-sidebar-accent text-foreground">
-              {user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
-        </button>
-        <button
-          title="Sair"
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="p-2 rounded-lg text-foreground/50 hover:text-foreground hover:bg-muted/50 transition-colors"
-        >
-          <LogOut size={16} strokeWidth={1.5} />
-        </button>
-      </div>
-    </>
-  );
+  const initials =
+    user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "U";
 
   return (
-    <>
-      {/* Hambúrguer mobile */}
-      <button
-        className="md:hidden fixed top-3 left-3 z-50 p-2 rounded-md bg-sidebar border border-sidebar-border shadow-sm"
-        onClick={() => setMobileOpen(true)}
-        aria-label="Abrir menu"
-      >
-        <Menu size={20} />
-      </button>
+    <aside className="flex flex-col w-[220px] shrink-0 border-r border-sidebar-border bg-sidebar h-screen sticky top-0">
+      {/* Logo */}
+      <div className="flex flex-col items-start px-5 pt-7 pb-6 shrink-0">
+        <Image
+          src="/alura-logo.svg"
+          alt="Alura"
+          width={107}
+          height={32}
+          className="[filter:brightness(0)_invert(1)] opacity-90"
+          priority
+        />
+        <span className="text-[13px] font-medium text-muted-foreground tracking-widest uppercase mt-2">
+          Hub EfOps
+        </span>
+      </div>
 
-      {/* Sidebar desktop */}
-      <aside className="hidden md:flex flex-col w-[200px] shrink-0 border-r border-sidebar-border bg-sidebar h-screen sticky top-0">
-        <div className="flex flex-col justify-center py-4 px-4 border-b border-sidebar-border shrink-0 gap-0.5">
-          <span className="text-sm font-bold text-foreground leading-none">EFops</span>
-          <span className="text-[10px] text-muted-foreground tracking-widest uppercase">Hub</span>
-        </div>
-        {sidebarInner}
-      </aside>
+      {/* Navegação principal */}
+      <nav className="flex-1 flex flex-col px-3 gap-0.5 overflow-y-auto pb-4">
+        <NavItems items={mainNavItems} pathname={pathname} />
 
-      {/* Drawer mobile */}
-      {mobileOpen && (
-        <>
-          <div
-            className="md:hidden fixed inset-0 z-40 bg-black/50"
-            onClick={() => setMobileOpen(false)}
-          />
-          <aside className="md:hidden fixed inset-y-0 left-0 z-50 flex flex-col w-[200px] border-r border-sidebar-border bg-sidebar">
-            <div className="flex flex-col justify-center py-4 px-4 border-b border-sidebar-border shrink-0 gap-0.5 relative">
-              <span className="text-sm font-bold text-foreground leading-none">EFops</span>
-              <span className="text-[10px] text-muted-foreground tracking-widest uppercase">Hub</span>
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="absolute top-3 right-2 p-1 rounded-md text-muted-foreground hover:bg-sidebar-accent/50"
-              >
-                <X size={14} />
-              </button>
-            </div>
-            {sidebarInner}
-          </aside>
-        </>
-      )}
+        {/* Separador antes dos itens de baixo */}
+        {(bottomNavItems.length > 0 || adminItems.length > 0) && (
+          <div className="my-2 border-t-2 border-border" />
+        )}
+
+        <NavItems items={[...bottomNavItems, ...adminItems]} pathname={pathname} />
+      </nav>
+
+      {/* Usuário + Logout */}
+      <div className="shrink-0 border-t border-sidebar-border px-3 py-3 flex flex-col gap-1">
+        <button
+          onClick={() => setProfileOpen(true)}
+          className="flex items-center gap-2 w-full px-3 py-3 rounded-[8px] hover:bg-muted/50 transition-colors cursor-pointer"
+          title="Editar perfil"
+        >
+          <Avatar className="h-5 w-5 shrink-0">
+            {user.image && <AvatarImage src={user.image} alt={user.name ?? ""} />}
+            <AvatarFallback className="text-[9px] bg-sidebar-accent text-foreground">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-sm font-normal text-muted-foreground leading-tight truncate">
+            {user.name || user.email}
+          </span>
+        </button>
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="flex items-center gap-2 w-full px-3 py-3 rounded-[8px] text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+        >
+          <LogOut size={20} strokeWidth={1.5} className="shrink-0" />
+          <span className="text-sm font-normal leading-tight">Sair</span>
+        </button>
+      </div>
 
       <ProfileDialog
         open={profileOpen}
@@ -303,6 +241,6 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
         user={user}
         canChangePassword={true}
       />
-    </>
+    </aside>
   );
 }
