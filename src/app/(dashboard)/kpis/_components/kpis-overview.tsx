@@ -14,8 +14,16 @@ import { EdicaoTable, buildEdicaoTsv } from "./edicao-table";
 import { PesosDialog } from "./pesos-dialog";
 import { KpisCharts } from "./kpis-charts";
 import { PublicacoesSyncDialog } from "./publicacoes-sync-dialog";
+import { GastosKpisTable } from "./gastos-kpis-table";
 import type { KpiProducao } from "./producao-form-dialog";
 import type { KpiEdicao } from "./edicao-form-dialog";
+
+interface GastoEntry {
+  month: string;
+  value: number;
+  currency: string;
+  exchangeRate: number | null;
+}
 
 interface Pesos {
   id: string;
@@ -38,12 +46,15 @@ interface KpisOverviewProps {
   initialAnos: KpiAno[];
   currentYear: number;
   isAdmin: boolean;
+  gastosInstrutores: GastoEntry[];
+  gastosEditores: GastoEntry[];
 }
 
 type Tab = "publicacao" | "graficos";
 
 export function KpisOverview({
   initialProducao, initialEdicao, initialPesos, initialAnos, currentYear, isAdmin,
+  gastosInstrutores, gastosEditores,
 }: KpisOverviewProps) {
   const [producao, setProducao] = useState(initialProducao);
   const [edicao, setEdicao] = useState(initialEdicao);
@@ -109,7 +120,7 @@ export function KpisOverview({
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="hub-page-title">KPIs de Conteúdo</h1>
+          <h1 className="hub-page-title">KPIs Conteúdo Alura</h1>
           <p className="hub-section-title">Indicadores mensais de publicação e edição</p>
         </div>
 
@@ -195,29 +206,63 @@ export function KpisOverview({
       </div>
 
       {activeTab === "publicacao" && (
-        <div className="space-y-8">
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">
-              Pesos: Curso={pesos.curso} · Artigo={pesos.artigo} · Carreira={pesos.carreira} · Nível={pesos.nivel} · Trilha={pesos.trilha}
-            </p>
-            <ProducaoTable
+        <div className="space-y-10">
+          {/* SEÇÃO: Conteúdo */}
+          <div className="space-y-6">
+            <div className="border-b border-border pb-3">
+              <h2 className="text-2xl font-[var(--font-encode-sans)] font-light">Conteúdo</h2>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Publicações</p>
+              <p className="text-xs text-muted-foreground">
+                Pesos: Curso={pesos.curso} · Artigo={pesos.artigo} · Carreira={pesos.carreira} · Nível={pesos.nivel} · Trilha={pesos.trilha}
+              </p>
+              <ProducaoTable
+                year={selectedYear}
+                data={yearProducao}
+                pesos={pesos}
+                isAdmin={isAdmin}
+                onChange={(updated) =>
+                  setProducao([...producao.filter((r) => !r.month.startsWith(`${yearStr}-`)), ...updated])
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Gastos</p>
+              <GastosKpisTable
+                year={selectedYear}
+                label="Gastos instrutores"
+                data={gastosInstrutores.filter((e) => e.month.startsWith(`${yearStr}-`))}
+              />
+            </div>
+          </div>
+
+          {/* SEÇÃO: Pós-produção */}
+          <div className="space-y-6">
+            <div className="border-b border-border pb-3">
+              <h2 className="text-2xl font-[var(--font-encode-sans)] font-light">Pós-produção</h2>
+            </div>
+
+            <EdicaoTable
               year={selectedYear}
-              data={yearProducao}
-              pesos={pesos}
+              data={yearEdicao}
               isAdmin={isAdmin}
               onChange={(updated) =>
-                setProducao([...producao.filter((r) => !r.month.startsWith(`${yearStr}-`)), ...updated])
+                setEdicao([...edicao.filter((r) => !r.month.startsWith(`${yearStr}-`)), ...updated])
               }
             />
+
+            <div className="space-y-2">
+              <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Gastos</p>
+              <GastosKpisTable
+                year={selectedYear}
+                label="Editores externos"
+                data={gastosEditores.filter((e) => e.month.startsWith(`${yearStr}-`))}
+              />
+            </div>
           </div>
-          <EdicaoTable
-            year={selectedYear}
-            data={yearEdicao}
-            isAdmin={isAdmin}
-            onChange={(updated) =>
-              setEdicao([...edicao.filter((r) => !r.month.startsWith(`${yearStr}-`)), ...updated])
-            }
-          />
         </div>
       )}
 

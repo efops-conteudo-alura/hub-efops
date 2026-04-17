@@ -129,8 +129,6 @@ export function ProducaoTable({ year, data, pesos, isAdmin, onChange }: Producao
 
   return (
     <div className="space-y-2">
-      <p className="hub-card-title">Publicação de Conteúdo</p>
-
       <div className="rounded-md border overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead>

@@ -112,7 +112,7 @@ export function EdicaoTable({ year, data, isAdmin, onChange }: EdicaoTableProps)
     <div className="space-y-4">
       {/* KPIs de Edição */}
       <div className="space-y-2">
-        <p className="hub-card-title">Pós-produção</p>
+        <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Entregas</p>
 
         <div className="rounded-md border overflow-x-auto">
           <table className="w-full border-collapse text-sm">
@@ -188,7 +188,7 @@ export function EdicaoTable({ year, data, isAdmin, onChange }: EdicaoTableProps)
 
       {/* Distribuição de Entregas */}
       <div className="space-y-2">
-        <p className="hub-card-title">Distribuição de Entregas</p>
+        <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Distribuição das Entregas por Demandante</p>
         <div className="rounded-md border overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>

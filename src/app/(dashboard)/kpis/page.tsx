@@ -29,11 +29,21 @@ export default async function KpisPage() {
   const isAdmin = session.user.role === "ADMIN";
   const currentYear = new Date().getFullYear();
 
-  const [producao, edicao, pesos, anos] = await Promise.all([
+  const [producao, edicao, pesos, anos, gastosInstrutores, gastosEditores] = await Promise.all([
     prisma.kpiProducao.findMany({ orderBy: { month: "asc" } }),
     prisma.kpiEdicao.findMany({ orderBy: { month: "asc" } }),
     getPesos(),
     getAnos(),
+    prisma.expense.findMany({
+      where: { category: "INSTRUTOR", costCenter: "ALURA" },
+      select: { month: true, value: true, currency: true, exchangeRate: true },
+      orderBy: { month: "asc" },
+    }),
+    prisma.expense.findMany({
+      where: { category: { in: ["EDITOR_FREELANCER", "EDITOR_EXTERNO"] }, costCenter: "ALURA" },
+      select: { month: true, value: true, currency: true, exchangeRate: true },
+      orderBy: { month: "asc" },
+    }),
   ]);
 
   return (
@@ -44,6 +54,8 @@ export default async function KpisPage() {
       initialAnos={anos}
       currentYear={currentYear}
       isAdmin={isAdmin}
+      gastosInstrutores={gastosInstrutores}
+      gastosEditores={gastosEditores}
     />
   );
 }
