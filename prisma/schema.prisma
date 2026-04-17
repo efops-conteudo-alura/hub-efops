@@ -435,6 +435,20 @@ model KpiEdicao {
   @@unique([month])
 }
 
+model KpiSuporteEducacional {
+  id                 String   @id @default(cuid())
+  month              String   // YYYY-MM
+  topicosRespondidos Int      @default(0)
+  slaMedio           Float    @default(0)
+  artigosCriados     Int      @default(0)
+  artigosRevisados   Int      @default(0)
+  imersoes           Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([month])
+}
+
 model ImobilizacaoPeriodo {
   id         String              @id @default(cuid())
   ano        Int

@@ -15,8 +15,10 @@ import { PesosDialog } from "./pesos-dialog";
 import { KpisCharts } from "./kpis-charts";
 import { PublicacoesSyncDialog } from "./publicacoes-sync-dialog";
 import { GastosKpisTable } from "./gastos-kpis-table";
+import { SuporteTable } from "./suporte-table";
 import type { KpiProducao } from "./producao-form-dialog";
 import type { KpiEdicao } from "./edicao-form-dialog";
+import type { KpiSuporte } from "./suporte-form-dialog";
 
 interface GastoEntry {
   month: string;
@@ -42,6 +44,7 @@ interface KpiAno {
 interface KpisOverviewProps {
   initialProducao: KpiProducao[];
   initialEdicao: KpiEdicao[];
+  initialSuporte: KpiSuporte[];
   initialPesos: Pesos;
   initialAnos: KpiAno[];
   currentYear: number;
@@ -53,11 +56,12 @@ interface KpisOverviewProps {
 type Tab = "publicacao" | "graficos";
 
 export function KpisOverview({
-  initialProducao, initialEdicao, initialPesos, initialAnos, currentYear, isAdmin,
+  initialProducao, initialEdicao, initialSuporte, initialPesos, initialAnos, currentYear, isAdmin,
   gastosInstrutores, gastosEditores,
 }: KpisOverviewProps) {
   const [producao, setProducao] = useState(initialProducao);
   const [edicao, setEdicao] = useState(initialEdicao);
+  const [suporte, setSuporte] = useState(initialSuporte);
   const [pesos, setPesos] = useState(initialPesos);
   const [anos, setAnos] = useState(initialAnos);
   const [selectedYear, setSelectedYear] = useState(currentYear);
@@ -70,6 +74,7 @@ export function KpisOverview({
   const yearStr = String(selectedYear);
   const yearProducao = producao.filter((r) => r.month.startsWith(`${yearStr}-`));
   const yearEdicao = edicao.filter((r) => r.month.startsWith(`${yearStr}-`));
+  const yearSuporte = suporte.filter((r) => r.month.startsWith(`${yearStr}-`));
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "publicacao", label: "Publicação & Edição" },
@@ -260,6 +265,25 @@ export function KpisOverview({
                 year={selectedYear}
                 label="Editores externos"
                 data={gastosEditores.filter((e) => e.month.startsWith(`${yearStr}-`))}
+              />
+            </div>
+          </div>
+
+          {/* SEÇÃO: Suporte Educacional */}
+          <div className="space-y-6">
+            <div className="border-b border-border pb-3">
+              <h2 className="text-2xl font-[var(--font-encode-sans)] font-light">Suporte Educacional</h2>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Entregas</p>
+              <SuporteTable
+                year={selectedYear}
+                data={yearSuporte}
+                isAdmin={isAdmin}
+                onChange={(updated) =>
+                  setSuporte([...suporte.filter((r) => !r.month.startsWith(`${yearStr}-`)), ...updated])
+                }
               />
             </div>
           </div>
