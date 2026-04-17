@@ -16,15 +16,18 @@ import { KpisCharts } from "./kpis-charts";
 import { PublicacoesSyncDialog } from "./publicacoes-sync-dialog";
 import { GastosKpisTable } from "./gastos-kpis-table";
 import { SuporteTable } from "./suporte-table";
+import { LeadtimeTable } from "./leadtime-table";
 import type { KpiProducao } from "./producao-form-dialog";
 import type { KpiEdicao } from "./edicao-form-dialog";
 import type { KpiSuporte } from "./suporte-form-dialog";
+import type { KpiLeadtime } from "./leadtime-form-dialog";
 
 interface GastoEntry {
   month: string;
   value: number;
   currency: string;
   exchangeRate: number | null;
+  costCenter: string;
 }
 
 interface Pesos {
@@ -51,17 +54,21 @@ interface KpisOverviewProps {
   isAdmin: boolean;
   gastosInstrutores: GastoEntry[];
   gastosEditores: GastoEntry[];
+  gastosSuporte: GastoEntry[];
+  initialLeadtime: KpiLeadtime[];
 }
 
-type Tab = "publicacao" | "graficos";
+type Tab = "publicacao" | "leadtime" | "graficos";
 
 export function KpisOverview({
-  initialProducao, initialEdicao, initialSuporte, initialPesos, initialAnos, currentYear, isAdmin,
-  gastosInstrutores, gastosEditores,
+  initialProducao, initialEdicao, initialSuporte, initialLeadtime, initialPesos, initialAnos, currentYear, isAdmin,
+  gastosInstrutores, gastosEditores, gastosSuporte,
 }: KpisOverviewProps) {
   const [producao, setProducao] = useState(initialProducao);
   const [edicao, setEdicao] = useState(initialEdicao);
   const [suporte, setSuporte] = useState(initialSuporte);
+  const [leadtime, setLeadtime] = useState(initialLeadtime);
+  const [costCenter, setCostCenter] = useState<"ALURA" | "LATAM" | null>(null);
   const [pesos, setPesos] = useState(initialPesos);
   const [anos, setAnos] = useState(initialAnos);
   const [selectedYear, setSelectedYear] = useState(currentYear);
@@ -76,8 +83,23 @@ export function KpisOverview({
   const yearEdicao = edicao.filter((r) => r.month.startsWith(`${yearStr}-`));
   const yearSuporte = suporte.filter((r) => r.month.startsWith(`${yearStr}-`));
 
+  const h1Title = costCenter === "ALURA" ? "KPIs Conteúdo · Alura" : costCenter === "LATAM" ? "KPIs Conteúdo · Latam" : "KPIs Conteúdo";
+
+  const costCenterFilters: { label: string; value: "ALURA" | "LATAM" | null }[] = [
+    { label: "Alura", value: "ALURA" },
+    { label: "Latam", value: "LATAM" },
+    { label: "Ambos", value: null },
+  ];
+
+  const filterGastos = (entries: GastoEntry[]) =>
+    costCenter ? entries.filter((e) => e.costCenter === costCenter) : entries;
+
+  const gastoLabel = (base: string) =>
+    costCenter === "ALURA" ? `${base} · Alura` : costCenter === "LATAM" ? `${base} · LATAM` : base;
+
   const tabs: { key: Tab; label: string }[] = [
-    { key: "publicacao", label: "Publicação & Edição" },
+    { key: "publicacao", label: "Indicadores" },
+    { key: "leadtime", label: "Leadtimes" },
     { key: "graficos", label: "Gráficos" },
   ];
 
@@ -123,9 +145,27 @@ export function KpisOverview({
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Filtro Alura / LATAM / Ambos */}
+      <div className="flex items-center gap-2">
+        {costCenterFilters.map((f) => (
+          <button
+            key={String(f.value)}
+            onClick={() => setCostCenter(f.value)}
+            className={cn(
+              "px-3 py-1 text-xs font-mono font-semibold uppercase rounded border transition-colors",
+              costCenter === f.value
+                ? "bg-foreground text-background border-foreground"
+                : "bg-transparent text-muted-foreground border-border hover:text-foreground hover:border-foreground"
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="hub-page-title">KPIs Conteúdo Alura</h1>
+          <h1 className="hub-page-title">{h1Title}</h1>
           <p className="hub-section-title">Indicadores mensais de publicação e edição</p>
         </div>
 
@@ -238,8 +278,8 @@ export function KpisOverview({
               <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Gastos</p>
               <GastosKpisTable
                 year={selectedYear}
-                label="Gastos instrutores"
-                data={gastosInstrutores.filter((e) => e.month.startsWith(`${yearStr}-`))}
+                label={gastoLabel("Gastos instrutores")}
+                data={filterGastos(gastosInstrutores).filter((e) => e.month.startsWith(`${yearStr}-`))}
               />
             </div>
           </div>
@@ -263,8 +303,8 @@ export function KpisOverview({
               <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Gastos</p>
               <GastosKpisTable
                 year={selectedYear}
-                label="Editores externos"
-                data={gastosEditores.filter((e) => e.month.startsWith(`${yearStr}-`))}
+                label={gastoLabel("Editores externos")}
+                data={filterGastos(gastosEditores).filter((e) => e.month.startsWith(`${yearStr}-`))}
               />
             </div>
           </div>
@@ -286,6 +326,42 @@ export function KpisOverview({
                 }
               />
             </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Gastos</p>
+              <GastosKpisTable
+                year={selectedYear}
+                label={gastoLabel("Suporte educacional")}
+                data={filterGastos(gastosSuporte).filter((e) => e.month.startsWith(`${yearStr}-`))}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "leadtime" && (
+        <div className="space-y-6">
+          {costCenter !== null && (
+            <div className="border-b border-border pb-3">
+              <h2 className="text-2xl font-[var(--font-encode-sans)] font-light">
+                {costCenter === "ALURA" ? "Conteúdo" : "Latam"}
+              </h2>
+            </div>
+          )}
+          <div className="space-y-2">
+            <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Cursos</p>
+            <LeadtimeTable
+              costCenter={costCenter ?? "ALURA"}
+              data={costCenter ? leadtime.filter((r) => r.costCenter === costCenter) : leadtime}
+              isAdmin={isAdmin}
+              onChange={(updated) => {
+                if (costCenter) {
+                  setLeadtime([...leadtime.filter((r) => r.costCenter !== costCenter), ...updated]);
+                } else {
+                  setLeadtime(updated);
+                }
+              }}
+            />
           </div>
         </div>
       )}

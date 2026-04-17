@@ -449,6 +449,22 @@ model KpiSuporteEducacional {
   @@unique([month])
 }
 
+model KpiLeadtime {
+  id             String            @id @default(cuid())
+  costCenter     ExpenseCostCenter @default(ALURA)
+  nome           String
+  dataInicio     String            // YYYY-MM-DD
+  inicioGravacao String?           // YYYY-MM-DD
+  fimGravacao    String?           // YYYY-MM-DD
+  inicioEdicao   String?           // YYYY-MM-DD
+  fimEdicao      String?           // YYYY-MM-DD
+  dataConclusao  String?           // YYYY-MM-DD
+  instrutor      String?
+  responsavel    String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
 model ImobilizacaoPeriodo {
   id         String              @id @default(cuid())
   ano        Int

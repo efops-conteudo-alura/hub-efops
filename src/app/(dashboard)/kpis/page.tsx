@@ -29,20 +29,26 @@ export default async function KpisPage() {
   const isAdmin = session.user.role === "ADMIN";
   const currentYear = new Date().getFullYear();
 
-  const [producao, edicao, suporte, pesos, anos, gastosInstrutores, gastosEditores] = await Promise.all([
+  const [producao, edicao, suporte, leadtime, pesos, anos, gastosInstrutores, gastosEditores, gastosSuporte] = await Promise.all([
     prisma.kpiProducao.findMany({ orderBy: { month: "asc" } }),
     prisma.kpiEdicao.findMany({ orderBy: { month: "asc" } }),
     prisma.kpiSuporteEducacional.findMany({ orderBy: { month: "asc" } }),
+    prisma.kpiLeadtime.findMany({ orderBy: { dataInicio: "desc" } }),
     getPesos(),
     getAnos(),
     prisma.expense.findMany({
-      where: { category: "INSTRUTOR", costCenter: "ALURA" },
-      select: { month: true, value: true, currency: true, exchangeRate: true },
+      where: { category: "INSTRUTOR" },
+      select: { month: true, value: true, currency: true, exchangeRate: true, costCenter: true },
       orderBy: { month: "asc" },
     }),
     prisma.expense.findMany({
-      where: { category: { in: ["EDITOR_FREELANCER", "EDITOR_EXTERNO"] }, costCenter: "ALURA" },
-      select: { month: true, value: true, currency: true, exchangeRate: true },
+      where: { category: { in: ["EDITOR_FREELANCER", "EDITOR_EXTERNO"] } },
+      select: { month: true, value: true, currency: true, exchangeRate: true, costCenter: true },
+      orderBy: { month: "asc" },
+    }),
+    prisma.expense.findMany({
+      where: { category: "SUPORTE_EDUCACIONAL" },
+      select: { month: true, value: true, currency: true, exchangeRate: true, costCenter: true },
       orderBy: { month: "asc" },
     }),
   ]);
@@ -52,12 +58,14 @@ export default async function KpisPage() {
       initialProducao={producao}
       initialEdicao={edicao}
       initialSuporte={suporte}
+      initialLeadtime={leadtime}
       initialPesos={pesos}
       initialAnos={anos}
       currentYear={currentYear}
       isAdmin={isAdmin}
       gastosInstrutores={gastosInstrutores}
       gastosEditores={gastosEditores}
+      gastosSuporte={gastosSuporte}
     />
   );
 }

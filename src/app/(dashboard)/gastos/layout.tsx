@@ -29,7 +29,7 @@ export default function GastosLayout({ children }: { children: React.ReactNode }
 
   const filterOptions = [
     { label: "Alura", value: "ALURA" },
-    { label: "LATAM", value: "LATAM" },
+    { label: "Latam", value: "LATAM" },
     { label: "Ambos", value: null },
   ];
 
@@ -57,7 +57,9 @@ export default function GastosLayout({ children }: { children: React.ReactNode }
       </div>
 
       <div className="mb-6">
-        <h1 className="hub-page-title">Gastos com externos</h1>
+        <h1 className="hub-page-title">
+          {cc === "ALURA" ? "Gastos com externos · Alura" : cc === "LATAM" ? "Gastos com externos · Latam" : "Gastos com externos"}
+        </h1>
         <p className="text-muted-foreground mt-1">Instrutores, editores e prestadores de serviço.</p>
       </div>
 
