@@ -533,6 +533,16 @@ enum ColaboradorTipo {
   ESPECIAL
 }
 
+model FeriadoAlura {
+  id        String   @id @default(cuid())
+  ano       Int
+  data      DateTime
+  descricao String
+  createdAt DateTime @default(now())
+
+  @@unique([ano, data])
+}
+
 // --- Revisor de Conteúdo ---
 
 model RevisorAuditoria {

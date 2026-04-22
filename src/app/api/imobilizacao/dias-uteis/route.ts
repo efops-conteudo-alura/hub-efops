@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 
 interface FeriadoBrasil {
   date: string;
@@ -60,7 +61,16 @@ export async function GET(req: Request) {
     // Se a API falhar, segue sem feriados nacionais
   }
 
-  const feriadosDatas = new Set(feriadosBrasil.map((f) => f.date));
+  // Busca feriados da Alura do banco
+  const feriadosAlura = await prisma.feriadoAlura.findMany({
+    where: { ano: parseInt(ano) },
+  });
+  const feriadosAluraDatas = feriadosAlura.map((f) => f.data.toISOString().slice(0, 10));
+
+  const feriadosDatas = new Set([
+    ...feriadosBrasil.map((f) => f.date),
+    ...feriadosAluraDatas,
+  ]);
 
   const inicio = new Date(dataInicio + "T00:00:00");
   const fim = new Date(dataFim + "T00:00:00");
@@ -78,9 +88,24 @@ export async function GET(req: Request) {
 
   const diasUteis = contarDiasUteis(inicio, fim, feriadosDatas);
 
+  // Feriados da Alura que caem em dias úteis no intervalo
+  const feriadosAluraNoPeriodo = feriadosAlura.filter((f) => {
+    const iso = f.data.toISOString().slice(0, 10);
+    const d = new Date(iso + "T00:00:00");
+    const dow = d.getDay();
+    return d >= inicio && d <= fim && dow !== 0 && dow !== 6;
+  });
+
   return NextResponse.json({
     diasUteis,
-    feriados: feriadosNoPeriodo.length,
-    feriados_detalhados: feriadosNoPeriodo.map((f) => ({ data: f.date, nome: f.name })),
+    feriados: feriadosNoPeriodo.length + feriadosAluraNoPeriodo.length,
+    feriados_detalhados: [
+      ...feriadosNoPeriodo.map((f) => ({ data: f.date, nome: f.name, tipo: "nacional" })),
+      ...feriadosAluraNoPeriodo.map((f) => ({
+        data: f.data.toISOString().slice(0, 10),
+        nome: f.descricao,
+        tipo: "alura",
+      })),
+    ],
   });
 }

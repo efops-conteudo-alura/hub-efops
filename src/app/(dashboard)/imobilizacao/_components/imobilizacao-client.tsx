@@ -24,6 +24,7 @@ interface Colaborador {
   id: string;
   nome: string;
   clickupUsername: string | null;
+  cargaHorariaDiaria: number;
   ordem: number;
 }
 
@@ -149,7 +150,7 @@ function CelulaHorasEditavel({
       if (res.ok) {
         onSalvo(novoValor);
       } else {
-        setInput(String(valor)); // reverte se falhou
+        setInput(String(valor));
       }
     } finally {
       setSalvando(false);
@@ -204,26 +205,54 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
   const [erroDetalhe, setErroDetalhe] = useState<string | null>(null);
   const [periodoDialogOpen, setPeriodoDialogOpen] = useState(false);
 
-  // Aba de time selecionada
   const [timeSelecionadoId, setTimeSelecionadoId] = useState<string | null>(
     times.length > 0 ? times[0].id : null
   );
 
-  // Sync por time
   const [syncLoading, setSyncLoading] = useState<Record<string, boolean>>({});
   const [syncResultado, setSyncResultado] = useState<Record<string, string>>({});
-
-  // Copy por time
   const [copied, setCopied] = useState<Record<string, boolean>>({});
-
-  // Editar período
   const [periodoParaEditar, setPeriodoParaEditar] = useState<PeriodoData | null>(null);
-
-  // Adicionar curso manualmente
   const [addCursoOpen, setAddCursoOpen] = useState(false);
   const [addCursoLoading, setAddCursoLoading] = useState(false);
   const [addCursoNome, setAddCursoNome] = useState("");
   const [addCursoId, setAddCursoId] = useState("");
+  const [addCursoErro, setAddCursoErro] = useState<string | null>(null);
+
+  // Refs para sincronização do scroll e medição da tabela
+  const scrollWrapperRef = useRef<HTMLDivElement>(null);
+  const scrollMirrorRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+  const isSyncingScroll = useRef(false);
+  const [tableScrollWidth, setTableScrollWidth] = useState(0);
+
+  useEffect(() => {
+    const table = tableRef.current;
+    if (!table) return;
+    const observer = new ResizeObserver(() => {
+      setTableScrollWidth(table.scrollWidth);
+    });
+    observer.observe(table);
+    return () => observer.disconnect();
+  }, [detalhe]);
+
+  const syncScrollFromWrapper = () => {
+    if (isSyncingScroll.current) return;
+    isSyncingScroll.current = true;
+    if (scrollMirrorRef.current && scrollWrapperRef.current) {
+      scrollMirrorRef.current.scrollLeft = scrollWrapperRef.current.scrollLeft;
+    }
+    isSyncingScroll.current = false;
+  };
+
+  const syncScrollFromMirror = () => {
+    if (isSyncingScroll.current) return;
+    isSyncingScroll.current = true;
+    if (scrollWrapperRef.current && scrollMirrorRef.current) {
+      scrollWrapperRef.current.scrollLeft = scrollMirrorRef.current.scrollLeft;
+    }
+    isSyncingScroll.current = false;
+  };
 
   const anos = [...new Set(periodos.map((p) => p.ano))].sort((a, b) => b - a);
   const mesesDoAno = periodos
@@ -347,8 +376,6 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
     });
   };
 
-  const [addCursoErro, setAddCursoErro] = useState<string | null>(null);
-
   const adicionarCurso = async () => {
     if (!addCursoNome.trim() || !timeAtivo || mesSelecionado === null) return;
     setAddCursoLoading(true);
@@ -387,11 +414,8 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
   };
 
   const periodoAtual = periodos.find((p) => p.ano === anoSelecionado && p.mes === mesSelecionado);
-
-  // Time ativo
   const timeAtivo = times.find((t) => t.id === timeSelecionadoId) ?? null;
 
-  // Colaboradores e entries do time ativo
   const colaboradoresDoTime = timeAtivo
     ? timeAtivo.colaboradores.sort((a, b) => a.ordem - b.ordem)
     : [];
@@ -400,7 +424,6 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
     ? detalhe.entries.filter((e) => e.timeId === timeAtivo.id)
     : detalhe?.entries ?? [];
 
-  // Produtos únicos (do time ativo ou todos se sem times)
   type ProdutoKey = { tipo: string | null; id: string | null; nome: string };
   const produtosMap = new Map<string, ProdutoKey>();
   entriesDoTime.forEach((e) => {
@@ -409,11 +432,9 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
   });
   const produtos = [...produtosMap.entries()];
 
-  // Colunas de colaboradores
+  // Item 3: usa todos os colaboradores do time, não só os que têm entries
   const colaboradoresGerais = timeAtivo
-    ? colaboradoresDoTime
-        .filter((c) => entriesDoTime.some((e) => e.colaboradorNome === c.nome))
-        .map((c) => c.nome)
+    ? colaboradoresDoTime.map((c) => c.nome)
     : [...new Set(entriesDoTime.map((e) => e.colaboradorNome))].sort();
 
   const getEntry = (produtoKey: string, colab: string) =>
@@ -425,6 +446,26 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
     entriesDoTime.filter((e) => e.colaboradorNome === colab).reduce((s, e) => s + e.horas, 0);
 
   const totalGeral = entriesDoTime.reduce((s, e) => s + e.horas, 0);
+
+  // Item 2: teto de horas por colaborador
+  const diasUteis = detalhe?.diasUteis ?? periodoAtual?.diasUteis ?? 0;
+  const cargaDiariaPorColab = useCallback(
+    (nomeColab: string): number => {
+      const colab = colaboradoresDoTime.find((c) => c.nome === nomeColab);
+      if (colab?.cargaHorariaDiaria) return colab.cargaHorariaDiaria;
+      const entry = entriesDoTime.find((e) => e.colaboradorNome === nomeColab && e.cargaHorariaDiaria);
+      return entry?.cargaHorariaDiaria ?? 8;
+    },
+    [colaboradoresDoTime, entriesDoTime]
+  );
+
+  const teto = (nomeColab: string) => diasUteis * cargaDiariaPorColab(nomeColab);
+  const estouro = (nomeColab: string) => diasUteis > 0 && totalPorColaborador(nomeColab) > teto(nomeColab);
+
+  // Tabela: mostrar quando há colaboradores no time ativo OU há entries
+  const mostrarTabela = timeAtivo
+    ? colaboradoresDoTime.length > 0 || entriesDoTime.length > 0
+    : entriesDoTime.length > 0;
 
   if (periodos.length === 0) {
     return (
@@ -470,7 +511,7 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
           <Link href="/imobilizacao/configurar">
             <Button size="sm" variant="outline">
               <Settings size={14} className="mr-2" />
-              Configurar Times
+              Configurações
             </Button>
           </Link>
           <Button size="sm" onClick={() => setPeriodoDialogOpen(true)}>
@@ -620,80 +661,108 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
             <div className="flex items-center justify-center h-32 text-destructive text-sm border rounded-lg bg-destructive/5">
               {erroDetalhe}
             </div>
-          ) : detalhe && entriesDoTime.length > 0 ? (
-            <div className="overflow-x-auto rounded-lg border">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="hub-table-header text-left px-2 py-1.5 w-16">Tipo</th>
-                    <th className="hub-table-header text-left px-2 py-1.5 w-20">ID</th>
-                    <th className="hub-table-header text-left px-2 py-1.5 min-w-40">Produto</th>
-                    {colaboradoresGerais.map((c) => (
-                      <th key={c} className="hub-table-header text-center px-1 py-1.5 whitespace-nowrap w-14">
-                        {c}
-                      </th>
-                    ))}
-                    <th className="hub-table-header text-center px-2 py-1.5 w-14">TOTAL</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Total por pessoa — primeira linha */}
-                  <tr className="border-b bg-muted/30 font-semibold">
-                    <td className="px-2 py-1.5 text-muted-foreground" colSpan={3}>Total por Pessoa</td>
-                    {colaboradoresGerais.map((c) => (
-                      <td key={c} className="px-2 py-1.5 text-center">{totalPorColaborador(c)}</td>
-                    ))}
-                    <td className="px-2 py-1.5 text-center">{totalGeral}</td>
-                  </tr>
+          ) : detalhe && mostrarTabela ? (
+            <div className="space-y-0">
+              {/* Barra de rolagem espelho no topo — fora do overflow-hidden do container */}
+              <div
+                ref={scrollMirrorRef}
+                className="overflow-x-scroll overflow-y-hidden"
+                onScroll={syncScrollFromMirror}
+              >
+                <div style={{ height: "1px", width: tableScrollWidth > 0 ? `${tableScrollWidth}px` : "100%" }} />
+              </div>
 
-                  {/* Linhas de produtos */}
-                  {produtos.map(([key, produto]) => {
-                    const totalCurso = colaboradoresGerais.reduce(
-                      (s, c) => s + (getEntry(key, c)?.horas ?? 0),
-                      0
-                    );
-                    return (
-                      <tr key={key} className="border-b hover:bg-muted/20 transition-colors">
-                        <td className="px-2 py-1 text-muted-foreground">{produto.tipo ?? "—"}</td>
-                        <td className="px-2 py-1 text-muted-foreground">{produto.id ?? "—"}</td>
-                        <td className="px-2 py-1 font-medium">{produto.nome}</td>
-                        {colaboradoresGerais.map((c) => {
-                          const entry = getEntry(key, c);
-                          return (
-                            <td key={c} className="px-0.5 py-0.5 text-center">
-                              <CelulaHorasEditavel
-                                entryId={entry?.id ?? null}
-                                valor={entry?.horas ?? 0}
-                                ano={anoSelecionado}
-                                mes={mesSelecionado}
-                                onSalvo={(novoValor) =>
-                                  entry && atualizarHorasLocal(entry.id, novoValor)
-                                }
-                              />
-                            </td>
-                          );
-                        })}
-                        <td className="px-2 py-1 text-center font-semibold">{totalCurso > 0 ? totalCurso : "—"}</td>
-                      </tr>
-                    );
-                  })}
-
-                  {/* Linha de adicionar curso */}
-                  {timeAtivo && (
-                    <tr>
-                      <td colSpan={3 + colaboradoresGerais.length + 1} className="px-2 py-1">
-                        <button
-                          onClick={() => setAddCursoOpen(true)}
-                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <Plus size={12} />
-                          Adicionar curso manualmente
-                        </button>
-                      </td>
+              <div className="rounded-lg border overflow-hidden">
+              <div
+                ref={scrollWrapperRef}
+                className="overflow-x-auto"
+                onScroll={syncScrollFromWrapper}
+              >
+                <table ref={tableRef} className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="hub-table-header text-left px-2 py-1.5 w-16">Tipo</th>
+                      <th className="hub-table-header text-left px-2 py-1.5 w-20">ID</th>
+                      <th className="hub-table-header text-left px-2 py-1.5 min-w-40">Produto</th>
+                      {colaboradoresGerais.map((c) => (
+                        <th key={c} className="hub-table-header text-center px-1 py-1.5 whitespace-nowrap w-14">
+                          {c}
+                        </th>
+                      ))}
+                      <th className="hub-table-header text-center px-2 py-1.5 w-14">TOTAL</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {/* Total por pessoa — Item 2: vermelho se estouro */}
+                    <tr className="border-b bg-muted/30 font-semibold">
+                      <td className="px-2 py-1.5 text-muted-foreground" colSpan={3}>Total por Pessoa</td>
+                      {colaboradoresGerais.map((c) => {
+                        const total = totalPorColaborador(c);
+                        const teto_ = teto(c);
+                        const estourou = estouro(c);
+                        return (
+                          <td
+                            key={c}
+                            className={`px-2 py-1.5 text-center ${estourou ? "text-red-500" : ""}`}
+                            title={diasUteis > 0 ? `${total} / ${teto_}h disponíveis` : undefined}
+                          >
+                            {total}
+                          </td>
+                        );
+                      })}
+                      <td className="px-2 py-1.5 text-center">{totalGeral}</td>
+                    </tr>
+
+                    {/* Linhas de produtos */}
+                    {produtos.map(([key, produto]) => {
+                      const totalCurso = colaboradoresGerais.reduce(
+                        (s, c) => s + (getEntry(key, c)?.horas ?? 0),
+                        0
+                      );
+                      return (
+                        <tr key={key} className="border-b hover:bg-muted/20 transition-colors">
+                          <td className="px-2 py-1 text-muted-foreground">{produto.tipo ?? "—"}</td>
+                          <td className="px-2 py-1 text-muted-foreground">{produto.id ?? "—"}</td>
+                          <td className="px-2 py-1 font-medium">{produto.nome}</td>
+                          {colaboradoresGerais.map((c) => {
+                            const entry = getEntry(key, c);
+                            return (
+                              <td key={c} className="px-0.5 py-0.5 text-center">
+                                <CelulaHorasEditavel
+                                  entryId={entry?.id ?? null}
+                                  valor={entry?.horas ?? 0}
+                                  ano={anoSelecionado}
+                                  mes={mesSelecionado}
+                                  onSalvo={(novoValor) =>
+                                    entry && atualizarHorasLocal(entry.id, novoValor)
+                                  }
+                                />
+                              </td>
+                            );
+                          })}
+                          <td className="px-2 py-1 text-center font-semibold">{totalCurso > 0 ? totalCurso : "—"}</td>
+                        </tr>
+                      );
+                    })}
+
+                    {/* Linha de adicionar curso */}
+                    {timeAtivo && (
+                      <tr>
+                        <td colSpan={3 + colaboradoresGerais.length + 1} className="px-2 py-1">
+                          <button
+                            onClick={() => setAddCursoOpen(true)}
+                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            <Plus size={12} />
+                            Adicionar curso manualmente
+                          </button>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-32 gap-2 text-center border rounded-lg bg-muted/10">
@@ -733,7 +802,6 @@ export function ImobilizacaoClient({ periodos: initialPeriodos, times }: Props) 
         onSuccess={onPeriodoSuccess}
       />
 
-      {/* Dialog para adicionar curso manualmente */}
       <Dialog open={addCursoOpen} onOpenChange={(open) => { setAddCursoOpen(open); if (!open) { setAddCursoNome(""); setAddCursoId(""); } }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
