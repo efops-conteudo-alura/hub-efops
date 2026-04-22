@@ -96,16 +96,17 @@ export async function GET(req: Request) {
     return d >= inicio && d <= fim && dow !== 0 && dow !== 6;
   });
 
+  // Deduplicar por data — um feriado da Alura pode coincidir com um nacional
+  const feriadosDetalhados = [
+    ...feriadosNoPeriodo.map((f) => ({ data: f.date, nome: f.name, tipo: "nacional" })),
+    ...feriadosAluraNoPeriodo
+      .filter((f) => !feriadosNoPeriodo.some((n) => n.date === f.data.toISOString().slice(0, 10)))
+      .map((f) => ({ data: f.data.toISOString().slice(0, 10), nome: f.descricao, tipo: "alura" })),
+  ];
+
   return NextResponse.json({
     diasUteis,
-    feriados: feriadosNoPeriodo.length + feriadosAluraNoPeriodo.length,
-    feriados_detalhados: [
-      ...feriadosNoPeriodo.map((f) => ({ data: f.date, nome: f.name, tipo: "nacional" })),
-      ...feriadosAluraNoPeriodo.map((f) => ({
-        data: f.data.toISOString().slice(0, 10),
-        nome: f.descricao,
-        tipo: "alura",
-      })),
-    ],
+    feriados: feriadosDetalhados.length,
+    feriados_detalhados: feriadosDetalhados,
   });
 }
