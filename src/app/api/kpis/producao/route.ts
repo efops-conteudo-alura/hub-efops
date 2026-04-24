@@ -22,13 +22,17 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { month, cursos, artigos, carreiras, niveis, trilhas } = body;
+  const { month, costCenter, cursos, artigos, carreiras, niveis, trilhas } = body;
 
   if (!month || !/^\d{4}-\d{2}$/.test(month)) {
     return NextResponse.json({ error: "month deve estar no formato AAAA-MM" }, { status: 400 });
   }
 
-  const existing = await prisma.kpiProducao.findUnique({ where: { month } });
+  const cc: "ALURA" | "LATAM" = costCenter === "LATAM" ? "LATAM" : "ALURA";
+
+  const existing = await prisma.kpiProducao.findUnique({
+    where: { month_costCenter: { month, costCenter: cc } },
+  });
   if (existing) {
     return NextResponse.json({ error: "Já existe um registro para este mês" }, { status: 409 });
   }
@@ -36,6 +40,7 @@ export async function POST(request: NextRequest) {
   const record = await prisma.kpiProducao.create({
     data: {
       month,
+      costCenter: cc,
       cursos: parseInt(cursos) || 0,
       artigos: parseInt(artigos) || 0,
       carreiras: parseInt(carreiras) || 0,

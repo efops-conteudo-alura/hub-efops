@@ -13,6 +13,25 @@ interface SuporteTableProps {
   onChange: (data: KpiSuporte[]) => void;
 }
 
+export function buildSuporteTsv(data: KpiSuporte[]): string {
+  const sorted = [...data].sort((a, b) => a.month.localeCompare(b.month));
+  if (sorted.length === 0) return "";
+
+  const months = sorted.map((r) => fmtMonthShort(r.month));
+
+  const rows = [
+    "Suporte Educacional",                                                                    // título da seção
+    ["Entregas", ...months].join("\t"),                                                       // sub-cabeçalho + meses
+    ["Tópicos respondidos", ...sorted.map((r) => String(r.topicosRespondidos))].join("\t"),
+    ["SLA médio (h)", ...sorted.map((r) => fmtSla(r.slaMedio))].join("\t"),
+    ["Artigos criados", ...sorted.map((r) => String(r.artigosCriados))].join("\t"),
+    ["Artigos revisados", ...sorted.map((r) => String(r.artigosRevisados))].join("\t"),
+    ["Imersões", ...sorted.map((r) => String(r.imersoes))].join("\t"),
+  ];
+
+  return rows.join("\n");
+}
+
 function allMonthsOfYear(year: number): string[] {
   return Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
 }

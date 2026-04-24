@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { EdicaoFormDialog, type KpiEdicao } from "./edicao-form-dialog";
-import { fmtMonthShort, fmtMonthLong } from "./producao-table";
+import { fmtMonthShort } from "./producao-table";
 
 interface EdicaoTableProps {
   year: number;
@@ -32,17 +32,15 @@ export function buildEdicaoTsv(data: KpiEdicao[]): string {
   const sorted = [...data].sort((a, b) => a.month.localeCompare(b.month));
   if (sorted.length === 0) return "";
 
-  const months = sorted.map((r) => fmtMonthLong(r.month));
+  const months = sorted.map((r) => fmtMonthShort(r.month));
 
-  const kpiRows = [
-    ["Pós-produção", ...months].join("\t"),
+  const rows = [
+    "Pós-produção",                                                                         // título da seção
+    ["Entregas", ...months].join("\t"),                                                     // sub-cabeçalho + meses
     ["Entregas", ...sorted.map((r) => String(totalEntregas(r)))].join("\t"),
     ["Correções", ...sorted.map((r) => String(r.correcoes))].join("\t"),
     ["Score Edição", ...sorted.map((r) => String(calcScoreEdicao(r)))].join("\t"),
-  ];
-
-  const distRows = [
-    ["Distribuição de Entregas", ...months].join("\t"),
+    ["Distribuição de Entregas", ...months].join("\t"),                                     // sub-cabeçalho + meses (sem linha em branco)
     ["Entregas Conteúdo", ...sorted.map((r) => pct(r.entregasConteudo, totalEntregas(r)))].join("\t"),
     ["Entregas Start", ...sorted.map((r) => pct(r.entregasStart, totalEntregas(r)))].join("\t"),
     ["Entregas Latam", ...sorted.map((r) => pct(r.entregasLatam, totalEntregas(r)))].join("\t"),
@@ -50,7 +48,7 @@ export function buildEdicaoTsv(data: KpiEdicao[]): string {
     ["Outras (PM3, B2B, DHO…)", ...sorted.map((r) => pct(r.entregasOutras, totalEntregas(r)))].join("\t"),
   ];
 
-  return [...kpiRows, "", ...distRows].join("\n");
+  return rows.join("\n");
 }
 
 function allMonthsOfYear(year: number): string[] {

@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 export interface KpiProducao {
   id: string;
   month: string;
+  costCenter: "ALURA" | "LATAM";
   cursos: number;
   artigos: number;
   carreiras: number;
@@ -21,6 +22,7 @@ interface ProducaoFormDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Mês no formato YYYY-MM — pré-definido, não editável */
   month: string;
+  costCenter: "ALURA" | "LATAM";
   record?: KpiProducao | null;
   onSaved: (record: KpiProducao) => void;
 }
@@ -35,7 +37,7 @@ function fmtMonthLabel(month: string) {
 
 const EMPTY = { cursos: "0", artigos: "0", carreiras: "0", niveis: "0", trilhas: "0" };
 
-export function ProducaoFormDialog({ open, onOpenChange, month, record, onSaved }: ProducaoFormDialogProps) {
+export function ProducaoFormDialog({ open, onOpenChange, month, costCenter, record, onSaved }: ProducaoFormDialogProps) {
   const [values, setValues] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -66,6 +68,7 @@ export function ProducaoFormDialog({ open, onOpenChange, month, record, onSaved 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           month,
+          costCenter,
           cursos: parseInt(values.cursos) || 0,
           artigos: parseInt(values.artigos) || 0,
           carreiras: parseInt(values.carreiras) || 0,
@@ -98,7 +101,7 @@ export function ProducaoFormDialog({ open, onOpenChange, month, record, onSaved 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{record ? "Editar" : "Adicionar"} Publicação</DialogTitle>
+          <DialogTitle>{record ? "Editar" : "Adicionar"} Publicação · {costCenter === "LATAM" ? "Latam" : "Alura"}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-2">
           <p className="text-sm font-medium text-muted-foreground">{fmtMonthLabel(month)}</p>

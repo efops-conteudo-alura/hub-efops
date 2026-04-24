@@ -18,6 +18,7 @@ interface ProducaoTableProps {
   data: KpiProducao[];
   pesos: Pesos;
   isAdmin: boolean;
+  costCenter: "ALURA" | "LATAM";
   onChange: (data: KpiProducao[]) => void;
 }
 
@@ -37,19 +38,21 @@ export function fmtMonthLong(month: string) {
   return `${months[parseInt(m) - 1]}/${year}`;
 }
 
-export function buildProducaoTsv(data: KpiProducao[], pesos: Pesos): string {
+export function buildProducaoTsv(data: KpiProducao[], pesos: Pesos, label = "Publicação de Conteúdo"): string {
   const sorted = [...data].sort((a, b) => a.month.localeCompare(b.month));
   if (sorted.length === 0) return "";
 
   const scores = sorted.map((r) => calcScoreProducao(r, pesos));
+  const months = sorted.map((r) => fmtMonthShort(r.month));
 
   function mm3(idx: number): string {
     if (idx < 2) return "—";
     return String(Math.round((scores[idx - 2] + scores[idx - 1] + scores[idx]) / 3));
   }
 
-  const header = ["Publicação de Conteúdo", ...sorted.map((r) => fmtMonthLong(r.month))].join("\t");
   const rows = [
+    label,                                                                          // título da seção (sem meses)
+    ["Entregas", ...months].join("\t"),                                             // sub-cabeçalho + meses
     ["# Cursos", ...sorted.map((r) => String(r.cursos))].join("\t"),
     ["# Artigos", ...sorted.map((r) => String(r.artigos))].join("\t"),
     ["# Carreiras", ...sorted.map((r) => String(r.carreiras))].join("\t"),
@@ -59,7 +62,7 @@ export function buildProducaoTsv(data: KpiProducao[], pesos: Pesos): string {
     ["MM 3 meses", ...sorted.map((_, i) => mm3(i))].join("\t"),
   ];
 
-  return [header, ...rows].join("\n");
+  return rows.join("\n");
 }
 
 // Gera os 12 meses do ano no formato YYYY-MM
@@ -67,7 +70,7 @@ function allMonthsOfYear(year: number): string[] {
   return Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
 }
 
-export function ProducaoTable({ year, data, pesos, isAdmin, onChange }: ProducaoTableProps) {
+export function ProducaoTable({ year, data, pesos, isAdmin, costCenter, onChange }: ProducaoTableProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMonth, setDialogMonth] = useState("");
   const [editing, setEditing] = useState<KpiProducao | null>(null);
@@ -223,6 +226,7 @@ export function ProducaoTable({ year, data, pesos, isAdmin, onChange }: Producao
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         month={dialogMonth}
+        costCenter={costCenter}
         record={editing}
         onSaved={handleSaved}
       />

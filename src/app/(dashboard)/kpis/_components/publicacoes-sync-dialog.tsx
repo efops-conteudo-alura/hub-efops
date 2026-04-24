@@ -101,7 +101,7 @@ export function PublicacoesSyncDialog({ anos, producao, onSuccess }: Props) {
     setError(null);
     try {
       const month = buildMonth();
-      const existing = producao.find((r) => r.month === month);
+      const existing = producao.find((r) => r.month === month && r.costCenter === "ALURA");
 
       let res: Response;
       if (existing) {
@@ -116,6 +116,7 @@ export function PublicacoesSyncDialog({ anos, producao, onSuccess }: Props) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             month,
+            costCenter: "ALURA",
             cursos: preview.cursos,
             artigos: preview.artigos,
             carreiras: 0,

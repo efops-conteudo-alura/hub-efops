@@ -9,13 +9,13 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { ProducaoTable, buildProducaoTsv } from "./producao-table";
-import { EdicaoTable, buildEdicaoTsv } from "./edicao-table";
+import { ProducaoTable, fmtMonthShort, calcScoreProducao } from "./producao-table";
+import { EdicaoTable, totalEntregas, calcScoreEdicao } from "./edicao-table";
+import { SuporteTable } from "./suporte-table";
 import { PesosDialog } from "./pesos-dialog";
 import { KpisCharts } from "./kpis-charts";
 import { PublicacoesSyncDialog } from "./publicacoes-sync-dialog";
 import { GastosKpisTable } from "./gastos-kpis-table";
-import { SuporteTable } from "./suporte-table";
 import { LeadtimeTable } from "./leadtime-table";
 import type { KpiProducao } from "./producao-form-dialog";
 import type { KpiEdicao } from "./edicao-form-dialog";
@@ -77,9 +77,12 @@ export function KpisOverview({
   const [copied, setCopied] = useState(false);
   const [addingYear, setAddingYear] = useState(false);
 
-  // Filtra dados pelo ano seleccionado
   const yearStr = String(selectedYear);
-  const yearProducao = producao.filter((r) => r.month.startsWith(`${yearStr}-`));
+  // Producao é filtrada pelo ano E pelo costCenter ativo (LATAM → só LATAM; resto → só ALURA)
+  const yearProducao = producao.filter((r) => {
+    if (!r.month.startsWith(`${yearStr}-`)) return false;
+    return r.costCenter === (costCenter === "LATAM" ? "LATAM" : "ALURA");
+  });
   const yearEdicao = edicao.filter((r) => r.month.startsWith(`${yearStr}-`));
   const yearSuporte = suporte.filter((r) => r.month.startsWith(`${yearStr}-`));
 
@@ -104,10 +107,111 @@ export function KpisOverview({
   ];
 
   async function handleCopy() {
-    const producaoTsv = buildProducaoTsv(yearProducao, pesos);
-    const edicaoTsv = buildEdicaoTsv(yearEdicao);
-    const tsv = [producaoTsv, "", edicaoTsv].filter(Boolean).join("\n");
-    await navigator.clipboard.writeText(tsv);
+    const producaoLabel = costCenter === "LATAM"
+      ? "Publicação de Conteúdo · Latam"
+      : "Publicação de Conteúdo · Alura";
+
+    // Funções auxiliares locais
+    const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const pct = (p: number, t: number) => t === 0 ? "—" : `${((p / t) * 100).toFixed(1)}%`;
+    const fmtSla = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+    // Cada "seção" é um array de linhas; cada linha tem células + flags de formatação
+    type Row = { cells: string[]; bold?: boolean; monthHeader?: boolean };
+    const sections: Row[][] = [];
+
+    // ---- Publicação ----
+    const sortedProd = [...yearProducao].sort((a, b) => a.month.localeCompare(b.month));
+    if (sortedProd.length > 0) {
+      const scores = sortedProd.map((r) => calcScoreProducao(r, pesos));
+      const months = sortedProd.map((r) => fmtMonthShort(r.month));
+      const mm3 = (i: number) =>
+        i < 2 ? "—" : String(Math.round((scores[i - 2] + scores[i - 1] + scores[i]) / 3));
+      sections.push([
+        { cells: [producaoLabel],                           bold: true },
+        { cells: ["Entregas", ...months],                   bold: true, monthHeader: true },
+        { cells: ["# Cursos",    ...sortedProd.map((r) => String(r.cursos))] },
+        { cells: ["# Artigos",   ...sortedProd.map((r) => String(r.artigos))] },
+        { cells: ["# Carreiras", ...sortedProd.map((r) => String(r.carreiras))] },
+        { cells: ["# Níveis",    ...sortedProd.map((r) => String(r.niveis))] },
+        { cells: ["# Trilhas",   ...sortedProd.map((r) => String(r.trilhas))] },
+        { cells: ["Score do mês", ...scores.map(String)] },
+        { cells: ["MM 3 meses",   ...sortedProd.map((_, i) => mm3(i))] },
+      ]);
+    }
+
+    // ---- Pós-produção (apenas Alura/Ambos) ----
+    if (costCenter !== "LATAM") {
+      const sortedEd = [...yearEdicao].sort((a, b) => a.month.localeCompare(b.month));
+      if (sortedEd.length > 0) {
+        const months = sortedEd.map((r) => fmtMonthShort(r.month));
+        sections.push([
+          { cells: ["Pós-produção"],                          bold: true },
+          { cells: ["Entregas", ...months],                   bold: true, monthHeader: true },
+          { cells: ["Entregas",    ...sortedEd.map((r) => String(totalEntregas(r)))] },
+          { cells: ["Correções",   ...sortedEd.map((r) => String(r.correcoes))] },
+          { cells: ["Score Edição",...sortedEd.map((r) => String(calcScoreEdicao(r)))] },
+          { cells: ["Distribuição de Entregas", ...months],   bold: true, monthHeader: true },
+          { cells: ["Entregas Conteúdo",  ...sortedEd.map((r) => pct(r.entregasConteudo,  totalEntregas(r)))] },
+          { cells: ["Entregas Start",     ...sortedEd.map((r) => pct(r.entregasStart,     totalEntregas(r)))] },
+          { cells: ["Entregas Latam",     ...sortedEd.map((r) => pct(r.entregasLatam,     totalEntregas(r)))] },
+          { cells: ["Entregas Marketing", ...sortedEd.map((r) => pct(r.entregasMarketing, totalEntregas(r)))] },
+          { cells: ["Outras (PM3, B2B, DHO…)", ...sortedEd.map((r) => pct(r.entregasOutras, totalEntregas(r)))] },
+        ]);
+      }
+
+      // ---- Suporte Educacional ----
+      const sortedSup = [...yearSuporte].sort((a, b) => a.month.localeCompare(b.month));
+      if (sortedSup.length > 0) {
+        const months = sortedSup.map((r) => fmtMonthShort(r.month));
+        sections.push([
+          { cells: ["Suporte Educacional"],   bold: true },
+          { cells: ["Entregas", ...months],   bold: true, monthHeader: true },
+          { cells: ["Tópicos respondidos", ...sortedSup.map((r) => String(r.topicosRespondidos))] },
+          { cells: ["SLA médio (h)",        ...sortedSup.map((r) => fmtSla(r.slaMedio))] },
+          { cells: ["Artigos criados",      ...sortedSup.map((r) => String(r.artigosCriados))] },
+          { cells: ["Artigos revisados",    ...sortedSup.map((r) => String(r.artigosRevisados))] },
+          { cells: ["Imersões",             ...sortedSup.map((r) => String(r.imersoes))] },
+        ]);
+      }
+    }
+
+    if (sections.length === 0) return;
+
+    // TSV (fallback texto puro)
+    const tsv = sections
+      .map((rows) => rows.map((r) => r.cells.join("\t")).join("\n"))
+      .join("\n\n");
+
+    // HTML — bold nos cabeçalhos + mso-number-format:'@' nas células de mês
+    // impede o Google Sheets de converter "jan/26" em número de série de data
+    const htmlRows = sections.flatMap((rows, si) => {
+      const spacer = si > 0 ? ["<tr><td></td></tr>"] : [];
+      const dataRows = rows.map((row) => {
+        const tds = row.cells.map((cell, ci) => {
+          const isMonthCell = row.monthHeader && ci > 0;
+          const style = isMonthCell ? " style=\"mso-number-format:'@'\"" : "";
+          const inner = row.bold ? `<b>${esc(cell)}</b>` : esc(cell);
+          return `<td${style}>${inner}</td>`;
+        });
+        return `<tr>${tds.join("")}</tr>`;
+      });
+      return [...spacer, ...dataRows];
+    });
+    const html = `<table>${htmlRows.join("")}</table>`;
+
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/plain": new Blob([tsv], { type: "text/plain" }),
+          "text/html":  new Blob([html], { type: "text/html" }),
+        }),
+      ]);
+    } catch {
+      // Fallback para browsers que não suportam ClipboardItem
+      await navigator.clipboard.writeText(tsv);
+    }
+
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -268,9 +372,14 @@ export function KpisOverview({
                 data={yearProducao}
                 pesos={pesos}
                 isAdmin={isAdmin}
-                onChange={(updated) =>
-                  setProducao([...producao.filter((r) => !r.month.startsWith(`${yearStr}-`)), ...updated])
-                }
+                costCenter={costCenter ?? "ALURA"}
+                onChange={(updated) => {
+                  const cc = costCenter === "LATAM" ? "LATAM" : "ALURA";
+                  setProducao([
+                    ...producao.filter((r) => !(r.month.startsWith(`${yearStr}-`) && r.costCenter === cc)),
+                    ...updated,
+                  ]);
+                }}
               />
             </div>
 
@@ -284,58 +393,62 @@ export function KpisOverview({
             </div>
           </div>
 
-          {/* SEÇÃO: Pós-produção */}
-          <div className="space-y-6">
-            <div className="border-b border-border pb-3">
-              <h2 className="text-2xl font-[var(--font-encode-sans)] font-light">Pós-produção</h2>
-            </div>
+          {/* SEÇÃO: Pós-produção — apenas Alura/Ambos */}
+          {costCenter !== "LATAM" && (
+            <div className="space-y-6">
+              <div className="border-b border-border pb-3">
+                <h2 className="text-2xl font-[var(--font-encode-sans)] font-light">Pós-produção</h2>
+              </div>
 
-            <EdicaoTable
-              year={selectedYear}
-              data={yearEdicao}
-              isAdmin={isAdmin}
-              onChange={(updated) =>
-                setEdicao([...edicao.filter((r) => !r.month.startsWith(`${yearStr}-`)), ...updated])
-              }
-            />
-
-            <div className="space-y-2">
-              <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Gastos</p>
-              <GastosKpisTable
+              <EdicaoTable
                 year={selectedYear}
-                label={gastoLabel("Editores externos")}
-                data={filterGastos(gastosEditores).filter((e) => e.month.startsWith(`${yearStr}-`))}
-              />
-            </div>
-          </div>
-
-          {/* SEÇÃO: Suporte Educacional */}
-          <div className="space-y-6">
-            <div className="border-b border-border pb-3">
-              <h2 className="text-2xl font-[var(--font-encode-sans)] font-light">Suporte Educacional</h2>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Entregas</p>
-              <SuporteTable
-                year={selectedYear}
-                data={yearSuporte}
+                data={yearEdicao}
                 isAdmin={isAdmin}
                 onChange={(updated) =>
-                  setSuporte([...suporte.filter((r) => !r.month.startsWith(`${yearStr}-`)), ...updated])
+                  setEdicao([...edicao.filter((r) => !r.month.startsWith(`${yearStr}-`)), ...updated])
                 }
               />
-            </div>
 
-            <div className="space-y-2">
-              <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Gastos</p>
-              <GastosKpisTable
-                year={selectedYear}
-                label={gastoLabel("Suporte educacional")}
-                data={filterGastos(gastosSuporte).filter((e) => e.month.startsWith(`${yearStr}-`))}
-              />
+              <div className="space-y-2">
+                <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Gastos</p>
+                <GastosKpisTable
+                  year={selectedYear}
+                  label={gastoLabel("Editores externos")}
+                  data={filterGastos(gastosEditores).filter((e) => e.month.startsWith(`${yearStr}-`))}
+                />
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* SEÇÃO: Suporte Educacional — apenas Alura/Ambos */}
+          {costCenter !== "LATAM" && (
+            <div className="space-y-6">
+              <div className="border-b border-border pb-3">
+                <h2 className="text-2xl font-[var(--font-encode-sans)] font-light">Suporte Educacional</h2>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Entregas</p>
+                <SuporteTable
+                  year={selectedYear}
+                  data={yearSuporte}
+                  isAdmin={isAdmin}
+                  onChange={(updated) =>
+                    setSuporte([...suporte.filter((r) => !r.month.startsWith(`${yearStr}-`)), ...updated])
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Gastos</p>
+                <GastosKpisTable
+                  year={selectedYear}
+                  label={gastoLabel("Suporte educacional")}
+                  data={filterGastos(gastosSuporte).filter((e) => e.month.startsWith(`${yearStr}-`))}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
