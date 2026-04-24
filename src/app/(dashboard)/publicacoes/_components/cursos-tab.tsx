@@ -125,28 +125,28 @@ export function CursosTab({ isAdmin }: { isAdmin: boolean }) {
   // Sincroniza estado → URL
   useEffect(() => {
     const params = new URLSearchParams(searchParamsRef.current.toString());
-    monthFrom ? params.set("c_mf", monthFrom) : params.delete("c_mf");
-    monthTo ? params.set("c_mt", monthTo) : params.delete("c_mt");
-    showEmBreve ? params.delete("c_eb") : params.set("c_eb", "0");
-    showCheckpoint ? params.delete("c_cp") : params.set("c_cp", "0");
+    if (monthFrom) params.set("c_mf", monthFrom); else params.delete("c_mf");
+    if (monthTo) params.set("c_mt", monthTo); else params.delete("c_mt");
+    if (showEmBreve) params.delete("c_eb"); else params.set("c_eb", "0");
+    if (showCheckpoint) params.delete("c_cp"); else params.set("c_cp", "0");
     params.delete("c_sp"); // limpa param legado
-    sortField !== "dataPublicacao" ? params.set("c_sf", sortField) : params.delete("c_sf");
-    sortDir !== "desc" ? params.set("c_sd", sortDir) : params.delete("c_sd");
+    if (sortField !== "dataPublicacao") params.set("c_sf", sortField); else params.delete("c_sf");
+    if (sortDir !== "desc") params.set("c_sd", sortDir); else params.delete("c_sd");
 
     const includes = Object.entries(catalogFilters).filter(([, v]) => v === "include").map(([k]) => k);
     const excludes = Object.entries(catalogFilters).filter(([, v]) => v === "exclude").map(([k]) => k);
-    includes.length > 0 ? params.set("c_inc", includes.join(",")) : params.delete("c_inc");
-    excludes.length > 0 ? params.set("c_exc", excludes.join(",")) : params.delete("c_exc");
+    if (includes.length > 0) params.set("c_inc", includes.join(",")); else params.delete("c_inc");
+    if (excludes.length > 0) params.set("c_exc", excludes.join(",")); else params.delete("c_exc");
     params.delete("c_cats"); // limpa param legado
 
     const sincInc = Object.entries(subcatFilters).filter(([, v]) => v === "include").map(([k]) => k);
     const sincExc = Object.entries(subcatFilters).filter(([, v]) => v === "exclude").map(([k]) => k);
-    sincInc.length > 0 ? params.set("s_inc", sincInc.join("|")) : params.delete("s_inc");
-    sincExc.length > 0 ? params.set("s_exc", sincExc.join("|")) : params.delete("s_exc");
-    filterSemSubcat ? params.set("s_none", filterSemSubcat) : params.delete("s_none");
+    if (sincInc.length > 0) params.set("s_inc", sincInc.join("|")); else params.delete("s_inc");
+    if (sincExc.length > 0) params.set("s_exc", sincExc.join("|")); else params.delete("s_exc");
+    if (filterSemSubcat) params.set("s_none", filterSemSubcat); else params.delete("s_none");
 
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [monthFrom, monthTo, showEmBreve, showCheckpoint, catalogFilters, subcatFilters, filterSemSubcat, sortField, sortDir, router, pathname]);
 
   function toggleCatalogFilter(cat: string, value: CatalogFilterValue) {

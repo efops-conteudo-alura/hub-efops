@@ -138,7 +138,7 @@ export async function POST() {
           .map((i) => i.nome ?? i.name ?? "")
           .filter(Boolean);
         const cargaHoraria =
-          apiData.carga_horaria != null ? Math.round(Number(apiData.carga_horaria)) || null : null;
+          apiData.carga_horaria !== null && apiData.carga_horaria !== undefined ? Math.round(Number(apiData.carga_horaria)) || null : null;
 
         await prisma.aluraCourse.upsert({
           where: { slug },

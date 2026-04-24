@@ -47,11 +47,11 @@ export function TrilhasTab({ isAdmin }: { isAdmin: boolean }) {
   // Sincroniza estado → URL (merge com params das outras abas)
   useEffect(() => {
     const params = new URLSearchParams(searchParamsRef.current.toString());
-    search ? params.set("t_q", search) : params.delete("t_q");
-    sortField !== "nome" ? params.set("t_sf", sortField) : params.delete("t_sf");
-    sortDir !== "asc" ? params.set("t_sd", sortDir) : params.delete("t_sd");
+    if (search) params.set("t_q", search); else params.delete("t_q");
+    if (sortField !== "nome") params.set("t_sf", sortField); else params.delete("t_sf");
+    if (sortDir !== "asc") params.set("t_sd", sortDir); else params.delete("t_sd");
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [search, sortField, sortDir, router, pathname]);
 
   function handleSort(field: SortField) {
@@ -128,14 +128,14 @@ export function TrilhasTab({ isAdmin }: { isAdmin: boolean }) {
       "<table>",
       "<tr><th>Nome</th><th>Categoria</th><th>Cursos</th><th>Carga Horária</th></tr>",
       ...sorted.map((t) =>
-        `<tr><td><a href="https://www.alura.com.br/formacao-${t.slug}">${esc(t.nome)}</a></td><td>${esc(t.categoria ?? "")}</td><td>${t.numCursos ?? ""}</td><td>${t.cargaHoraria != null ? `${t.cargaHoraria}h` : ""}</td></tr>`
+        `<tr><td><a href="https://www.alura.com.br/formacao-${t.slug}">${esc(t.nome)}</a></td><td>${esc(t.categoria ?? "")}</td><td>${t.numCursos ?? ""}</td><td>${t.cargaHoraria !== null ? `${t.cargaHoraria}h` : ""}</td></tr>`
       ),
       "</table>",
     ].join("\n");
     const plain = [
       ["Nome", "Categoria", "Cursos", "Carga Horária", "Link"].join("\t"),
       ...sorted.map((t) =>
-        [t.nome, t.categoria ?? "", t.numCursos ?? "", t.cargaHoraria != null ? `${t.cargaHoraria}h` : "", `https://www.alura.com.br/formacao-${t.slug}`].join("\t")
+        [t.nome, t.categoria ?? "", t.numCursos ?? "", t.cargaHoraria !== null ? `${t.cargaHoraria}h` : "", `https://www.alura.com.br/formacao-${t.slug}`].join("\t")
       ),
     ].join("\n");
     try {
@@ -263,7 +263,7 @@ export function TrilhasTab({ isAdmin }: { isAdmin: boolean }) {
                     {trilha.numCursos ?? "—"}
                   </td>
                   <td className="py-2.5 pl-3 text-right text-muted-foreground tabular-nums">
-                    {trilha.cargaHoraria != null ? `${trilha.cargaHoraria}h` : "—"}
+                    {trilha.cargaHoraria !== null ? `${trilha.cargaHoraria}h` : "—"}
                   </td>
                 </tr>
               ))}

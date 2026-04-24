@@ -90,13 +90,13 @@ export function ArtigosTab({ isAdmin }: { isAdmin: boolean }) {
   // Sincroniza estado → URL (merge com params das outras abas)
   useEffect(() => {
     const params = new URLSearchParams(searchParamsRef.current.toString());
-    monthFrom ? params.set("a_mf", monthFrom) : params.delete("a_mf");
-    monthTo ? params.set("a_mt", monthTo) : params.delete("a_mt");
-    selectedCat ? params.set("a_cat", selectedCat) : params.delete("a_cat");
-    sortField !== "dataPublicacao" ? params.set("a_sf", sortField) : params.delete("a_sf");
-    sortDir !== "desc" ? params.set("a_sd", sortDir) : params.delete("a_sd");
+    if (monthFrom) params.set("a_mf", monthFrom); else params.delete("a_mf");
+    if (monthTo) params.set("a_mt", monthTo); else params.delete("a_mt");
+    if (selectedCat) params.set("a_cat", selectedCat); else params.delete("a_cat");
+    if (sortField !== "dataPublicacao") params.set("a_sf", sortField); else params.delete("a_sf");
+    if (sortDir !== "desc") params.set("a_sd", sortDir); else params.delete("a_sd");
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [monthFrom, monthTo, selectedCat, sortField, sortDir, router, pathname]);
 
   function handleSort(field: SortField) {

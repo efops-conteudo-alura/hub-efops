@@ -82,14 +82,14 @@ export async function POST() {
           slug,
           nome: data.title ?? slug,
           categoria: data.categoryName ?? null,
-          numCursos: data.totalPublishedCourses != null ? Number(data.totalPublishedCourses) : null,
-          cargaHoraria: data.estimatedTimeToFinish != null ? Math.round(Number(data.estimatedTimeToFinish)) : null,
+          numCursos: data.totalPublishedCourses !== null && data.totalPublishedCourses !== undefined ? Number(data.totalPublishedCourses) : null,
+          cargaHoraria: data.estimatedTimeToFinish !== null && data.estimatedTimeToFinish !== undefined ? Math.round(Number(data.estimatedTimeToFinish)) : null,
         },
         update: {
           nome: data.title ?? slug,
           categoria: data.categoryName ?? null,
-          numCursos: data.totalPublishedCourses != null ? Number(data.totalPublishedCourses) : null,
-          cargaHoraria: data.estimatedTimeToFinish != null ? Math.round(Number(data.estimatedTimeToFinish)) : null,
+          numCursos: data.totalPublishedCourses !== null && data.totalPublishedCourses !== undefined ? Number(data.totalPublishedCourses) : null,
+          cargaHoraria: data.estimatedTimeToFinish !== null && data.estimatedTimeToFinish !== undefined ? Math.round(Number(data.estimatedTimeToFinish)) : null,
         },
       });
       upserted++;

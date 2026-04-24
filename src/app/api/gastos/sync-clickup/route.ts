@@ -46,7 +46,7 @@ interface ClickUpTask {
 
 // Busca o nome da opção selecionada num campo dropdown
 function getDropdownOptionName(field: ClickUpCustomField | undefined): string | null {
-  if (!field || field.value == null) return null;
+  if (!field || field.value === null || field.value === undefined) return null;
   const options = field.type_config?.options ?? [];
   const selected = options.find(
     (o) => o.orderindex === Number(field.value) || String(o.id) === String(field.value)

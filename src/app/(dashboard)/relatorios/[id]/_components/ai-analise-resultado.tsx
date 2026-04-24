@@ -104,7 +104,7 @@ export function AiAnaliseResultado({ resultado, reportId, outputFormat, onBack }
     const geradoEm = new Date(resultado.createdAt).toLocaleDateString("pt-BR", {
       day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
     });
-    const totalInfo = resultado.totalRows != null ? ` · ${resultado.totalRows} respostas` : "";
+    const totalInfo = resultado.totalRows !== null ? ` · ${resultado.totalRows} respostas` : "";
 
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
@@ -156,7 +156,7 @@ export function AiAnaliseResultado({ resultado, reportId, outputFormat, onBack }
                 day: "2-digit", month: "short", year: "numeric",
                 hour: "2-digit", minute: "2-digit"
               })}
-              {resultado.totalRows != null && ` · ${resultado.totalRows} respostas`}
+              {resultado.totalRows !== null && ` · ${resultado.totalRows} respostas`}
             </p>
           </div>
         </div>

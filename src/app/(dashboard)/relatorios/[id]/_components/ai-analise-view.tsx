@@ -124,7 +124,7 @@ export function AiAnaliseView({ report, resultados: initialResultados }: AiAnali
                 <p className="text-sm font-medium truncate">{formatPeriod(r.params)}</p>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span>{new Date(r.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
-                  {r.totalRows != null && <span>{r.totalRows} respostas</span>}
+                  {r.totalRows !== null && <span>{r.totalRows} respostas</span>}
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">

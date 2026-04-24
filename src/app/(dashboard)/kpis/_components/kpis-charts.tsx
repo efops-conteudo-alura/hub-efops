@@ -44,7 +44,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
     <div className="rounded-md border bg-popover shadow-md px-3 py-2 text-xs space-y-0.5">
       <p className="font-semibold text-foreground mb-1">{label}</p>
       {payload.map((entry) =>
-        entry.value != null ? (
+        entry.value !== null ? (
           <p key={entry.name} style={{ color: entry.color }}>
             {entry.name}: <span className="font-medium">{entry.value}</span>
           </p>

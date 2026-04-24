@@ -20,7 +20,7 @@ interface ClickUpTask {
 }
 
 function extractFieldValue(field: ClickUpCustomField): string {
-  if (field.value == null || field.value === "") return "";
+  if (field.value === null || field.value === undefined || field.value === "") return "";
   if (typeof field.value === "string") return field.value;
   if (typeof field.value === "number") return String(field.value);
   if (Array.isArray(field.value)) {
