@@ -30,7 +30,9 @@
       "mcp__figma__get_screenshot",
       "Bash(grep -n \"font-heading\\\\|--font-heading\" /c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-producao-conteudo/tailwind.config* /c/Users/vasco/OneDrive/Documentos/projetos-alura/projeto-hub-producao-conteudo/src/app/globals.css)",
       "mcp__vercel__list_teams",
-      "mcp__vercel__list_projects"
+      "mcp__vercel__list_projects",
+      "mcp__vercel__get_deployment_build_logs",
+      "mcp__figma__get_design_context"
     ],
     "defaultMode": "acceptEdits"
   },

@@ -1,6 +1,7 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+---
+name: project-context
+description: Contexto específico do Hub EfOps. Carregar sempre que trabalhar neste projeto.
+---
 
 # Hub de Eficiência Operacional — Alura (EfOps)
 
@@ -25,8 +26,6 @@ Hub interno do departamento de conteúdo da Alura. Centraliza KPIs, publicaçõe
 | Recharts | 3.x | Gráficos |
 | Zod | 4.x | Validação |
 | react-hook-form | 7.x | Formulários |
-| mammoth | 1.x | Import DOCX |
-| xlsx | 0.18.x | Import/export Excel |
 
 ---
 
@@ -39,7 +38,6 @@ npm run lint             # ESLint
 npm run lint:fix         # ESLint com auto-fix
 npm run typecheck        # tsc --noEmit
 npx prisma migrate dev   # aplica migration + gera client
-npx prisma studio        # UI visual do banco
 npx tsx scripts/create-admin.ts  # cria admin inicial
 ```
 
@@ -125,7 +123,7 @@ scripts/                # utilitários ad-hoc (excluídos do ESLint)
 
 ## Autenticação (NextAuth v5)
 
-**Atenção: este projeto usa NextAuth v5 (beta), que tem API diferente da v4.**
+**Atenção: NextAuth v5 (beta) — API diferente da v4. Não usar `getServerSession`.**
 
 ```ts
 import { auth } from "@/lib/auth"
@@ -139,11 +137,9 @@ if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Forbidden"
 - `403` — autenticado sem permissão (role insuficiente)
 - Roles por app via `AppRole { userId, app, role }` — único por `(userId, app)`
 - App ID deste hub: `"hub-efops"`. Roles: `ADMIN`, `USER`
-- Login via credentials (email + senha bcrypt)
 - Usuário sem AppRole para `"hub-efops"` não consegue logar
 
-Rotas públicas (não protegidas):
-`/api/auth`, `/api/setup`, `/api/relatorios/form`, `/api/linte/cadastro`, `/login`, `/setup`, `/relatorios/responder`, `/primeiro-acesso`
+Rotas públicas: `/api/auth`, `/api/setup`, `/api/relatorios/form`, `/api/linte/cadastro`, `/login`, `/setup`, `/relatorios/responder`, `/primeiro-acesso`
 
 ---
 
@@ -156,7 +152,7 @@ import { prisma } from "@/lib/db"  // export é `prisma`, não `db`
 - PostgreSQL via Neon — só este projeto roda `npx prisma migrate`
 - `npm run build` inclui `prisma generate` automaticamente
 - Dados sensíveis criptografados com `src/lib/crypto.ts` (AES-256-GCM)
-- `loginPass` de `Subscription` é sempre armazenado criptografado
+- `loginPass` de `Subscription` sempre armazenado criptografado
 - `SystemConfig` armazena configs globais (algumas criptografadas, ex: `CAELUM_BI_URL`)
 
 ---
@@ -176,9 +172,9 @@ export async function POST(req: Request) {
 }
 ```
 
-- Rotas admin também checam `session.user.role !== "ADMIN"` → 403
+- Rotas admin: checar também `session.user.role !== "ADMIN"` → 403
 - Server Components em `page.tsx` buscam dados via Prisma direto (sem `fetch()` interno)
-- Sync de APIs externas: POST para `/api/<modulo>/sync`, retorna `{ created, updated, total }`
+- Sync de APIs externas: POST em `/api/<modulo>/sync`, retorna `{ created, updated, total }`
 
 ---
 
@@ -192,26 +188,22 @@ Três fontes via `next/font/google`:
 | `--font-roboto-flex` | Roboto Flex | Corpo, labels, dropdowns, botões |
 | `--font-jetbrains-mono` | JetBrains Mono | Abas, tags, datas, código, números |
 
-Classes semânticas (definidas em `globals.css`, usar sempre — não definir font-family inline):
-`hub-page-title`, `hub-card-title`, `hub-chart-title`, `hub-table-header`, `hub-tab-label`, `hub-tag`, `hub-number`
+Classes semânticas (`globals.css`): `hub-page-title`, `hub-card-title`, `hub-chart-title`, `hub-table-header`, `hub-tab-label`, `hub-tag`, `hub-number`
 
 Paleta dark: fundo `#111213`, card `#0c0d0e`, sidebar mais escuro que card, primário `#052fd3` (azul Alura).
 **Cards são mais escuros que o fundo** — inverso do padrão típico.
-Azul (`--primary`) apenas em: botões de criação, indicador de aba ativa, badges de status.
+Azul apenas em: botões de criação, indicador de aba ativa, badges de status.
 
 ---
 
 ## ESLint (flat config, ESLint 9)
 
-`eslint.config.mjs` — regras ativas:
-
-- `eqeqeq: always` → sempre `===` / `!==` (nunca `==` ou `!=`)
+- `eqeqeq: always` → sempre `===` / `!==`
 - `@typescript-eslint/no-explicit-any` → error
 - `@typescript-eslint/no-unused-vars` → warn (prefixo `_` para ignorar)
 - `react-hooks/rules-of-hooks` → error
 - `react-hooks/exhaustive-deps` → warn
 - `no-console` → warn (permite `console.warn` e `console.error`)
-- `no-unreachable` → error
 
 Ignorados: `.next/`, `node_modules/`, `prisma/migrations/`, `scripts/`
 
@@ -225,22 +217,20 @@ Este hub é o ponto central de gestão de usuários. Todos os apps compartilham 
 |---|---|
 | `hub-efops` | este projeto |
 | `hub-producao-conteudo` | hub de produção de conteúdo |
-| `select-activity` | seletor de atividades (embutido no hub-producao) |
+| `select-activity` | seletor de atividades |
 
-- `AllowedEmail` — whitelist global de emails que podem se cadastrar
+- `AllowedEmail` — whitelist global de emails que podem se cadastrar em qualquer app
 - `AppRole` — define acesso por app: sem AppRole = sem acesso
 - Só este hub roda `npx prisma migrate`. Os outros usam apenas `npx prisma generate`
-- Registro neste hub cria AppRoles para os três apps acima
 
 ---
 
 ## Integrações Externas
 
-- **Claude API**: streaming via `anthropic.messages.stream()`. Fallback: usar `messages.create()` — nunca `stream()` de novo após chunks já enviados
-- **ClickUp**: sync de gastos e imobilização por lista configurada em `CLICKUP_LIST_ID`
+- **Claude API**: streaming via `anthropic.messages.stream()`. Fallback: usar `messages.create()` — nunca `stream()` de novo após chunks já enviados ao cliente
+- **ClickUp**: sync de gastos e imobilização via API REST
 - **Caelum BI**: sync de cursos via query SQL salva criptografada em `SystemConfig` (`CAELUM_BI_URL`)
 - **Gamma**: geração de apresentações a partir de análises de relatórios
-- **Linte**: cadastro de instrutores via webhook público
 
 ---
 
@@ -252,8 +242,8 @@ Este hub é o ponto central de gestão de usuários. Todos os apps compartilham 
 - Não importar `{ db }` de `@/lib/db` — o export é `{ prisma }`
 - Não importar `@prisma/client` diretamente no código da aplicação
 - Não rodar `npx prisma migrate` em outros projetos do ecossistema
-- Não usar `getServerSession(authOptions)` — é padrão NextAuth v4. Usar `auth()` de `@/lib/auth`
-- Não retornar 401 quando autenticado sem permissão — usar 403
+- Não usar `getServerSession(authOptions)` — padrão NextAuth v4. Usar `auth()` de `@/lib/auth`
+- Não retornar 401 para autenticado sem permissão — usar 403
 - Não passar body do request direto ao Prisma sem validação Zod
 - Não expor `ENCRYPTION_KEY`, senhas ou tokens em logs ou respostas de API
 - Não usar `anthropic.messages.stream()` como fallback quando chunks já foram enviados ao cliente
