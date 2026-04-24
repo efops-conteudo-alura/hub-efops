@@ -14,7 +14,7 @@ export async function GET(
   const subscription = await prisma.subscription.findUnique({ where: { id } });
   if (!subscription) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const { loginPass: _, ...safeSubscription } = subscription;
   return NextResponse.json(safeSubscription);
 }
@@ -79,7 +79,7 @@ export async function PUT(
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const { loginPass: __, ...safeUpdated } = subscription;
   return NextResponse.json(safeUpdated);
 }

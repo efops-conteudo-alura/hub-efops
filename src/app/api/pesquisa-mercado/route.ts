@@ -76,7 +76,7 @@ Priorize dados atuais (2025-2026). Foque em plataformas relevantes para o públi
           const anthropicStream = anthropic.messages.stream({
             model: "claude-sonnet-4-6",
             max_tokens: 8000,
-            tools: [{ type: "web_search_20250305" as "web_search_20250305", name: "web_search" }],
+            tools: [{ type: "web_search_20250305" as const, name: "web_search" }],
             messages: [{ role: "user", content: prompt }],
           });
 
