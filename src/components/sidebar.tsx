@@ -181,7 +181,7 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
     user.name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || "U";
 
   return (
-    <aside className="flex flex-col w-[220px] shrink-0 border-r border-sidebar-border bg-sidebar h-screen sticky top-0">
+    <aside className="flex flex-col w-[256px] shrink-0 border-r border-sidebar-border bg-sidebar h-screen sticky top-0">
       {/* Logo */}
       <div className="flex flex-col items-start px-5 pt-7 pb-6 shrink-0">
         <Image
@@ -198,19 +198,25 @@ export function Sidebar({ user, isAdmin }: SidebarProps) {
       </div>
 
       {/* Navegação principal */}
-      <nav className="flex-1 flex flex-col px-3 gap-0.5 overflow-y-auto pb-4">
-        <NavItems items={mainNavItems} pathname={pathname} />
+      <nav className="flex-1 flex flex-col px-3 overflow-hidden">
+        {/* Itens principais — crescem e scrollam se necessário */}
+        <div className="flex flex-col gap-0.5 flex-1 overflow-y-auto pb-2">
+          <NavItems items={mainNavItems} pathname={pathname} />
+        </div>
 
-        {/* Separador antes dos itens de baixo */}
+        {/* Itens admin — ancorados no fundo, acima do perfil */}
         {(bottomNavItems.length > 0 || adminItems.length > 0) && (
-          <div className="my-2 border-t-2 border-border" />
+          <>
+            <div className="border-t-2 border-muted-foreground/30 my-2" />
+            <div className="flex flex-col gap-0.5 pb-2">
+              <NavItems items={[...bottomNavItems, ...adminItems]} pathname={pathname} />
+            </div>
+          </>
         )}
-
-        <NavItems items={[...bottomNavItems, ...adminItems]} pathname={pathname} />
       </nav>
 
       {/* Usuário + Logout */}
-      <div className="shrink-0 border-t border-sidebar-border px-3 py-3 flex flex-col gap-1">
+      <div className="shrink-0 border-t border-muted-foreground/30 px-3 py-3 flex flex-col gap-1">
         <button
           onClick={() => setProfileOpen(true)}
           className="flex items-center gap-2 w-full px-3 py-3 rounded-[8px] hover:bg-muted/50 transition-colors cursor-pointer"
