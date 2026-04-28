@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, AlertTriangle, Plus, Pencil, Trash2, RotateCcw } from "lucide-react";
+import { RefreshCw, AlertTriangle, Plus, Pencil, Trash2, RotateCcw, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { LeadtimeEditDialog } from "./leadtime-edit-dialog";
 import type { KpiLeadtime } from "./leadtime-form-dialog";
 
@@ -37,6 +37,8 @@ interface UnifiedRow {
   rawManual?: KpiLeadtime;
 }
 
+type SortCol = "nome" | "dataInicio" | "dataGravInicio" | "dataGravFim" | "dataConclusao" | "leadtimeDias" | "leadtimeGravacao";
+
 interface LeadtimeClickupPanelProps {
   costCenter: "ALURA" | "LATAM" | null;
   year: number;
@@ -45,9 +47,15 @@ interface LeadtimeClickupPanelProps {
   isAdmin: boolean;
 }
 
+// Arredondamento "half down": 13.3→13, 13.8→14, 13.5→13. Zero (mesmo dia) vira 1.
+function roundDias(n: number): number {
+  const rounded = Math.ceil(n - 0.5);
+  return rounded < 1 ? 1 : rounded;
+}
+
 function diffDiasFromStr(d1: string | null, d2: string | null): number | null {
   if (!d1 || !d2) return null;
-  const diff = Math.round((new Date(d2).getTime() - new Date(d1).getTime()) / 86_400_000);
+  const diff = (new Date(d2).getTime() - new Date(d1).getTime()) / 86_400_000;
   return diff < 0 ? null : diff;
 }
 
@@ -63,7 +71,7 @@ function fmtDate(iso: string | null): string {
 
 function fmtDias(n: number | null): string {
   if (n === null || n === undefined) return "—";
-  return n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+  return String(roundDias(n));
 }
 
 function median(values: number[]): number | null {
@@ -104,6 +112,23 @@ function manualToUnified(r: KpiLeadtime): UnifiedRow {
   };
 }
 
+function sortRows(rows: UnifiedRow[], col: SortCol, dir: "asc" | "desc"): UnifiedRow[] {
+  return [...rows].sort((a, b) => {
+    const av = a[col];
+    const bv = b[col];
+    if (av === null && bv === null) return 0;
+    if (av === null) return 1;
+    if (bv === null) return -1;
+    let cmp = 0;
+    if (typeof av === "number" && typeof bv === "number") {
+      cmp = av - bv;
+    } else {
+      cmp = String(av).localeCompare(String(bv), "pt-BR");
+    }
+    return dir === "asc" ? cmp : -cmp;
+  });
+}
+
 export function LeadtimeClickupPanel({
   costCenter,
   year,
@@ -119,14 +144,29 @@ export function LeadtimeClickupPanel({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingClickup, setEditingClickup] = useState<LeadtimeTaskRow | null>(null);
   const [editingManual, setEditingManual] = useState<KpiLeadtime | null>(null);
+  const [onlyWithLeadtime, setOnlyWithLeadtime] = useState(false);
+  const [sortCol, setSortCol] = useState<SortCol | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const dialogCostCenter = costCenter ?? "ALURA";
 
   const filtered = useMemo<UnifiedRow[]>(() => {
     const all = [...tasks.map(clickupToUnified), ...manualTasks.map(manualToUnified)];
+    let rows = all.filter((r) => {
+      if (costCenter !== null && r.costCenter !== costCenter) return false;
+      const conclusaoYear = getYear(r.dataConclusao);
+      if (conclusaoYear !== null && conclusaoYear !== year) return false;
+      return true;
+    });
+    if (onlyWithLeadtime) rows = rows.filter((r) => r.leadtimeDias !== null);
+    if (sortCol) rows = sortRows(rows, sortCol, sortDir);
+    return rows;
+  }, [tasks, manualTasks, costCenter, year, onlyWithLeadtime, sortCol, sortDir]);
+
+  const allFiltered = useMemo<UnifiedRow[]>(() => {
+    const all = [...tasks.map(clickupToUnified), ...manualTasks.map(manualToUnified)];
     return all.filter((r) => {
       if (costCenter !== null && r.costCenter !== costCenter) return false;
-      // Filtro de ano: baseia-se no ano de conclusão; sem conclusão = inclui sempre
       const conclusaoYear = getYear(r.dataConclusao);
       if (conclusaoYear !== null && conclusaoYear !== year) return false;
       return true;
@@ -134,15 +174,24 @@ export function LeadtimeClickupPanel({
   }, [tasks, manualTasks, costCenter, year]);
 
   const validLeadtimes = useMemo(
-    () => filtered.map((t) => t.leadtimeDias).filter((v): v is number => v !== null),
-    [filtered]
+    () => allFiltered.map((t) => t.leadtimeDias).filter((v): v is number => v !== null),
+    [allFiltered]
   );
 
   const showGravacao = costCenter === "LATAM" || costCenter === null;
   const validGravacao = useMemo(
-    () => filtered.map((t) => t.leadtimeGravacao).filter((v): v is number => v !== null),
-    [filtered]
+    () => allFiltered.map((t) => t.leadtimeGravacao).filter((v): v is number => v !== null),
+    [allFiltered]
   );
+
+  function toggleSort(col: SortCol) {
+    if (sortCol === col) {
+      setSortDir((d) => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortCol(col);
+      setSortDir("asc");
+    }
+  }
 
   async function handleSync() {
     setSyncing(true);
@@ -191,27 +240,12 @@ export function LeadtimeClickupPanel({
     } finally {
       setClearing(false);
     }
-    // Dispara sync imediatamente
     await handleSync();
   }
 
-  function openAdd() {
-    setEditingClickup(null);
-    setEditingManual(null);
-    setDialogOpen(true);
-  }
-
-  function openEditClickup(row: LeadtimeTaskRow) {
-    setEditingManual(null);
-    setEditingClickup(row);
-    setDialogOpen(true);
-  }
-
-  function openEditManual(row: KpiLeadtime) {
-    setEditingClickup(null);
-    setEditingManual(row);
-    setDialogOpen(true);
-  }
+  function openAdd() { setEditingClickup(null); setEditingManual(null); setDialogOpen(true); }
+  function openEditClickup(row: LeadtimeTaskRow) { setEditingManual(null); setEditingClickup(row); setDialogOpen(true); }
+  function openEditManual(row: KpiLeadtime) { setEditingClickup(null); setEditingManual(row); setDialogOpen(true); }
 
   async function handleDeleteClickup(id: string) {
     if (!confirm("Apagar este curso do banco?")) return;
@@ -238,12 +272,19 @@ export function LeadtimeClickupPanel({
   }
 
   const th = "px-3 py-2 hub-table-header text-left whitespace-nowrap";
-  const thR = "px-3 py-2 hub-table-header text-center whitespace-nowrap";
+  const thS = "px-3 py-2 hub-table-header text-center whitespace-nowrap cursor-pointer select-none hover:text-foreground";
   const td = "px-3 py-2 text-sm whitespace-nowrap";
   const tdC = "px-3 py-2 text-sm text-center tabular-nums whitespace-nowrap";
   const gravCols = showGravacao ? 3 : 0;
   const actionCols = isAdmin ? 1 : 0;
   const colSpan = 4 + gravCols + actionCols;
+
+  function SortIcon({ col }: { col: SortCol }) {
+    if (sortCol !== col) return <ChevronsUpDown size={11} className="inline ml-1 opacity-40" />;
+    return sortDir === "asc"
+      ? <ChevronUp size={11} className="inline ml-1" />
+      : <ChevronDown size={11} className="inline ml-1" />;
+  }
 
   return (
     <div className="space-y-4">
@@ -276,22 +317,31 @@ export function LeadtimeClickupPanel({
 
       {/* Cards de métricas */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard label="Total" value={String(filtered.length)} />
+        <MetricCard label="Total" value={String(allFiltered.length)} />
         <MetricCard
           label="Com leadtime"
           value={String(validLeadtimes.length)}
-          hint={validLeadtimes.length !== filtered.length ? `${filtered.length - validLeadtimes.length} sem dados` : undefined}
+          hint={validLeadtimes.length !== allFiltered.length ? `${allFiltered.length - validLeadtimes.length} sem dados` : undefined}
+          active={onlyWithLeadtime}
+          onClick={() => setOnlyWithLeadtime((v) => !v)}
         />
-        <MetricCard label="Leadtime médio" value={`${fmtDias(avg(validLeadtimes))} d`} />
-        <MetricCard label="Leadtime mediano" value={`${fmtDias(median(validLeadtimes))} d`} />
+        <MetricCard label="LD Criação médio" value={`${fmtDias(avg(validLeadtimes))} d`} />
+        <MetricCard label="LD Criação mediano" value={`${fmtDias(median(validLeadtimes))} d`} />
       </div>
 
       {showGravacao && validGravacao.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <MetricCard label="Com gravação" value={String(validGravacao.length)} />
-          <MetricCard label="Gravação média" value={`${fmtDias(avg(validGravacao))} d`} />
-          <MetricCard label="Gravação mediana" value={`${fmtDias(median(validGravacao))} d`} />
+          <MetricCard label="LD Gravação médio" value={`${fmtDias(avg(validGravacao))} d`} />
+          <MetricCard label="LD Gravação mediano" value={`${fmtDias(median(validGravacao))} d`} />
         </div>
+      )}
+
+      {onlyWithLeadtime && (
+        <p className="text-xs text-muted-foreground">
+          Mostrando apenas cursos com leadtime.{" "}
+          <button className="underline" onClick={() => setOnlyWithLeadtime(false)}>Mostrar todos</button>
+        </p>
       )}
 
       {/* Tabela */}
@@ -299,19 +349,35 @@ export function LeadtimeClickupPanel({
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b bg-muted/40">
-              <th className={th}>Curso</th>
+              <th className={th + " cursor-pointer select-none hover:text-foreground"} onClick={() => toggleSort("nome")}>
+                Curso <SortIcon col="nome" />
+              </th>
               <th className={th}>Centro de custo</th>
-              <th className={thR}>Início</th>
-              <th className={thR}>Conclusão</th>
-              <th className={thR}>Leadtime (d)</th>
+              <th className={thS} onClick={() => toggleSort("dataInicio")}>
+                Início <SortIcon col="dataInicio" />
+              </th>
               {showGravacao && (
                 <>
-                  <th className={thR}>Grav. início</th>
-                  <th className={thR}>Grav. fim</th>
-                  <th className={thR}>Grav. (d)</th>
+                  <th className={thS} onClick={() => toggleSort("dataGravInicio")}>
+                    Grav. início <SortIcon col="dataGravInicio" />
+                  </th>
+                  <th className={thS} onClick={() => toggleSort("dataGravFim")}>
+                    Grav. fim <SortIcon col="dataGravFim" />
+                  </th>
                 </>
               )}
-              {isAdmin && <th className={thR} />}
+              <th className={thS} onClick={() => toggleSort("dataConclusao")}>
+                Conclusão <SortIcon col="dataConclusao" />
+              </th>
+              <th className={thS} onClick={() => toggleSort("leadtimeDias")}>
+                LD Criação <SortIcon col="leadtimeDias" />
+              </th>
+              {showGravacao && (
+                <th className={thS} onClick={() => toggleSort("leadtimeGravacao")}>
+                  LD Gravação <SortIcon col="leadtimeGravacao" />
+                </th>
+              )}
+              {isAdmin && <th className={thS} />}
             </tr>
           </thead>
           <tbody>
@@ -327,14 +393,16 @@ export function LeadtimeClickupPanel({
                 <td className={td + " max-w-[300px] truncate"} title={row.nome}>{row.nome}</td>
                 <td className={td + " text-muted-foreground"}>{row.costCenter}</td>
                 <td className={tdC + " text-muted-foreground"}>{fmtDate(row.dataInicio)}</td>
-                <td className={tdC + " text-muted-foreground"}>{fmtDate(row.dataConclusao)}</td>
-                <td className={tdC + " font-medium"}>{fmtDias(row.leadtimeDias)}</td>
                 {showGravacao && (
                   <>
                     <td className={tdC + " text-muted-foreground"}>{fmtDate(row.dataGravInicio)}</td>
                     <td className={tdC + " text-muted-foreground"}>{fmtDate(row.dataGravFim)}</td>
-                    <td className={tdC}>{fmtDias(row.leadtimeGravacao)}</td>
                   </>
+                )}
+                <td className={tdC + " text-muted-foreground"}>{fmtDate(row.dataConclusao)}</td>
+                <td className={tdC + " font-medium"}>{fmtDias(row.leadtimeDias)}</td>
+                {showGravacao && (
+                  <td className={tdC + " font-medium"}>{fmtDias(row.leadtimeGravacao)}</td>
                 )}
                 {isAdmin && (
                   <td className="px-3 py-1 text-center">
@@ -373,11 +441,22 @@ export function LeadtimeClickupPanel({
   );
 }
 
-function MetricCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function MetricCard({
+  label, value, hint, active, onClick,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  active?: boolean;
+  onClick?: () => void;
+}) {
+  const base = "rounded-md border bg-card p-3 space-y-1";
+  const interactive = onClick ? " cursor-pointer hover:border-primary transition-colors" : "";
+  const highlighted = active ? " border-primary" : "";
   return (
-    <div className="rounded-md border bg-card p-3 space-y-1">
+    <div className={base + interactive + highlighted} onClick={onClick}>
       <p className="text-[10px] font-mono uppercase text-muted-foreground tracking-wide">{label}</p>
-      <p className="hub-number text-2xl font-light">{value}</p>
+      <p className={`hub-number text-2xl font-light${active ? " text-primary" : ""}`}>{value}</p>
       {hint && <p className="text-[10px] text-muted-foreground">{hint}</p>}
     </div>
   );
