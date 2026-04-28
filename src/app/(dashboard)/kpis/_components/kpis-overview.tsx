@@ -17,6 +17,7 @@ import { KpisCharts } from "./kpis-charts";
 import { PublicacoesSyncDialog } from "./publicacoes-sync-dialog";
 import { GastosKpisTable } from "./gastos-kpis-table";
 import { LeadtimeTable } from "./leadtime-table";
+import { LeadtimeClickupPanel, type LeadtimeTaskRow } from "./leadtime-clickup-panel";
 import type { KpiProducao } from "./producao-form-dialog";
 import type { KpiEdicao } from "./edicao-form-dialog";
 import type { KpiSuporte } from "./suporte-form-dialog";
@@ -56,6 +57,7 @@ interface KpisOverviewProps {
   gastosEditores: GastoEntry[];
   gastosSuporte: GastoEntry[];
   initialLeadtime: KpiLeadtime[];
+  initialLeadtimeTasks: LeadtimeTaskRow[];
 }
 
 type Tab = "publicacao" | "leadtime" | "graficos";
@@ -63,6 +65,7 @@ type Tab = "publicacao" | "leadtime" | "graficos";
 export function KpisOverview({
   initialProducao, initialEdicao, initialSuporte, initialLeadtime, initialPesos, initialAnos, currentYear, isAdmin,
   gastosInstrutores, gastosEditores, gastosSuporte,
+  initialLeadtimeTasks,
 }: KpisOverviewProps) {
   const [producao, setProducao] = useState(initialProducao);
   const [edicao, setEdicao] = useState(initialEdicao);
@@ -453,7 +456,7 @@ export function KpisOverview({
       )}
 
       {activeTab === "leadtime" && (
-        <div className="space-y-6">
+        <div className="space-y-10">
           {costCenter !== null && (
             <div className="border-b border-border pb-3">
               <h2 className="text-2xl font-[var(--font-encode-sans)] font-light">
@@ -461,8 +464,17 @@ export function KpisOverview({
               </h2>
             </div>
           )}
+
+          {/* Painel sincronizado do ClickUp */}
+          <LeadtimeClickupPanel
+            costCenter={costCenter}
+            initialData={initialLeadtimeTasks}
+            isAdmin={isAdmin}
+          />
+
+          {/* Tabela manual legada */}
           <div className="space-y-2">
-            <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Cursos</p>
+            <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Cursos (manual)</p>
             <LeadtimeTable
               costCenter={costCenter ?? "ALURA"}
               data={costCenter ? leadtime.filter((r) => r.costCenter === costCenter) : leadtime}

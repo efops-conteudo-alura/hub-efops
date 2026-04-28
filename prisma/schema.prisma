@@ -567,3 +567,24 @@ model UserCredential {
 
   @@unique([userId, service])
 }
+
+// --- Sync ClickUp para Leadtimes (KPIs) ---
+
+model LeadtimeTask {
+  id               String    @id @default(cuid())
+  clickupTaskId    String    @unique
+  name             String
+  listId           String
+  regiao           String    // "ALURA" | "LATAM"
+  dataInicio       DateTime?
+  dataConclusao    DateTime?
+  leadtimeDias     Float?    // (dataConclusao - dataInicio) em dias
+  dataGravInicio   DateTime? // apenas LATAM
+  dataGravFim      DateTime? // apenas LATAM
+  leadtimeGravacao Float?    // apenas LATAM
+  syncedAt         DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([regiao])
+  @@index([listId])
+}
