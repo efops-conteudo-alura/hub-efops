@@ -575,16 +575,17 @@ model LeadtimeTask {
   clickupTaskId    String    @unique
   name             String
   listId           String
-  regiao           String    // "ALURA" | "LATAM"
+  costCenter       String    // "ALURA" | "LATAM"
   dataInicio       DateTime?
   dataConclusao    DateTime?
   leadtimeDias     Float?    // (dataConclusao - dataInicio) em dias
   dataGravInicio   DateTime? // apenas LATAM
   dataGravFim      DateTime? // apenas LATAM
   leadtimeGravacao Float?    // apenas LATAM
+  clickupUpdatedAt DateTime? // date_updated do ClickUp para sync incremental
   syncedAt         DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  @@index([regiao])
+  @@index([costCenter])
   @@index([listId])
 }

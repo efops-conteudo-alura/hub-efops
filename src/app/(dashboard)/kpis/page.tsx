@@ -74,7 +74,7 @@ export default async function KpisPage() {
     clickupTaskId: t.clickupTaskId,
     name: t.name,
     listId: t.listId,
-    regiao: t.regiao,
+    costCenter: t.costCenter,
     dataInicio: t.dataInicio ? t.dataInicio.toISOString() : null,
     dataConclusao: t.dataConclusao ? t.dataConclusao.toISOString() : null,
     leadtimeDias: t.leadtimeDias,

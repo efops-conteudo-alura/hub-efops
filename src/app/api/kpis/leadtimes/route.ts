@@ -3,11 +3,11 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
-// GET /api/kpis/leadtimes?regiao=ALURA|LATAM
+// GET /api/kpis/leadtimes?costCenter=ALURA|LATAM
 // Retorna as tasks sincronizadas do ClickUp com leadtime calculado.
 // Sem filtro = todas as regiões.
 const querySchema = z.object({
-  regiao: z.enum(["ALURA", "LATAM"]).optional(),
+  costCenter: z.enum(["ALURA", "LATAM"]).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -18,21 +18,18 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const parsed = querySchema.safeParse({
-    regiao: searchParams.get("regiao") ?? undefined,
+    costCenter: searchParams.get("costCenter") ?? undefined,
   });
 
   if (!parsed.success) {
     return NextResponse.json({ error: "Parâmetros inválidos" }, { status: 400 });
   }
 
-  const where = parsed.data.regiao ? { regiao: parsed.data.regiao } : {};
+  const where = parsed.data.costCenter ? { costCenter: parsed.data.costCenter } : {};
 
   const tasks = await prisma.leadtimeTask.findMany({
     where,
-    orderBy: [
-      { dataConclusao: "desc" },
-      { name: "asc" },
-    ],
+    orderBy: [{ dataConclusao: "desc" }, { name: "asc" }],
   });
 
   return NextResponse.json(tasks);

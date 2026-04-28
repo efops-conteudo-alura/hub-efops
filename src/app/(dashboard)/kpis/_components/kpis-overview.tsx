@@ -16,7 +16,6 @@ import { PesosDialog } from "./pesos-dialog";
 import { KpisCharts } from "./kpis-charts";
 import { PublicacoesSyncDialog } from "./publicacoes-sync-dialog";
 import { GastosKpisTable } from "./gastos-kpis-table";
-import { LeadtimeTable } from "./leadtime-table";
 import { LeadtimeClickupPanel, type LeadtimeTaskRow } from "./leadtime-clickup-panel";
 import type { KpiProducao } from "./producao-form-dialog";
 import type { KpiEdicao } from "./edicao-form-dialog";
@@ -70,7 +69,7 @@ export function KpisOverview({
   const [producao, setProducao] = useState(initialProducao);
   const [edicao, setEdicao] = useState(initialEdicao);
   const [suporte, setSuporte] = useState(initialSuporte);
-  const [leadtime, setLeadtime] = useState(initialLeadtime);
+  const [leadtime] = useState(initialLeadtime);
   const [costCenter, setCostCenter] = useState<"ALURA" | "LATAM" | null>(null);
   const [pesos, setPesos] = useState(initialPesos);
   const [anos, setAnos] = useState(initialAnos);
@@ -456,7 +455,7 @@ export function KpisOverview({
       )}
 
       {activeTab === "leadtime" && (
-        <div className="space-y-10">
+        <div className="space-y-6">
           {costCenter !== null && (
             <div className="border-b border-border pb-3">
               <h2 className="text-2xl font-[var(--font-encode-sans)] font-light">
@@ -465,29 +464,13 @@ export function KpisOverview({
             </div>
           )}
 
-          {/* Painel sincronizado do ClickUp */}
           <LeadtimeClickupPanel
             costCenter={costCenter}
+            year={selectedYear}
             initialData={initialLeadtimeTasks}
+            initialManualData={leadtime}
             isAdmin={isAdmin}
           />
-
-          {/* Tabela manual legada */}
-          <div className="space-y-2">
-            <p className="text-xs font-mono uppercase text-muted-foreground tracking-wide">Cursos (manual)</p>
-            <LeadtimeTable
-              costCenter={costCenter ?? "ALURA"}
-              data={costCenter ? leadtime.filter((r) => r.costCenter === costCenter) : leadtime}
-              isAdmin={isAdmin}
-              onChange={(updated) => {
-                if (costCenter) {
-                  setLeadtime([...leadtime.filter((r) => r.costCenter !== costCenter), ...updated]);
-                } else {
-                  setLeadtime(updated);
-                }
-              }}
-            />
-          </div>
         </div>
       )}
 
