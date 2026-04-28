@@ -149,6 +149,14 @@ export function LeadtimeClickupPanel({
     setSyncMsg(null);
     try {
       const res = await fetch("/api/kpis/leadtimes/sync", { method: "POST" });
+      const contentType = res.headers.get("content-type") ?? "";
+      if (!contentType.includes("application/json")) {
+        setSyncMsg({ text: `Timeout ou erro do servidor (${res.status}) — recarregue a página e clique em Sincronizar novamente para continuar`, error: true });
+        const qs = costCenter ? `?costCenter=${costCenter}` : "";
+        const reload = await fetch(`/api/kpis/leadtimes${qs}`);
+        if (reload.ok) setTasks(await reload.json());
+        return;
+      }
       const data = await res.json();
       if (!res.ok) {
         setSyncMsg({ text: data.error ?? "Erro ao sincronizar", error: true });

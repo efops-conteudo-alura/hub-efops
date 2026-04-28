@@ -216,102 +216,86 @@ export async function POST() {
       const existingMap = new Map(existingTasks.map((t) => [t.clickupTaskId, t]));
 
       const listStatusSamples: string[] = [];
+      const CONCURRENCY = 5;
 
+      // Separa as tasks que precisam de processamento das que são filtradas/puladas
+      const toProcess: ClickUpTaskListItem[] = [];
       for (const item of listTasks) {
         total++;
+        const statusNorm = canonicalizeStatus(item.status?.status ?? "");
 
-        // Filtro: ignorar tasks em backlog (nome varia por lista: "backlog", "1. backlog", etc.)
-        if (canonicalizeStatus(item.status?.status ?? "").includes("backlog")) {
-          filtered++;
-          continue;
-        }
-
-        // Filtro: ignorar status extras configurados por lista
-        if (config.skipStatuses?.some((s) => canonicalizeStatus(item.status?.status ?? "") === canonicalizeStatus(s))) {
-          filtered++;
-          continue;
-        }
-
-        // Filtro: só aceitar tasks cujo nome começa com exatamente 4 dígitos (ID do curso)
-        if (!/^\d{4}(?!\d)/.test(item.name.trim())) {
-          filtered++;
-          continue;
-        }
-
-        // Filtro: ignorar tasks "Reaproveitado" nas listas Alura
-        if (config.filterReaproveitado && item.custom_fields && isOrigemReaproveitado(item.custom_fields)) {
-          filtered++;
-          continue;
-        }
+        if (statusNorm.includes("backlog")) { filtered++; continue; }
+        if (config.skipStatuses?.some((s) => statusNorm === canonicalizeStatus(s))) { filtered++; continue; }
+        if (!/^\d{4}(?!\d)/.test(item.name.trim())) { filtered++; continue; }
+        if (config.filterReaproveitado && item.custom_fields && isOrigemReaproveitado(item.custom_fields)) { filtered++; continue; }
 
         const dateUpdated = item.date_updated ? new Date(Number(item.date_updated)) : null;
         const existing = existingMap.get(item.id);
-
-        // Sync incremental: pular tasks sem mudanças desde o último sync
-        if (
-          existing &&
-          dateUpdated &&
-          existing.clickupUpdatedAt &&
-          existing.clickupUpdatedAt.getTime() === dateUpdated.getTime()
-        ) {
+        if (existing && dateUpdated && existing.clickupUpdatedAt &&
+            existing.clickupUpdatedAt.getTime() === dateUpdated.getTime()) {
           skipped++;
           continue;
         }
 
-        const enterMap = await fetchTimeInStatus(item.id);
-        if (!enterMap) {
-          skipped++;
-          continue;
-        }
+        toProcess.push(item);
+      }
 
-        // Coleta amostras de status para diagnóstico (até 30 por lista)
-        if (listStatusSamples.length < 30) {
-          for (const [s] of enterMap) listStatusSamples.push(s);
-        }
+      // Processa em blocos paralelos de CONCURRENCY tarefas
+      for (let i = 0; i < toProcess.length; i += CONCURRENCY) {
+        const batch = toProcess.slice(i, i + CONCURRENCY);
 
-        const firstStatusTs = enterMap.size > 0 ? Math.min(...enterMap.values()) : null;
-        const startTs = enterMap.get(config.startStatus) ?? firstStatusTs ?? null;
-        const endTs = enterMap.get(config.endStatus) ?? null;
+        await Promise.allSettled(batch.map(async (item) => {
+          const enterMap = await fetchTimeInStatus(item.id);
+          if (!enterMap) { skipped++; return; }
 
-        const dataInicio = startTs !== null ? new Date(startTs) : null;
-        const dataConclusao = endTs !== null ? new Date(endTs) : null;
-        const leadtimeDias = diffDias(startTs, endTs);
+          if (listStatusSamples.length < 30) {
+            for (const [s] of enterMap) listStatusSamples.push(s);
+          }
 
-        let dataGravInicio: Date | null = null;
-        let dataGravFim: Date | null = null;
-        let leadtimeGravacao: number | null = null;
+          const firstStatusTs = enterMap.size > 0 ? Math.min(...enterMap.values()) : null;
+          const startTs = enterMap.get(config.startStatus) ?? firstStatusTs ?? null;
+          const endTs = enterMap.get(config.endStatus) ?? null;
 
-        if (config.costCenter === "LATAM") {
-          const gravStart = config.gravStartStatus ? (enterMap.get(config.gravStartStatus) ?? null) : null;
-          const gravEnd = config.gravEndStatus ? (enterMap.get(config.gravEndStatus) ?? null) : null;
-          dataGravInicio = gravStart !== null ? new Date(gravStart) : null;
-          dataGravFim = gravEnd !== null ? new Date(gravEnd) : null;
-          leadtimeGravacao = diffDias(gravStart, gravEnd);
-        }
+          const dataInicio = startTs !== null ? new Date(startTs) : null;
+          const dataConclusao = endTs !== null ? new Date(endTs) : null;
+          const leadtimeDias = diffDias(startTs, endTs);
 
-        const data = {
-          name: item.name,
-          listId: config.listId,
-          costCenter: config.costCenter,
-          dataInicio,
-          dataConclusao,
-          leadtimeDias,
-          dataGravInicio,
-          dataGravFim,
-          leadtimeGravacao,
-          clickupUpdatedAt: dateUpdated,
-          syncedAt: new Date(),
-        };
+          let dataGravInicio: Date | null = null;
+          let dataGravFim: Date | null = null;
+          let leadtimeGravacao: number | null = null;
 
-        await prisma.leadtimeTask.upsert({
-          where: { clickupTaskId: item.id },
-          create: { clickupTaskId: item.id, ...data },
-          update: data,
-          select: { id: true },
-        });
+          if (config.costCenter === "LATAM") {
+            const gravStart = config.gravStartStatus ? (enterMap.get(config.gravStartStatus) ?? null) : null;
+            const gravEnd = config.gravEndStatus ? (enterMap.get(config.gravEndStatus) ?? null) : null;
+            dataGravInicio = gravStart !== null ? new Date(gravStart) : null;
+            dataGravFim = gravEnd !== null ? new Date(gravEnd) : null;
+            leadtimeGravacao = diffDias(gravStart, gravEnd);
+          }
 
-        if (existing) updated++;
-        else created++;
+          const data = {
+            name: item.name,
+            listId: config.listId,
+            costCenter: config.costCenter,
+            dataInicio,
+            dataConclusao,
+            leadtimeDias,
+            dataGravInicio,
+            dataGravFim,
+            leadtimeGravacao,
+            clickupUpdatedAt: item.date_updated ? new Date(Number(item.date_updated)) : null,
+            syncedAt: new Date(),
+          };
+
+          await prisma.leadtimeTask.upsert({
+            where: { clickupTaskId: item.id },
+            create: { clickupTaskId: item.id, ...data },
+            update: data,
+            select: { id: true },
+          });
+
+          if (existingMap.get(item.id)) updated++;
+          else created++;
+        }));
       }
 
       // Deduplica amostras
