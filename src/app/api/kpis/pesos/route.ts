@@ -3,11 +3,13 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 async function getPesos() {
-  let pesos = await prisma.kpiPesos.findFirst();
-  if (!pesos) {
-    pesos = await prisma.kpiPesos.create({ data: {} });
+  const existing = await prisma.kpiPesos.findFirst();
+  if (existing) return existing;
+  try {
+    return await prisma.kpiPesos.create({ data: {} });
+  } catch {
+    return (await prisma.kpiPesos.findFirst())!;
   }
-  return pesos;
 }
 
 export async function GET() {

@@ -5,22 +5,23 @@ import { KpisOverview } from "./_components/kpis-overview";
 import type { LeadtimeTaskRow } from "./_components/leadtime-clickup-panel";
 
 async function getPesos() {
-  let pesos = await prisma.kpiPesos.findFirst();
-  if (!pesos) {
-    pesos = await prisma.kpiPesos.create({ data: {} });
+  const existing = await prisma.kpiPesos.findFirst();
+  if (existing) return existing;
+  try {
+    return await prisma.kpiPesos.create({ data: {} });
+  } catch {
+    return (await prisma.kpiPesos.findFirst())!;
   }
-  return pesos;
 }
 
 async function getAnos() {
   const currentYear = new Date().getFullYear();
-  let anos = await prisma.kpiAno.findMany({ orderBy: { year: "desc" } });
-  // Garante que o ano corrente existe sempre
-  if (!anos.find((a) => a.year === currentYear)) {
-    const novo = await prisma.kpiAno.create({ data: { year: currentYear } });
-    anos = [novo, ...anos];
-  }
-  return anos;
+  await prisma.kpiAno.upsert({
+    where: { year: currentYear },
+    update: {},
+    create: { year: currentYear },
+  });
+  return prisma.kpiAno.findMany({ orderBy: { year: "desc" } });
 }
 
 export default async function KpisPage() {
