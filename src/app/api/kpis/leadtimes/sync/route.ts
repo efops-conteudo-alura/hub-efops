@@ -19,6 +19,7 @@ interface ListConfig {
   endStatus: string;
   gravStartStatus?: string;
   gravEndStatus?: string;
+  skipStatuses?: string[];
 }
 
 const LIST_CONFIGS: ListConfig[] = [
@@ -35,6 +36,7 @@ const LIST_CONFIGS: ListConfig[] = [
     filterReaproveitado: true,
     startStatus: "3. ementa",
     endStatus: "11. publicado",
+    skipStatuses: ["2. alinhamento de briefing"],
   },
   {
     listId: "901303695381",
@@ -218,8 +220,20 @@ export async function POST() {
       for (const item of listTasks) {
         total++;
 
-        // Filtro: ignorar tasks em backlog (todas as listas)
-        if (canonicalizeStatus(item.status?.status ?? "") === "backlog") {
+        // Filtro: ignorar tasks em backlog (nome varia por lista: "backlog", "1. backlog", etc.)
+        if (canonicalizeStatus(item.status?.status ?? "").includes("backlog")) {
+          filtered++;
+          continue;
+        }
+
+        // Filtro: ignorar status extras configurados por lista
+        if (config.skipStatuses?.some((s) => canonicalizeStatus(item.status?.status ?? "") === canonicalizeStatus(s))) {
+          filtered++;
+          continue;
+        }
+
+        // Filtro: só aceitar tasks cujo nome começa com exatamente 4 dígitos (ID do curso)
+        if (!/^\d{4}(?!\d)/.test(item.name.trim())) {
           filtered++;
           continue;
         }
@@ -255,7 +269,8 @@ export async function POST() {
           for (const [s] of enterMap) listStatusSamples.push(s);
         }
 
-        const startTs = enterMap.get(config.startStatus) ?? null;
+        const firstStatusTs = enterMap.size > 0 ? Math.min(...enterMap.values()) : null;
+        const startTs = enterMap.get(config.startStatus) ?? firstStatusTs ?? null;
         const endTs = enterMap.get(config.endStatus) ?? null;
 
         const dataInicio = startTs !== null ? new Date(startTs) : null;
