@@ -55,7 +55,7 @@ DATABASE_URL              # PostgreSQL Neon (obrigatório)
 NEXTAUTH_SECRET           # Segredo JWT (obrigatório)
 ENCRYPTION_KEY            # AES-256-GCM — fallback: NEXTAUTH_SECRET
 ANTHROPIC_API_KEY         # API Claude
-CLICKUP_API_KEY           # Integração ClickUp (gastos, imobilização)
+CLICKUP_API_KEY           # Integração ClickUp (gastos, imobilização, leadtimes KPIs)
 CLICKUP_LIST_ID           # ID lista ClickUp para gastos
 GAMMA_API_KEY             # Geração de apresentações Gamma
 LINTE_API_KEY             # API Linte (cadastro de instrutores)
@@ -237,7 +237,10 @@ Este hub é o ponto central de gestão de usuários. Todos os apps compartilham 
 ## Integrações Externas
 
 - **Claude API**: streaming via `anthropic.messages.stream()`. Fallback: usar `messages.create()` — nunca `stream()` de novo após chunks já enviados
-- **ClickUp**: sync de gastos e imobilização por lista configurada em `CLICKUP_LIST_ID`
+- **ClickUp**: três integrações distintas:
+  - **Gastos** (`/api/gastos/sync-clickup`) — usa `CLICKUP_LIST_ID`
+  - **Imobilização** (`/api/imobilizacao/[ano]/[mes]/sync/[timeId]`) — lista por time configurável em `/imobilizacao/configurar`
+  - **Leadtimes KPIs** (`/api/kpis/leadtimes/sync`) — 3 listas hardcoded (2 ALURA + 1 LATAM); calcula dias entre status de início e conclusão lendo `status_history` da task. Fallback: `date_created` / `date_done` quando histórico não vier
 - **Caelum BI**: sync de cursos via query SQL salva criptografada em `SystemConfig` (`CAELUM_BI_URL`)
 - **Gamma**: geração de apresentações a partir de análises de relatórios
 - **Linte**: cadastro de instrutores via webhook público
